@@ -37,7 +37,9 @@ ARCEAG/
 │   │   ├── decision.py
 │   │   ├── alert.py
 │   │   ├── event.py
-│   │   └── notion_chunk.py
+│   │   ├── notion_chunk.py
+│   │   ├── project_memory.py   ← mémoire validée
+│   │   └── user_preferences.py ← config comportement mémoire
 │   │
 │   ├── schemas/                ← Pydantic schemas (I/O)
 │   │   ├── __init__.py
@@ -46,7 +48,8 @@ ARCEAG/
 │   │   ├── planning.py
 │   │   ├── scenario.py
 │   │   ├── meeting.py
-│   │   └── rag.py
+│   │   ├── rag.py
+│   │   └── memory.py           ← candidate, save, query schemas
 │   │
 │   ├── routers/                ← endpoints FastAPI
 │   │   ├── __init__.py
@@ -56,7 +59,8 @@ ARCEAG/
 │   │   ├── scenario.py         ← /scenario/*
 │   │   ├── meeting.py          ← /meeting/*
 │   │   ├── rag.py              ← /rag/*
-│   │   └── events.py           ← /events/*
+│   │   ├── events.py           ← /events/*
+│   │   └── memory.py           ← /memory/*
 │   │
 │   ├── engines/                ← logique métier pure
 │   │   ├── __init__.py
@@ -64,7 +68,8 @@ ARCEAG/
 │   │   ├── scenario_engine.py  ← simulation retards / météo
 │   │   ├── event_engine.py     ← priorités + alertes
 │   │   ├── meeting_engine.py   ← analyse CR + extraction actions
-│   │   └── rag_engine.py       ← embedding + recherche pgvector
+│   │   ├── rag_engine.py       ← embedding + recherche pgvector
+│   │   └── memory_engine.py    ← mémoire projet : dédup, classification, validation
 │   │
 │   └── services/               ← intégrations externes
 │       ├── __init__.py
@@ -88,7 +93,8 @@ ARCEAG/
 │   ├── tools/
 │   │   ├── planning_tools.py   ← tools OpenWebUI → API
 │   │   ├── chantier_tools.py
-│   │   └── rag_tools.py
+│   │   ├── rag_tools.py
+│   │   └── memory_tools.py     ← candidate, save, query mémoire
 │   └── knowledge/
 │       └── README.md           ← instructions ingestion docs
 │
@@ -219,6 +225,66 @@ CREATE TABLE alerts (
     entite_ref      UUID,           -- ID de la tâche / event concerné
     acquittee       BOOLEAN DEFAULT FALSE,
     created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### `project_memory` — mémoire projet validée
+```sql
+CREATE TABLE project_memory (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    affaire_id      UUID REFERENCES affaires(id) ON DELETE CASCADE,
+    type_memory     VARCHAR(50) NOT NULL,   -- decision|risk|insight|coordination
+    content         TEXT NOT NULL,
+    importance      VARCHAR(20) NOT NULL DEFAULT 'info', -- info|warning|critical
+    source          VARCHAR(50) NOT NULL,   -- chat|cr|chantier|notion|planning|simulation
+    source_ref      UUID,                   -- ID de l'entité source (chantier_event, etc.)
+    embedding       VECTOR(1024),           -- pour dédup sémantique
+    validated_by    VARCHAR(100),           -- utilisateur ayant validé
+    validated_at    TIMESTAMPTZ,
+    metadata        JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Index cosine pour dédup et retrieval
+CREATE INDEX ON project_memory USING ivfflat (embedding vector_cosine_ops);
+-- Index filtrage rapide par affaire + type
+CREATE INDEX ON project_memory (affaire_id, type_memory, importance);
+```
+
+#### `memory_candidates` — mémoire en attente de validation
+```sql
+CREATE TABLE memory_candidates (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    affaire_id      UUID REFERENCES affaires(id) ON DELETE CASCADE,
+    type_memory     VARCHAR(50) NOT NULL,
+    content         TEXT NOT NULL,
+    importance      VARCHAR(20) NOT NULL DEFAULT 'info',
+    source          VARCHAR(50) NOT NULL,
+    source_ref      UUID,
+    embedding       VECTOR(1024),
+    similarity_score DECIMAL(5,4),          -- similarité avec mémoire existante (si proche)
+    duplicate_of    UUID REFERENCES project_memory(id), -- si doublon détecté
+    statut          VARCHAR(30) DEFAULT 'pending', -- pending|validated|rejected|merged
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+#### `user_preferences` — configuration comportement mémoire
+```sql
+CREATE TABLE user_preferences (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         VARCHAR(100) UNIQUE NOT NULL,  -- identifiant OpenWebUI
+    auto_save       BOOLEAN DEFAULT FALSE,
+    ask_validation  BOOLEAN DEFAULT TRUE,
+    sensitivity     VARCHAR(20) DEFAULT 'medium',  -- low|medium|high
+    -- low    : enregistre tout automatiquement
+    -- medium : demande validation pour warning + critical
+    -- high   : demande validation pour tout, même info
+    notify_on_duplicate BOOLEAN DEFAULT TRUE,
+    min_importance_to_save VARCHAR(20) DEFAULT 'info', -- seuil minimum pour proposer
+    metadata        JSONB DEFAULT '{}',
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 ```
 
@@ -409,6 +475,21 @@ JALONS = {
 | POST | `/events/process` | Traiter événements → alertes |
 | GET | `/events/{affaire_id}/alerts` | Alertes actives |
 | PATCH | `/events/alerts/{id}/ack` | Acquitter alerte |
+
+### `/memory`
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/memory/candidate` | Soumettre info → dédup + classification → candidate |
+| GET | `/memory/{affaire_id}/candidates` | Lister candidats en attente |
+| POST | `/memory/save` | Valider et persister une candidate |
+| DELETE | `/memory/candidate/{id}` | Rejeter une candidate |
+| PATCH | `/memory/candidate/{id}` | Modifier contenu avant validation |
+| GET | `/memory/{affaire_id}` | Lister mémoire validée (filtres: type, importance) |
+| POST | `/memory/query` | Recherche sémantique dans la mémoire |
+| DELETE | `/memory/{id}` | Supprimer une mémoire validée |
+| GET | `/memory/{affaire_id}/context` | Contexte enrichi pour une question (memory + events + decisions) |
+| GET | `/memory/preferences/{user_id}` | Lire préférences utilisateur |
+| PUT | `/memory/preferences/{user_id}` | Mettre à jour préférences |
 
 ---
 
@@ -681,11 +762,15 @@ volumes:
 - [ ] Router `/events`
 - [ ] Tâche background (APScheduler ou Celery) pour run engine périodiquement
 
-### Phase 4 — Meeting Engine + RAG
+### Phase 4 — Meeting Engine + RAG + Memory Engine
 - [ ] `engines/rag_engine.py` (embedding + pgvector)
 - [ ] Router `/rag/ingest` + `/rag/query`
 - [ ] `engines/meeting_engine.py`
 - [ ] Router `/meeting`
+- [ ] Tables `project_memory`, `memory_candidates`, `user_preferences`
+- [ ] `engines/memory_engine.py` (pipeline complet)
+- [ ] Router `/memory` (tous les endpoints)
+- [ ] Tests déduplication (similarité cosine)
 
 ### Phase 5 — OpenWebUI
 - [ ] Configuration agents (YAML)
@@ -752,6 +837,359 @@ DEBUG=true
 | 4 | Jours ouvrés : calendrier FR ou configurable ? | Configurable par affaire |
 | 5 | Multi-tenant (plusieurs agences) ? | Non en v1, prévu en v2 |
 | 6 | Export Gantt : format MS Project ou CSV ? | CSV + JSON en v1 |
+
+---
+
+---
+
+## 15. MEMORY ENGINE — Mémoire Projet Intelligente
+
+### 15.1 Architecture à 3 niveaux
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Niveau 1 — MÉMOIRE BRUTE (non persistée)                   │
+│  Discussion chat, analyses en cours, hypothèses temporaires  │
+│  → Vie = durée de la session OpenWebUI                      │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ détection automatique
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Niveau 2 — MÉMOIRE CANDIDATE (memory_candidates)           │
+│  Information détectée comme potentiellement importante       │
+│  → Dédup vérifié, classification faite, attente validation  │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ validation utilisateur (ou auto)
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Niveau 3 — MÉMOIRE VALIDÉE (project_memory)                │
+│  Décisions, risques, insights, coordination                  │
+│  → Persistée, indexée pgvector, exploitable par tous agents │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 15.2 Pipeline de création d'une mémoire candidate
+
+```
+Information produite (chat / CR / analyse / simulation)
+    │
+    ▼
+1. CLASSIFICATION LLM
+   → type_memory  : decision | risk | insight | coordination
+   → importance   : info | warning | critical
+   → lot concerné (si applicable)
+    │
+    ▼
+2. GÉNÉRATION EMBEDDING (text-embedding-3-large)
+    │
+    ▼
+3. DÉDUPLICATION (pgvector cosine similarity)
+   ┌─────────────────────────────────────────────────────┐
+   │ Rechercher dans project_memory WHERE affaire_id = X  │
+   │ ORDER BY embedding <=> query_embedding LIMIT 5       │
+   │                                                      │
+   │  similarity >= 0.92  →  DOUBLON — ne pas créer      │
+   │  0.75 <= sim < 0.92  →  PROCHE — signaler + proposer│
+   │  similarity < 0.75   →  NOUVEAU — créer candidate   │
+   └─────────────────────────────────────────────────────┘
+    │
+    ▼
+4. VÉRIFICATION CROSS-TABLES
+   → chantier_events (descriptions similaires ?)
+   → decisions (déjà arbitré ?)
+   → alerts (déjà alerté ?)
+    │
+    ▼
+5. CRÉATION memory_candidates
+   → statut = 'pending'
+   → similarity_score + duplicate_of si proche
+    │
+    ▼
+6. DÉCISION SELON user_preferences
+   (voir section 15.4)
+```
+
+### 15.3 Classification automatique
+
+**Prompt système classifieur :**
+```
+Tu es un assistant MOE expert en pilotage de chantier.
+Analyse cette information extraite d'un échange chantier.
+
+Classifie selon :
+TYPE (un seul) :
+- decision    : une décision a été prise ou doit être prise
+- risk        : un risque, problème ou danger identifié
+- insight     : observation utile, retour d'expérience, constat important
+- coordination: information de coordination entre acteurs / lots
+
+IMPORTANCE (un seul) :
+- critical : impact direct sur délai, coût, sécurité ou réception
+- warning  : impact possible, à surveiller
+- info     : utile à conserver, pas d'urgence
+
+Réponds UNIQUEMENT avec ce JSON :
+{
+  "type_memory": "...",
+  "importance": "...",
+  "lot": "...",          // lot BTP concerné, null si transversal
+  "resume": "...",       // résumé en 1 phrase claire et actionnable (max 120 chars)
+  "raison": "..."        // justification courte de la classification
+}
+```
+
+**Exemples de classification :**
+
+| Information brute | type | importance |
+|---|---|---|
+| "réservation PAC mal positionnée de 30cm" | risk | warning |
+| "décision : changer entreprise lot plomberie" | decision | critical |
+| "prévoir 2 semaines de délai livraison charpente métal" | insight | warning |
+| "BET structure attend validation plans avant semaine 3" | coordination | warning |
+| "prise de conscience : éviter joints en fond de tableau" | insight | info |
+| "retard coulage dalle dû aux gelées, impact -7j planning" | risk | critical |
+
+### 15.4 Comportement selon user_preferences
+
+```python
+def should_auto_save(candidate: MemoryCandidate, prefs: UserPreferences) -> str:
+    """
+    Retourne : 'auto_save' | 'ask_user' | 'skip'
+    """
+    # Mode auto total
+    if prefs.auto_save and not prefs.ask_validation:
+        return 'auto_save'
+
+    # Seuil importance non atteint → ignorer
+    importance_rank = {'info': 0, 'warning': 1, 'critical': 2}
+    if importance_rank[candidate.importance] < importance_rank[prefs.min_importance_to_save]:
+        return 'skip'
+
+    # Mode intelligent (défaut)
+    if not prefs.auto_save and prefs.ask_validation:
+        match prefs.sensitivity:
+            case 'low':
+                # Auto-save sauf critical → demander
+                return 'ask_user' if candidate.importance == 'critical' else 'auto_save'
+            case 'medium':
+                # Demander pour warning + critical
+                return 'ask_user' if candidate.importance in ('warning', 'critical') else 'auto_save'
+            case 'high':
+                # Toujours demander
+                return 'ask_user'
+
+    return 'ask_user'
+```
+
+### 15.5 Format de la proposition à l'utilisateur (OpenWebUI)
+
+L'agent doit présenter la candidature de façon structurée et concise.
+
+**Template réponse agent :**
+```
+---
+📋 **Nouvelle information détectée**
+
+**Type :** `{type_memory}` | **Importance :** `{importance}`
+**Lot :** {lot}
+
+> {resume}
+
+{si_proche}
+⚠️ Information proche déjà enregistrée :
+> "{contenu_existant}" (similarité: {similarity_score:.0%})
+
+---
+Souhaitez-vous l'enregistrer ?
+**[Oui]** · **[Non]** · **[Modifier]**
+---
+```
+
+**Comportement des actions :**
+
+| Action | Effet |
+|--------|-------|
+| `[Oui]` | Appelle `/memory/save` → statut `validated` → insert `project_memory` |
+| `[Non]` | Appelle `DELETE /memory/candidate/{id}` → statut `rejected` |
+| `[Modifier]` | Affiche l'information éditable → `PATCH /memory/candidate/{id}` → repropose |
+
+### 15.6 Recherche et utilisation en contexte
+
+**Avant chaque analyse (meeting, planning, simulation) le système doit :**
+
+```python
+async def build_project_context(affaire_id: UUID, question: str) -> ProjectContext:
+    """
+    Construit le contexte enrichi pour l'IA avant toute analyse.
+    Fusionne mémoire, events et décisions sans doublon.
+    """
+    embedding = await embed(question)
+
+    # 1. Mémoire projet (top 8 par similarité)
+    memories = await db.execute("""
+        SELECT * FROM project_memory
+        WHERE affaire_id = :aid
+        ORDER BY embedding <=> :emb
+        LIMIT 8
+    """, {"aid": affaire_id, "emb": embedding})
+
+    # 2. Events récents / ouverts critiques
+    events = await db.execute("""
+        SELECT * FROM chantier_events
+        WHERE affaire_id = :aid
+          AND statut != 'clos'
+          AND priorite IN ('high', 'critical')
+        ORDER BY date_evenement DESC
+        LIMIT 10
+    """, {"aid": affaire_id})
+
+    # 3. Décisions récentes
+    decisions = await db.execute("""
+        SELECT * FROM decisions
+        WHERE affaire_id = :aid
+          AND statut = 'active'
+        ORDER BY date_decision DESC
+        LIMIT 5
+    """, {"aid": affaire_id})
+
+    # 4. Alertes actives
+    alerts = await db.execute("""
+        SELECT * FROM alerts
+        WHERE affaire_id = :aid AND acquittee = FALSE
+        ORDER BY created_at DESC LIMIT 5
+    """, {"aid": affaire_id})
+
+    return ProjectContext(
+        memories=memories,
+        events=events,
+        decisions=decisions,
+        alerts=alerts
+    )
+```
+
+**Endpoint dédié :**
+`GET /memory/{affaire_id}/context?question={question}`
+
+Retourne le contexte fusionné, injecté dans le prompt système des agents.
+
+### 15.7 Tools OpenWebUI — memory_tools.py
+
+```python
+"""
+Tools mémoire pour les agents OpenWebUI.
+Ces fonctions sont appelées par l'agent quand il détecte une information importante.
+"""
+
+async def detect_and_candidate_memory(
+    affaire_id: str,
+    raw_content: str,
+    source: str = "chat"
+) -> dict:
+    """
+    Soumettre une information pour évaluation mémoire.
+    L'API classe, déduplique et crée la candidate.
+    Retourne la candidate avec recommandation (auto_save | ask_user | skip).
+    """
+    response = await api_post("/memory/candidate", {
+        "affaire_id": affaire_id,
+        "content": raw_content,
+        "source": source
+    })
+    return response
+
+
+async def validate_memory(candidate_id: str, user_id: str) -> dict:
+    """Valider et persister une candidate."""
+    return await api_post("/memory/save", {
+        "candidate_id": candidate_id,
+        "validated_by": user_id
+    })
+
+
+async def reject_memory(candidate_id: str) -> dict:
+    """Rejeter une candidate."""
+    return await api_delete(f"/memory/candidate/{candidate_id}")
+
+
+async def query_project_memory(
+    affaire_id: str,
+    question: str,
+    type_filter: str = None,
+    importance_filter: str = None
+) -> dict:
+    """Recherche sémantique dans la mémoire validée."""
+    return await api_post("/memory/query", {
+        "affaire_id": affaire_id,
+        "question": question,
+        "type_filter": type_filter,
+        "importance_filter": importance_filter
+    })
+
+
+async def get_project_context(affaire_id: str, question: str) -> dict:
+    """Contexte enrichi : mémoire + events + décisions + alertes."""
+    return await api_get(f"/memory/{affaire_id}/context", {"question": question})
+```
+
+### 15.8 Intégration dans les autres engines
+
+**Meeting engine** — après extraction des actions :
+```python
+# Pour chaque décision et blocage extrait du CR
+for item in extracted_items:
+    if item.type in ('decision', 'blocage'):
+        candidate = await memory_engine.create_candidate(
+            affaire_id=affaire_id,
+            content=item.description,
+            source="cr",
+            source_ref=meeting_id
+        )
+        # Le router retourne les candidats avec la réponse meeting
+        # L'agent OpenWebUI les présente à l'utilisateur
+```
+
+**Planning engine** — après simulation scénario :
+```python
+# Si impact critique détecté
+if scenario_result.duree_supplementaire_jours > 7:
+    await memory_engine.create_candidate(
+        affaire_id=affaire_id,
+        content=f"Risque planning : {scenario.type} sur {scenario.lot} → +{delta}j sur réception",
+        source="simulation",
+        importance_hint="critical"  # suggestion, la classification LLM peut overrider
+    )
+```
+
+**Event engine** — sur nouvelle alerte critique :
+```python
+if alert.severite == 'critical':
+    await memory_engine.create_candidate(
+        affaire_id=affaire_id,
+        content=alert.message,
+        source="chantier",
+        source_ref=alert.entite_ref,
+        importance_hint="critical"
+    )
+```
+
+### 15.9 Règles de qualité mémoire (invariants)
+
+1. **Jamais de doublon** — seuil cosine `>= 0.92` = rejet automatique sans proposition
+2. **Mémoire actionnable** — le `content` doit toujours être une phrase complète et autonome (comprise hors contexte)
+3. **Traçabilité obligatoire** — tout enregistrement doit avoir `source` + `source_ref` si possible
+4. **Pas d'embedding null** — toute entrée `project_memory` doit avoir son embedding (contrôle DB)
+5. **Nettoyage périodique** — les `memory_candidates` rejetées ou `pending` depuis > 7 jours sont archivées
+6. **Importance non dégradable** — une `critical` ne peut pas être reclassifiée `info` sans justification explicite
+7. **Cohérence cross-affaire** — `insights` génériques (pas liés à un lot spécifique) peuvent être tagués `global` pour réutilisation
+
+### 15.10 Seuils de similarité cosine — calibration
+
+| Seuil | Interprétation | Action |
+|-------|---------------|--------|
+| >= 0.92 | Quasi-identique | Rejet silencieux (doublon certain) |
+| 0.80 – 0.91 | Très similaire | Proposer fusion ou mise à jour |
+| 0.65 – 0.79 | Thème proche | Signaler l'existant, laisser choisir |
+| < 0.65 | Nouveau | Créer candidate directement |
 
 ---
 
