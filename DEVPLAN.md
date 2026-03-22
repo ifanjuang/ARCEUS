@@ -28,7 +28,7 @@ Quant aux IA génératives — ChatGPT, Gemini, Claude — elles impressionnent,
 
 Il ne remplace pas les outils existants — il enregistre ce que vous faites déjà, le comprend, le relie, et le rend accessible à tout moment par une simple question en langage naturel.
 
-Il constitue deux types de bases de connaissance, validées et maîtrisées par l'agence :
+Il constitue trois types de bases de connaissance, validées et maîtrisées par l'agence :
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -36,10 +36,13 @@ Il constitue deux types de bases de connaissance, validées et maîtrisées par 
 │  DTU, Eurocodes, RT/RE2020, NF, avis techniques CSTB,          │
 │  fiches fournisseurs — vérifiés, versionnés                     │
 ├─────────────────────────────────────────────────────────────────┤
-│  BASE LOCALE — Mémoire de l'agence et de ses projets            │
-│  Notes de calculs, diagnostics, solutions retenues,             │
-│  produits qualifiés, détails constructifs éprouvés,             │
-│  PLU par commune, règlements spécifiques par affaire            │
+│  BASE PROJET — Documents propres à l'affaire                    │
+│  PLU de la commune, programme, études de sol, diagnostics,      │
+│  règlements spécifiques, pièces contractuelles                  │
+├─────────────────────────────────────────────────────────────────┤
+│  BASE AGENCE — Mémoire capitalisée de l'agence                  │
+│  Notes de calculs, solutions retenues, produits qualifiés,      │
+│  détails constructifs éprouvés                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
