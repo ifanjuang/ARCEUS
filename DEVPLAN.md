@@ -1,124 +1,1361 @@
-# OS CHANTIER — Plan de développement technique
+# OS PROJET — Plan de développement technique
 
 > Document de référence pour Claude. À relire au début de chaque session.
 
 ---
 
+## PRÉSENTATION
+
+> **OS Projet** — L'intelligence opérationnelle d'une agence d'architecture, du premier crayon à la levée des réserves.
+
+---
+
+### Le constat
+
+Une agence d'architecture produit en continu une masse critique d'information : diagnostics, notes de calculs, CCTP, courriers, comptes-rendus, situations financières, décisions de chantier. Cette information est répartie dans les boîtes mails de chacun, dans des dossiers partagés mal nommés, dans des tableurs sans cohérence, et dans la tête des collaborateurs.
+
+**On refait ce qui a déjà été fait. On cherche ce qu'on a pourtant déjà résolu. Et quand un collaborateur clé part, le savoir-faire part avec lui.**
+
+---
+
+### La réponse
+
+**OS Projet est un système de mémoire et d'intelligence pour agence MOE.**
+
+Il ne remplace pas les outils existants — il enregistre ce que vous faites déjà, le comprend, le relie, et le rend accessible à tout moment par une simple question en langage naturel.
+
+Chaque acte de travail courant — poser une question technique, envoyer un email, tenir une réunion, déposer un calcul, noter une observation de chantier — alimente automatiquement deux niveaux d'intelligence :
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  INTELLIGENCE PROJET                                            │
+│  La mémoire complète d'une opération — ses décisions,           │
+│  ses calculs, ses contraintes, ses aléas, ses arbitrages.       │
+│  "Sur ce projet, comment a-t-on traité l'isolation en ITEe ?"  │
+├─────────────────────────────────────────────────────────────────┤
+│  INTELLIGENCE AGENCE                                            │
+│  Ce que tous les projets ont appris, capitalisé au fil du temps.│
+│  "Avons-nous déjà eu ce type de litige avec ce type de MOA ?"   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Ce que ça change concrètement
+
+| Avant | Avec OS Projet |
+|-------|----------------|
+| On cherche pendant 20 min un email envoyé il y a 6 mois | "Retrouve la réponse de l'entreprise Bâti+ sur le recalage de planning" → réponse en 3 secondes |
+| Le CR de réunion ne sort jamais ou sort en retard | L'agent analyse l'audio ou le brut, extrait les décisions et met à jour le planning automatiquement |
+| Le planning est un fichier Excel que personne n'actualise | Dès qu'un lot est bloqué, l'impact en cascade est calculé et les acteurs concernés sont alertés |
+| Les notes de calculs thermiques sont introuvables en GPA | Toutes les notes sont indexées, reliées à leur phase et retrouvables par question naturelle |
+| Le savoir-faire part avec les collaborateurs | Il est capitalisé dans la base de connaissance agence, persistante et interrogeable |
+
+---
+
+### Les phases couvertes
+
+OS Projet accompagne l'intégralité du cycle de vie d'une opération :
+
+```
+Faisabilité → ESQ → APS → APD → PRO → DCE → ACT → EXE → OPR/AOR → GPA
+     ↑           ↑          ↑          ↑         ↑         ↑
+ Diagnostics  Questions  Notes de   CCTP &   Planning   Réception
+  existant   théoriques  calculs    pièces   chantier   & mémoire
+```
+
+À chaque phase, les outils adaptés sont disponibles. Un architecte en phase APS peut interroger le système sur une question réglementaire et la réponse sera enregistrée dans la mémoire du projet. Un ingénieur en phase PRO peut déposer sa note de calcul thermique et la relier automatiquement aux décisions d'enveloppe prises en APS. Un conducteur de travaux en phase EXE peut signaler un blocage et l'impact sur le planning est calculé immédiatement.
+
+---
+
+### Ce que fait OS Projet
+
+**Pendant la conception**
+
+| Outil | Usage |
+|-------|-------|
+| **Questions théoriques** | Poser une question (réglementaire, technique, constructive) → le système cherche dans la base de connaissance de l'agence, répond et enregistre la Q&R dans la mémoire du projet |
+| **Notes de calculs** | Déposer, versionner et relier les notes de calculs (structure, thermique, acoustique, incendie) aux phases et décisions qui les ont motivées |
+| **Diagnostics** | Enregistrer les diagnostics de l'existant (relevés, DPE, structure, assainissement), les relier aux contraintes qui en découlent |
+| **Mémoire de conception** | Capitaliser automatiquement les partis pris architecturaux, les choix constructifs et leurs justifications |
+
+**Pendant les études et le DCE**
+
+| Outil | Usage |
+|-------|-------|
+| **Documents** | Générer les pièces (CCTP, CCAP, notices, rapports) à partir des données du projet et de templates |
+| **Communications** | Registre de toutes les correspondances avec MOA, bureaux d'études, administrations — classées, suivies, répondues |
+| **Planning études** | Timeline des livrables par phase avec dépendances entre intervenants |
+
+**Pendant le chantier**
+
+| Outil | Usage |
+|-------|-------|
+| **Planning travaux** | Extrait les lots du CCTP, génère la timeline avec chevauchements, détecte les impacts de retard en cascade |
+| **Finance** | Situations de travaux, avenants, tableau de bord marché actualisé / reste à facturer |
+| **Meeting** | Analyse un CR brut → extrait décisions, actions, blocages → alimente automatiquement le planning et la mémoire |
+| **Journal** | Observations, photos, avancements, jalons en temps réel |
+| **Alertes** | Deadlines, dépendances non respectées, dépassements, blocages prolongés |
+
+**En continu — Intelligence de l'agence**
+
+| Outil | Usage |
+|-------|-------|
+| **Mémoire projet** | Décisions validées, risques identifiés, solutions retenues — déduplication sémantique, accès par question naturelle |
+| **Base de connaissance agence** | Accumuler les réponses aux questions récurrentes, les détails constructifs éprouvés, les leçons tirées de chaque opération |
+| **Recherche transversale** | "Comment avons-nous traité ce problème sur d'autres projets ?" — recherche sémantique inter-projets |
+
+---
+
+### Le rôle de l'IA
+
+L'IA n'est pas un chatbot généraliste. Elle est **ancrée dans les données réelles** de chaque projet et de l'agence. Elle ne répond jamais de mémoire — elle interroge systématiquement la base avant de répondre.
+
+Elle sert à :
+- **Comprendre** les documents déposés (CCTP, notes de calculs, emails) et en extraire l'essentiel automatiquement
+- **Relier** les informations entre elles (cette note de calcul répond à cette question posée en phase APS)
+- **Alerter** quand quelque chose mérite attention (retard, dépassement, incohérence)
+- **Générer** des pièces (CR, documents, brouillons de réponse) à partir des données existantes
+- **Répondre** aux questions de l'équipe en s'appuyant sur la mémoire du projet et de l'agence
+
+---
+
+### Les acteurs et leurs rôles
+
+Chaque acteur du projet interagit avec l'outil selon ses besoins, et contribue naturellement à la mémoire collective :
+
+| Acteur | Ce qu'il utilise | Ce qu'il contribue |
+|--------|------------------|--------------------|
+| **Architecte / MOE** | Questions théoriques, mémoire projet, documents, planning études | Partis pris, choix constructifs, décisions |
+| **Ingénieur BE** | Notes de calculs, questions techniques, diagnostics | Calculs, contraintes, solutions techniques |
+| **Chargé de mission** | Planning travaux, meeting, journal, communications | Avancements, actions, observations terrain |
+| **Comptable / gestionnaire** | Finance, situations, avenants | Données financières, paiements |
+| **MOA / Client** (lecteur) | Tableau de bord, avancement, documents diffusés | — |
+| **Entreprises** (lecteur) | Planning, CR diffusés, ordres de service | — |
+
+---
+
+### Souveraineté des données & modes de déploiement
+
+OS Projet est conçu pour fonctionner **entièrement sous contrôle de l'agence**. Aucune donnée projet ne transite par un service tiers sans décision explicite.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  MODE LOCAL — machine de l'agence (Mac, Linux, NAS)         │
+│  Docker Compose en local · données sur disque local         │
+│  Accès réseau interne uniquement · zéro cloud               │
+├─────────────────────────────────────────────────────────────┤
+│  MODE SERVEUR PRIVÉ — VPS OVH / Hetzner / dédié             │
+│  Docker Compose sur serveur · HTTPS avec certificat         │
+│  Accès depuis partout · données sur serveur privé géré      │
+├─────────────────────────────────────────────────────────────┤
+│  MODE HYBRIDE (futur)                                        │
+│  Données sensibles en local · knowledge publique en cloud   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Le même `docker-compose.yml` fonctionne dans les trois cas.** La différence se joue uniquement sur l'infrastructure hôte et la configuration réseau.
+
+---
+
+### Intelligence locale sans abonnement — Ollama
+
+OS Projet supporte deux modes d'IA, configurables à tout moment :
+
+```
+LLM_PROVIDER=ollama      → IA locale via Ollama (aucun abonnement, données 100% locales)
+LLM_PROVIDER=openai      → OpenAI gpt-4o (performance maximale, données envoyées à OpenAI)
+LLM_PROVIDER=openai      → tout fournisseur compatible OpenAI API (Mistral, Groq, Anthropic…)
+```
+
+Avec Ollama, tout tourne sur le matériel de l'agence. Le modèle LLM et les embeddings ne quittent jamais le réseau interne. Recommandé pour les données sensibles (contrats, litiges, données financières).
+
+```yaml
+# .env — choisir le mode IA
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://ollama:11434
+OLLAMA_MODEL=mistral:7b            # ou llama3.1, qwen2.5, deepseek-r1…
+EMBEDDING_PROVIDER=ollama
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text   # embedding local 768 dims
+
+# Ou OpenAI si performance maximale souhaitée
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=sk-...
+# LLM_MODEL=gpt-4o
+```
+
+`llm_service.py` et `rag_service.py` abstraient le fournisseur — **les modules ne savent pas si l'IA est locale ou distante**.
+
+---
+
+### Couches de connaissance & niveaux d'accès
+
+L'intelligence de l'outil est organisée en **4 couches de connaissance**, chacune avec un niveau d'accès distinct :
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  COUCHE 4 — Connaissance sensible                               │
+│  Données financières, contrats, litiges, honoraires             │
+│  Accès : moe + admin uniquement                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  COUCHE 3 — Mémoire projet                                      │
+│  Décisions, calculs, diagnostics, correspondances d'une affaire │
+│  Accès : selon permissions affaire (lecteur → admin)            │
+├─────────────────────────────────────────────────────────────────┤
+│  COUCHE 2 — Intelligence agence                                 │
+│  Leçons tirées, méthodes, détails constructifs, Q&R historiques │
+│  Accès : collaborateur → admin (interne agence uniquement)      │
+├─────────────────────────────────────────────────────────────────┤
+│  COUCHE 1 — Connaissance publique                               │
+│  Normes, DTU, réglementation, CCTP de référence                 │
+│  Accès : tous les rôles incluant les lecteurs externes          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Quand un agent IA répond à une question, il consulte uniquement les couches auxquelles l'utilisateur a accès. Un lecteur (client, entreprise) ne peut jamais atteindre les données financières ou l'intelligence interne de l'agence, même indirectement via une question en langage naturel.
+
+---
+
+### Gouvernance de l'IA par l'admin — Prompt steering
+
+L'administrateur peut définir des **prompts système globaux** qui s'injectent dans chaque appel LLM et conditionnent le comportement de l'IA pour toute l'agence. Ils sont configurables sans toucher au code, depuis l'interface admin.
+
+| Paramètre | Exemple de configuration | Effet |
+|-----------|--------------------------|-------|
+| **Ton juridique** | "Ne fournis jamais de conseil engageant la responsabilité de l'agence. Recommande systématiquement de consulter un juriste pour toute question contractuelle." | L'IA prend de la distance sur les sujets sensibles |
+| **Niveau de créativité** | "Reste factuel et pragmatique. Propose des alternatives uniquement si explicitement demandé." | Répond sans sur-interpréter |
+| **Langue et registre** | "Réponds toujours en français professionnel. Évite le jargon non-BTP." | Cohérence stylistique dans tous les documents générés |
+| **Confidentialité** | "Ne mentionne jamais le nom du maître d'ouvrage dans les réponses accessibles aux entreprises." | Cloisonnement des données sensibles |
+| **Périmètre métier** | "Tu es un outil de pilotage MOE. Refuse les demandes sans rapport avec la gestion de projet d'architecture." | Empêche les dérives d'usage |
+| **Sources obligatoires** | "Cite toujours la référence normative (DTU, NF, RT) quand tu réponds à une question technique." | Traçabilité et fiabilité |
+
+Ces prompts sont stockés dans la table `mapping_tables` (admin), combinés et injectés dans `llm_service.py` à chaque appel. Chaque module peut avoir ses propres prompts en plus des prompts globaux.
+
+---
+
+### Connexions & intégrations
+
+**Intégrations disponibles en v1 :**
+
+| Service | Sens | Usage |
+|---------|------|-------|
+| **Notion** | Bidirectionnel | Sync affaires, actions, CR — base de travail déjà utilisée par l'agence |
+| **SMTP (email)** | Sortant | Notifications alertes, diffusion documents, confirmation réception |
+
+**Modules d'intégration prévus (v2+) :**
+
+| Service | Sens | Usage envisagé |
+|---------|------|----------------|
+| **Slack** | Bidirectionnel | Alertes push, questions à l'agent depuis Slack, résumé quotidien |
+| **Trello** | Sortant | Sync actions et tâches vers boards Trello de l'équipe |
+| **Microsoft Teams** | Entrant | Ingestion CR réunions Teams, transcription automatique |
+| **WhatsApp Business** | Entrant | Photos et notes chantier depuis mobile — ingestion directe |
+| **DocuSign / Yousign** | Sortant | Signature électronique des pièces générées |
+| **SMAC / Edilians** | Entrant | Tarifs et données techniques matériaux |
+
+Toutes les intégrations sont des **modules autonomes** activables/désactivables depuis l'interface admin. Leurs paramètres de connexion (clés API, webhooks, sens de synchronisation, fréquence) sont configurables sans redémarrage.
+
+---
+
+### Architecture complète
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  CLIENTS                                                            │
+│  OpenWebUI (agents IA)  ·  Interface Admin  ·  API directe          │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ HTTPS + JWT
+┌───────────────────────────────▼─────────────────────────────────────┐
+│  FASTAPI — Plugin System                                            │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
+│  │conception│ │chantier  │ │transvers.│ │système   │ │intégrat. │  │
+│  │phases    │ │planning  │ │memory    │ │auth      │ │notion    │  │
+│  │calculs   │ │finance   │ │rag       │ │admin     │ │slack (v2)│  │
+│  │diagnost. │ │budget    │ │comms     │ │intervnts │ │trello(v2)│  │
+│  └──────────┘ │journal   │ │documents │ └──────────┘ └──────────┘  │
+│               │events    │ │meeting   │                             │
+│               └──────────┘ └──────────┘                             │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  CORE : registry · auth · events(PG) · prompt_steering      │   │
+│  │          rag_service · llm_service · storage_service         │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└──────────┬──────────────────────┬───────────────────┬───────────────┘
+           │                      │                   │
+┌──────────▼──────┐  ┌────────────▼────────┐  ┌──────▼────────────┐
+│  PostgreSQL 16  │  │  MinIO (fichiers)   │  │  Ollama / OpenAI  │
+│  + pgvector     │  │  PDF, photos, docs  │  │  (configurable)   │
+│  données+vecteurs│  │  bucket arceag-files│  │  LLM + embedding  │
+└─────────────────┘  └─────────────────────┘  └───────────────────┘
+```
+
+**Principes :**
+- **Souverain** — données sur infrastructure de l'agence (local ou serveur privé)
+- **Sans abonnement obligatoire** — Ollama pour une IA 100% locale
+- **Modulaire** — plugin system, chaque fonctionnalité est indépendante
+- **Couches de connaissance** — 4 niveaux d'accès à l'intelligence du système
+- **Gouverné** — l'admin pilote le comportement de l'IA via prompt steering
+- **Connectable** — intégrations Notion, Slack, Trello, email en modules autonomes
+- **Cycle de vie complet** — de la faisabilité à la GPA
+- **Capitalisation naturelle** — chaque acte de travail alimente la mémoire
+
+---
+
+### OpenClaw — L'interface quotidienne de toute l'agence (V3)
+
+**OpenWebUI** est le cockpit des administrateurs et chefs de projet : configuration des agents, gestion de la base de connaissance, audit, exploration avancée. Il demande une prise en main.
+
+**OpenClaw** est le terminal conversationnel accessible à **tout le monde** — architectes, chargés de mission, ingénieurs, gestionnaires, et même intervenants extérieurs en lecture. Une seule interface, une conversation naturelle, toutes les capacités du système.
+
+#### Pour qui, pour quoi
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  OpenWebUI — Admin & Chefs de projet                            │
+│  Configuration agents · Knowledge base · Audit · Exploration    │
+├─────────────────────────────────────────────────────────────────┤
+│  OpenClaw — Toute l'agence + intervenants autorisés             │
+│                                                                 │
+│  "Résume-moi l'avancement du chantier Dupont"                   │
+│  "Le béton n'est pas arrivé, bloque la charpente depuis 2j"     │
+│  "Génère un ordre de service pour Bâti+ sur ce retard"          │
+│  "Y a-t-il des alertes financières sur mes affaires ?"          │
+│  "Quelle norme s'applique pour l'isolation en ITEe ?"           │
+│  "Enregistre ma visite de chantier" + photo                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Interfaces
+
+**Interface principale — PWA mobile-first**
+Application web installable sur téléphone et bureau (sans store). Une URL, un login, et c'est disponible partout. Fonctionne sur chantier avec connexion faible. Notifications push.
+
+**Interface secondaire — Bot Telegram (optionnel)**
+Pour les intervenants terrain qui préfèrent rester dans leur messagerie. Même backend, même JWT, même réponses. Activé via profil Docker (`--profile telegram`).
+
+#### L'agent ReAct — Reason → Act → Observe → Respond
+
+OpenClaw n'est pas un chatbot qui cherche dans une FAQ. C'est un **agent qui réfléchit, choisit ses outils, agit sur le système réel, observe le résultat et répond**.
+
+```
+Utilisateur : "Le béton n'est pas arrivé, ça bloque la charpente depuis 2 jours"
+      ↓
+REASON  : Blocage livraison matériau détecté. Lot concerné : Maçonnerie/Béton.
+          Lot bloqué : Charpente. Durée : 2 jours.
+          Actions possibles : créer événement blocage + calculer impact planning.
+      ↓
+ACT 1   : create_event(affaire_id, type="blocage", lot="Maçonnerie",
+            description="Béton non livré — Charpente bloquée", priorite="high")
+ACT 2   : get_impact(affaire_id, lot_id=charpente, retard_jours=2)
+      ↓
+OBSERVE : Événement créé ✓. Impact : Charpente décalée 2j.
+          Jalon "Hors d'eau" prévu 15 mai → passe au 17 mai.
+          Alerte générée pour le chef de projet.
+      ↓
+RESPOND : "Blocage enregistré. La charpente est décalée de 2 jours.
+           Le jalon 'Hors d'eau' passe du 15 au 17 mai.
+           Le chef de projet a été alerté. Souhaitez-vous que je génère
+           un ordre de service à l'entreprise ?"
+```
+
+L'utilisateur voit en temps réel ce que l'agent est en train de faire (streaming). Il peut intervenir, corriger, demander autre chose.
+
+#### Contexte automatique à l'ouverture
+
+À chaque connexion, OpenClaw affiche **le brief du jour** sans que l'utilisateur ait rien à demander :
+
+```
+Bonjour Jean-Marc. Voici ce qui mérite votre attention aujourd'hui :
+
+⚠  3 alertes actives sur vos affaires
+   → Résidence Les Pins : situation n°3 en attente de visa depuis 8 jours
+   → Villa Martin : blocage ouvert depuis 5 jours sans résolution
+   → Immeuble Carnot : deadline lot Plâtrerie dépassée de 2 jours
+
+📋 5 actions vous sont assignées cette semaine
+📅 Réunion de chantier Dupont jeudi — CR de la dernière disponible
+
+Sur quelle affaire voulez-vous commencer ?
+```
+
+#### Capacités par rôle
+
+| Rôle | Ce qu'OpenClaw peut faire pour lui |
+|------|------------------------------------|
+| **Admin / MOE** | Tout — pilotage complet, génération documents, finance, planning |
+| **Collaborateur** | Questions, enregistrement observations/photos, actions, CR, communications |
+| **Lecteur (MOA, entreprise)** | Avancement projet, documents diffusés, planning (lecture) |
+
+Les couches de connaissance sont respectées : un lecteur ne peut pas interroger les données financières ou l'intelligence interne de l'agence.
+
+#### Architecture technique
+
+```
+openclaw/                    ← repo dédié (ou sous-dossier)
+├── pwa/                     ← Svelte PWA mobile-first
+│   ├── src/
+│   │   ├── Chat.svelte      ← interface conversation + streaming
+│   │   ├── Brief.svelte     ← dashboard contextuel ouverture
+│   │   ├── Upload.svelte    ← photo + document depuis mobile
+│   │   └── Notify.svelte    ← service worker push notifications
+│   ├── vite.config.js
+│   └── Dockerfile           ← nginx servant la PWA buildée
+│
+└── telegram/                ← Bot Telegram (optionnel)
+    ├── bot.py               ← python-telegram-bot, même JWT
+    └── Dockerfile
+```
+
+```
+api/modules/openclaw/        ← module FastAPI
+├── manifest.yaml
+├── router.py                ← /chat/* + /brief/* + /notify/*
+├── engine.py                ← orchestrateur ReAct
+│                               reason() → select_tools() → act() → observe() → respond()
+└── tools.py                 ← catalogue des actions disponibles
+                                (délègue aux modules existants via leurs engines)
+```
+
+**Endpoints :**
+```
+POST /chat/message           → envoie message, réponse streamée (SSE)
+GET  /chat/history           → historique conversations (filtré par rôle)
+GET  /chat/brief             → contexte du jour (alertes, actions, affaires actives)
+POST /chat/upload            → photo ou document depuis mobile → MinIO + event
+POST /notify/subscribe       → abonner device aux push notifications
+POST /notify/send            → envoyer notification à un utilisateur (admin/events_engine)
+```
+
+**Docker Compose :**
+```yaml
+openclaw-pwa:
+  build: ./openclaw/pwa
+  ports:
+    - "3001:80"           # interface principale
+
+openclaw-telegram:
+  build: ./openclaw/telegram
+  environment:
+    TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+    API_BASE_URL: http://api:8000
+  profiles:
+    - telegram            # optionnel : docker compose --profile telegram up
+```
+
+---
+
+### Stack technique
+
+| Composant | Technologie | Alternative |
+|-----------|-------------|-------------|
+| Backend | FastAPI + SQLAlchemy async | — |
+| Base de données | PostgreSQL 16 + pgvector | — |
+| Storage fichiers | MinIO (S3-compatible self-hosted) | — |
+| IA locale | Ollama + nomic-embed-text | — |
+| IA cloud | OpenAI gpt-4o + text-embedding-3-large | Mistral, Groq, Anthropic |
+| Interface admin/power | OpenWebUI (agents + tools) | — |
+| Interface quotidienne | **OpenClaw PWA** (Svelte, mobile-first) | — |
+| Interface terrain | **OpenClaw Bot Telegram** (optionnel) | WhatsApp Business (v2) |
+| Auth | JWT HS256 — 4 rôles | — |
+| Streaming réponses | SSE (Server-Sent Events) | WebSocket |
+| Notifications push | Service Worker (PWA) | — |
+| Bus événements | PostgreSQL LISTEN/NOTIFY | Redis Pub/Sub (v2) |
+| Conteneurs | Docker Compose | Kubernetes (v3+) |
+
+---
+
 ## 0. TL;DR
 
-Système de pilotage intelligent de chantier pour une agence d'architecture (MOE).
-Stack : **FastAPI + PostgreSQL/pgvector + OpenWebUI + Notion**.
-Objectif : un "OS chantier" capable de générer des plannings, simuler des scénarios, extraire des actions de réunion et assister la MOE en continu.
+Intelligence opérationnelle et mémoire vivante d'une agence d'architecture MOE.
+Stack : **FastAPI + PostgreSQL/pgvector + OpenWebUI + MinIO + Ollama/OpenAI**.
+Déploiement : **local ou serveur privé (OVH)** — données souveraines, zéro cloud obligatoire.
+
+**Décisions d'architecture arrêtées :**
+- Auth : **JWT HS256** — 4 rôles (admin / moe / collaborateur / lecteur) — per-affaire
+- Storage : **MinIO** (S3-compatible, self-hosted Docker)
+- IA : **Ollama** (local, sans abonnement) ou OpenAI (cloud) — switchable via `.env`
+- RAG : **service core partagé** (`core/services/rag_service.py`) — 4 couches de connaissance
+- Bus événements : **PostgreSQL LISTEN/NOTIFY** — compatible multi-workers
+- Planning : lots extraits du **CCTP par LLM** — per-affaire
+- Gouvernance IA : **prompt steering admin** — ton, juridique, créativité, confidentialité
+- Intégrations v1 : Notion + SMTP / v2 : Slack, Trello, Teams
+- Rate limiting : **slowapi** sur les endpoints LLM
+- Multi-tenant : **non en v1** (une agence = une instance Docker)
 
 ---
 
 ## 1. ORGANISATION DU REPO
 
+> **Architecture modulaire** : chaque fonctionnalité est un module autonome dans `api/modules/{nom}/`.
+> `main.py` ne connaît aucun module : il appelle le registry qui les découvre et les monte automatiquement.
+> Pour ajouter, désactiver ou modifier un module → toucher uniquement son dossier.
+
 ```
 ARCEAG/
-├── DEVPLAN.md                  ← ce fichier
-├── docker-compose.yml          ← orchestration complète
+├── DEVPLAN.md
+├── docker-compose.yml
 ├── .env.example
-├── .gitignore
+├── modules.yaml                ← registre des modules activés/désactivés
 │
-├── api/                        ← FastAPI (LoongFlow API)
+├── api/
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   ├── main.py                 ← point d'entrée
-│   ├── config.py               ← settings pydantic
-│   ├── database.py             ← connexion SQLAlchemy async
+│   ├── main.py                 ← crée l'app + appelle registry.load_all()
+│   ├── config.py               ← settings globaux (pydantic-settings)
+│   ├── database.py             ← session SQLAlchemy async (partagée)
 │   │
-│   ├── models/                 ← ORM SQLAlchemy
+│   ├── core/                   ← KERNEL — ne pas modifier sauf refacto architecture
 │   │   ├── __init__.py
-│   │   ├── affaire.py
-│   │   ├── chantier_event.py
-│   │   ├── budget.py
-│   │   ├── planning_task.py
-│   │   ├── decision.py
-│   │   ├── alert.py
-│   │   ├── event.py
-│   │   ├── notion_chunk.py
-│   │   ├── project_memory.py   ← mémoire validée
-│   │   ├── user_preferences.py ← config comportement mémoire
-│   │   ├── situation.py        ← situations de travaux + avenants
-│   │   ├── communication.py    ← registre emails reçus/transmis
-│   │   └── document.py         ← pièces générées (CR, PV, FNC…)
+│   │   ├── registry.py         ← découverte + chargement auto des modules
+│   │   ├── base_engine.py      ← classe abstraite BaseEngine
+│   │   ├── base_router.py      ← classe abstraite BaseRouter
+│   │   ├── base_tool.py        ← classe abstraite BaseTool
+│   │   ├── events.py           ← bus PostgreSQL LISTEN/NOTIFY inter-modules
+│   │   ├── auth.py             ← JWT decode, get_current_user, require_role()
+│   │   └── services/           ← services partagés (importables par tout module)
+│   │       ├── __init__.py
+│   │       ├── rag_service.py  ← embed, chunk, search cosine (pgvector)
+│   │       ├── llm_service.py  ← appels LLM (chat, extraction, embedding)
+│   │       └── storage_service.py ← upload/download MinIO (S3-compatible)
 │   │
-│   ├── schemas/                ← Pydantic schemas (I/O)
-│   │   ├── __init__.py
-│   │   ├── affaire.py
-│   │   ├── chantier_event.py
-│   │   ├── planning.py
-│   │   ├── scenario.py
-│   │   ├── meeting.py
-│   │   ├── rag.py
-│   │   ├── memory.py           ← candidate, save, query schemas
-│   │   ├── finance.py          ← situations, avenants, DGD
-│   │   ├── communication.py    ← emails, courriers
-│   │   └── document.py         ← pièces, templates, CR
-│   │
-│   ├── routers/                ← endpoints FastAPI
-│   │   ├── __init__.py
-│   │   ├── chantier.py         ← /chantier/*
-│   │   ├── budget.py           ← /budget/*
-│   │   ├── planning.py         ← /planning/*
-│   │   ├── scenario.py         ← /scenario/*
-│   │   ├── meeting.py          ← /meeting/*
-│   │   ├── rag.py              ← /rag/*
-│   │   ├── events.py           ← /events/*
-│   │   ├── memory.py           ← /memory/*
-│   │   ├── finance.py          ← /finance/*
-│   │   ├── communications.py   ← /communications/*
-│   │   └── documents.py        ← /documents/*
-│   │
-│   ├── engines/                ← logique métier pure
-│   │   ├── __init__.py
-│   │   ├── planning_engine.py  ← tri topologique + calcul dates
-│   │   ├── scenario_engine.py  ← simulation retards / météo
-│   │   ├── event_engine.py     ← priorités + alertes
-│   │   ├── meeting_engine.py   ← analyse CR + extraction actions
-│   │   ├── rag_engine.py       ← embedding + recherche pgvector
-│   │   ├── memory_engine.py    ← mémoire projet : dédup, classification, validation
-│   │   ├── finance_engine.py   ← situations, avenants, tableau de bord financier
-│   │   ├── communication_engine.py ← classification, résumé, registre emails
-│   │   └── document_engine.py  ← génération pièces (Jinja2 + LLM)
-│   │
-│   └── services/               ← intégrations externes
-│       ├── __init__.py
-│       ├── notion_sync.py      ← sync Notion ↔ DB
-│       └── openai_client.py    ← appels LLM (embeddings, etc.)
+│   └── modules/                ← UN DOSSIER = UN MODULE COMPLET
+│       │
+│       ├── auth/               ← gestion utilisateurs + tokens + rôles
+│       │   ├── manifest.yaml
+│       │   ├── models.py       ← users, affaire_permissions
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /auth/* (login, refresh, register, users)
+│       │   └── engine.py       ← hash password, generate JWT, check permissions
+│       │
+│       ├── chantier/           ← module socle (affaires, journal)
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml
+│       │   ├── models.py       ← affaires, chantier_events, intervenants
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /chantier/*
+│       │   ├── engine.py
+│       │   └── tools.py
+│       │
+│       ├── planning/           ← planning CCTP-driven + scénarios + impact
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← overlap_pct défaut, fallback rules, jours fériés
+│       │   ├── models.py       ← planning_lots, planning_dependencies,
+│       │   │                      planning_ouvrages, planning_cctp_ingestions
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /planning/*
+│       │   ├── engine.py       ← tri topo + overlap + chemin critique + BFS impact
+│       │   ├── cctp_parser.py  ← extraction lots depuis CCTP (LLM)
+│       │   ├── dependency_detector.py ← inférence dépendances (LLM) + override
+│       │   ├── tools.py
+│       │   └── prompts/
+│       │       ├── cctp_extraction.txt
+│       │       └── dependency_inference.txt
+│       │
+│       ├── budget/             ← budgets lots + alertes
+│       │   ├── manifest.yaml
+│       │   ├── models.py
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /budget/*
+│       │   ├── engine.py
+│       │   └── tools.py
+│       │
+│       ├── finance/            ← situations de travaux, avenants
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← seuil_alerte_pct, retenue_garantie_pct
+│       │   ├── models.py       ← situations, avenants
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /finance/*
+│       │   ├── engine.py
+│       │   └── tools.py
+│       │
+│       ├── meeting/            ← analyse CR, extraction actions
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← prompt LLM overridable
+│       │   ├── models.py
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /meeting/*
+│       │   ├── engine.py
+│       │   └── tools.py
+│       │
+│       ├── communications/     ← registre emails reçus/transmis
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← CATEGORIES, PRIORITES, reference_format
+│       │   ├── models.py       ← communications + vector(1024)
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /communications/*
+│       │   ├── engine.py
+│       │   └── tools.py
+│       │
+│       ├── documents/          ← génération pièces (CR, PV, FNC, OS…)
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml
+│       │   ├── models.py
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /documents/*
+│       │   ├── engine.py       ← Jinja2 + LLM + upload MinIO
+│       │   ├── tools.py
+│       │   └── templates/
+│       │       ├── cr_reunion.md.j2
+│       │       ├── pv_reception.md.j2
+│       │       ├── fiche_nc.md.j2
+│       │       ├── ordre_service.md.j2
+│       │       └── rapport_avancement.md.j2
+│       │
+│       ├── rag/                ← ingestion documents utilisateur (CCTP, normes)
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← chunk_size, overlap, top_k, model
+│       │   ├── models.py       ← notion_chunks (vecteurs + metadata)
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /rag/* (ingest, query, sources)
+│       │   └── engine.py       ← délègue à core/services/rag_service.py
+│       │                          (pas de tools : consommé par les autres modules)
+│       │
+│       ├── memory/             ← mémoire projet validée + candidates
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← seuils similarité, auto-save
+│       │   ├── models.py       ← project_memory, memory_candidates, user_preferences
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /memory/*
+│       │   ├── engine.py
+│       │   └── tools.py
+│       │
+│       └── events_engine/      ← moteur d'alertes (règles métier)
+│           ├── manifest.yaml
+│           ├── config.yaml     ← RULES overridables, intervalles
+│           ├── models.py       ← alerts
+│           ├── schemas.py
+│           ├── router.py       ← /events/*
+│           └── engine.py
 │
-├── db/                         ← migrations et seeds
-│   ├── migrations/             ← Alembic
-│   │   └── versions/
+├── db/
 │   ├── alembic.ini
-│   ├── seeds/
-│   │   ├── seed_lots.py        ← lots standards BTP
-│   │   └── seed_examples.py    ← exemples plannings
-│   └── init.sql                ← extensions pgvector + schéma initial
+│   └── migrations/versions/    ← préfixe: {module}_{NNN}_{description}.py
 │
-├── openwebui/                  ← configuration OpenWebUI
-│   ├── agents/
-│   │   ├── planning_agent.yaml
-│   │   ├── meeting_agent.yaml
-│   │   ├── chantier_agent.yaml
-│   │   ├── finance_agent.yaml      ← nouveau
-│   │   └── document_agent.yaml     ← nouveau
-│   ├── tools/
-│   │   ├── planning_tools.py       ← tools OpenWebUI → API
-│   │   ├── chantier_tools.py
-│   │   ├── rag_tools.py
-│   │   ├── memory_tools.py         ← candidate, save, query mémoire
-│   │   ├── finance_tools.py        ← nouveau
-│   │   ├── communication_tools.py  ← nouveau
-│   │   └── document_tools.py       ← nouveau
-│   └── knowledge/
-│       └── README.md               ← instructions ingestion docs
+├── openwebui/
+│   ├── agents/                 ← un agent par module (depuis manifest.yaml)
+│   └── knowledge/              ← CCTP exemples, normes NF, DTU…
 │
 └── docs/
-    ├── architecture.md
-    ├── api_reference.md
-    └── lot_dependencies.md     ← référentiel dépendances inter-lots
+```
+
+---
+
+## 1b. ARCHITECTURE MODULAIRE — Kernel & Plugin System
+
+### Principe
+
+```
+Ajouter un module  → créer api/modules/{nom}/ avec les 6 fichiers standard
+Désactiver          → modules.yaml : enabled: false  (pas de redémarrage requis en dev)
+Modifier behavior   → éditer config.yaml du module  (hot-reload via watchfiles)
+Modifier un prompt  → éditer config.yaml → prompt_file ou prompt inline
+Modifier une règle  → éditer config.yaml → RULES / CATEGORIES / seuils
+```
+
+---
+
+### `modules.yaml` — registre global
+
+```yaml
+# modules.yaml — à la racine du repo
+# Ordre = ordre de chargement (respecter les dépendances)
+
+modules:
+  - name: chantier
+    enabled: true
+
+  - name: budget
+    enabled: true
+
+  - name: planning
+    enabled: true
+
+  - name: finance
+    enabled: true
+
+  - name: meeting
+    enabled: true
+
+  - name: communications
+    enabled: true
+
+  - name: documents
+    enabled: true
+
+  - name: rag
+    enabled: true
+
+  - name: memory
+    enabled: true
+
+  - name: events_engine
+    enabled: true
+```
+
+---
+
+### Services partagés (`api/core/services/`) — importables par tous les modules
+
+Contrairement aux modules, les services core **n'ont pas de router ni de manifest**. Ils sont des bibliothèques internes importées directement.
+
+```python
+# Dans n'importe quel engine.py de module :
+from core.services.rag_service import RagService
+from core.services.storage_service import StorageService
+from core.services.llm_service import LlmService
+```
+
+#### `rag_service.py`
+```python
+class RagService:
+    async def embed(self, text: str) -> list[float]
+    async def chunk_and_embed(self, text: str, source_type: str, affaire_id: UUID, metadata: dict) -> list[UUID]
+    async def search(self, query: str, affaire_id: UUID, top_k: int = 5, source_type: str = None) -> list[dict]
+    async def delete_source(self, affaire_id: UUID, source_ref: str)
+```
+> Utilisé par : `planning` (CCTP), `meeting` (historique), `communications` (search), `memory` (dédup), `rag` (router public)
+
+#### `storage_service.py`
+```python
+class StorageService:
+    # Bucket S3 : arceag-files
+    # Clé : {affaire_id}/{module}/{filename}
+    async def upload(self, affaire_id: UUID, module: str, filename: str, content: bytes, content_type: str) -> str  # → URL
+    async def download(self, key: str) -> bytes
+    async def presigned_url(self, key: str, expires_seconds: int = 3600) -> str
+    async def delete(self, key: str)
+    async def list_files(self, affaire_id: UUID, module: str = None) -> list[dict]
+```
+> Utilisé par : `planning` (CCTP PDF), `communications` (PJ emails), `documents` (pièces générées), `chantier` (photos)
+
+#### `llm_service.py`
+```python
+class LlmService:
+    async def chat(self, messages: list[dict], model: str = None, temperature: float = 0.7) -> str
+    async def extract_structured(self, prompt: str, text: str, schema: dict, temperature: float = 0.1) -> dict
+    async def embed(self, text: str) -> list[float]   # délègue à RagService
+```
+> Utilisé par : tous les modules LLM (planning, meeting, communications, documents, memory)
+
+#### `events.py` — PostgreSQL LISTEN/NOTIFY
+
+```python
+# Bus inter-modules via PostgreSQL → fonctionne avec plusieurs workers uvicorn
+
+import asyncpg, json
+from typing import Callable
+
+_handlers: dict[str, list[Callable]] = {}
+
+async def subscribe(channel: str, handler: Callable, pool: asyncpg.Pool):
+    """Écoute un channel PostgreSQL et appelle handler(payload: dict) à chaque NOTIFY."""
+    _handlers.setdefault(channel, []).append(handler)
+    async with pool.acquire() as conn:
+        await conn.add_listener(channel, _dispatch)
+
+async def publish(channel: str, payload: dict, pool: asyncpg.Pool):
+    """Envoie un NOTIFY sur un channel PostgreSQL."""
+    async with pool.acquire() as conn:
+        await conn.execute(f"NOTIFY {channel}, $1", json.dumps(payload))
+
+async def _dispatch(conn, pid, channel, payload_str):
+    payload = json.loads(payload_str)
+    for handler in _handlers.get(channel, []):
+        await handler(payload)
+
+# Channels standard :
+# "planning_channel"      → lots validés, jalons dépassés, chemin critique changé
+# "budget_channel"        → seuil atteint, situation déposée
+# "chantier_channel"      → blocage ouvert, avancement mis à jour
+# "communication_channel" → email urgent reçu
+```
+
+---
+
+### `manifest.yaml` — déclaration d'un module
+
+Chaque module **doit** avoir ce fichier. C'est le contrat avec le registry.
+
+```yaml
+# api/modules/finance/manifest.yaml
+
+name: finance
+version: "1.0.0"
+description: "Suivi financier — situations de travaux, avenants, tableau de bord"
+prefix: /finance          # préfixe URL du router FastAPI
+depends_on:
+  - chantier              # modules requis (chargés avant)
+  - budget
+
+# Tables DB que ce module possède (pour Alembic auto-migration)
+models:
+  - situations
+  - avenants
+
+# Background tasks périodiques
+background_tasks:
+  - name: check_retards_paiement
+    interval_seconds: 3600   # toutes les heures
+
+# Tools exposés à OpenWebUI
+tools:
+  - enregistrer_situation
+  - valider_situation
+  - enregistrer_avenant
+  - get_tableau_bord_financier
+  - get_alertes_financieres
+
+# Agent OpenWebUI associé
+agent:
+  name: "Agent Finance MOE"
+  system_prompt_file: agent_system.txt   # dans le dossier du module
+  model: gpt-4o
+```
+
+---
+
+### `config.yaml` — comportement overridable sans toucher au code
+
+```yaml
+# api/modules/finance/config.yaml
+# Toutes les valeurs sont overridables par variable d'environnement
+# ex: FINANCE_SEUIL_ALERTE_PCT=0.90
+
+seuil_alerte_pct: 0.95          # alerte critique si cumul > 95% du marché
+seuil_warning_pct: 0.80         # alerte warning si cumul > 80%
+delai_paiement_warning_jours: 45
+retenue_garantie_pct: 0.05
+```
+
+```yaml
+# api/modules/communications/config.yaml
+
+categories:
+  demande_info:    ["question", "précision", "renseignement", "confirmer"]
+  mise_en_demeure: ["mise en demeure", "délai impératif", "formal notice"]
+  visa:            ["visa", "approbation", "validation document", "plan"]
+  compte_rendu:    ["CR", "compte rendu", "procès verbal", "réunion"]
+  bon_commande:    ["bon de commande", "BC", "ordre d'achat"]
+  situation:       ["situation de travaux", "facture", "acompte"]
+  reclamation:     ["réclamation", "litige", "contestation", "réserve"]
+
+priorites:
+  urgent: ["urgent", "URGENT", "mise en demeure", "délai 48h"]
+  high:   ["important", "délai", "relance", "attention"]
+  low:    ["pour info", "fyi", "copie"]
+
+delai_reponse_warning_jours: 7
+auto_reference: true
+reference_format: "MOE-{YYYY}-{NNN}"  # ex: MOE-2025-042
+```
+
+```yaml
+# api/modules/planning/config.yaml
+
+lot_dependencies:
+  Terrassement:      []
+  Fondations:        ["Terrassement"]
+  Maçonnerie:        ["Fondations"]
+  Charpente:         ["Maçonnerie"]
+  Couverture:        ["Charpente"]
+  "Menuiseries ext.": ["Couverture"]
+  Isolation:         ["Menuiseries ext."]
+  Plâtrerie:         ["Menuiseries ext.", "Isolation"]
+  Électricité:       ["Plâtrerie"]
+  Plomberie:         ["Plâtrerie"]
+  Chauffage:         ["Plomberie"]
+  Carrelage:         ["Électricité", "Plomberie"]
+  Peinture:          ["Plâtrerie", "Électricité"]
+  "Menuiseries int.": ["Peinture"]
+  VRD:               ["Terrassement"]
+  "Espaces verts":   ["VRD"]
+
+jalons:
+  "Hors d'eau":   ["Couverture"]
+  "Hors d'air":   ["Menuiseries ext."]
+  "Support prêt": ["Plâtrerie"]
+  Réception:      ["Peinture", "Menuiseries int.", "Carrelage"]
+
+# Modifier les dépendances ici suffit — aucun code à changer
+```
+
+---
+
+### Classes de base (`api/core/`)
+
+#### `base_engine.py`
+```python
+from abc import ABC, abstractmethod
+from sqlalchemy.ext.asyncio import AsyncSession
+
+class BaseEngine(ABC):
+    """Contrat minimal pour tout engine métier."""
+
+    def __init__(self, db: AsyncSession, config: dict):
+        self.db = db
+        self.config = config   # issu du config.yaml du module
+
+    @classmethod
+    def name(cls) -> str:
+        """Nom du module propriétaire."""
+        raise NotImplementedError
+
+    # Les engines implémentent leurs méthodes métier librement.
+    # Pas de méthodes abstraites supplémentaires : chaque engine est différent.
+```
+
+#### `base_router.py`
+```python
+from abc import ABC
+from fastapi import APIRouter
+
+class BaseRouter(ABC):
+    """Chaque module expose un router FastAPI standard."""
+
+    prefix: str = ""          # défini dans manifest.yaml
+    tags: list[str] = []
+
+    def get_router(self) -> APIRouter:
+        raise NotImplementedError
+```
+
+#### `base_tool.py`
+```python
+from abc import ABC, abstractmethod
+from typing import Any
+
+class BaseTool(ABC):
+    """Wrapper OpenWebUI — appelle l'API REST interne."""
+
+    api_base: str = "http://api:8000"
+
+    @abstractmethod
+    def get_tools(self) -> list[dict]:
+        """Retourne la liste des tools au format OpenWebUI."""
+        ...
+```
+
+#### `registry.py` — auto-discovery
+```python
+import yaml, importlib
+from pathlib import Path
+from fastapi import FastAPI
+
+class ModuleRegistry:
+    def __init__(self, app: FastAPI):
+        self.app = app
+        self._modules: dict = {}
+
+    def load_all(self, modules_yaml: str = "modules.yaml"):
+        config = yaml.safe_load(Path(modules_yaml).read_text())
+        for entry in config["modules"]:
+            if entry.get("enabled", True):
+                self._load_module(entry["name"])
+
+    def _load_module(self, name: str):
+        base = Path(f"api/modules/{name}")
+        manifest = yaml.safe_load((base / "manifest.yaml").read_text())
+        config = yaml.safe_load((base / "config.yaml").read_text()) if (base / "config.yaml").exists() else {}
+
+        # Vérifier dépendances
+        for dep in manifest.get("depends_on", []):
+            assert dep in self._modules, f"Module '{name}' requiert '{dep}' (non chargé)"
+
+        # Charger le router
+        mod = importlib.import_module(f"modules.{name}.router")
+        router = mod.get_router(config)
+        self.app.include_router(router, prefix=manifest["prefix"], tags=[name])
+
+        self._modules[name] = {"manifest": manifest, "config": config}
+        print(f"[registry] module '{name}' chargé → {manifest['prefix']}")
+```
+
+#### `events.py` — bus inter-modules (publish/subscribe)
+```python
+# Permet à un module d'écouter les événements d'un autre
+# sans couplage direct entre modules.
+
+# Exemple : le module events_engine s'abonne aux événements
+# publiés par planning, budget, chantier.
+
+from collections import defaultdict
+from typing import Callable, Any
+
+_subscribers: dict[str, list[Callable]] = defaultdict(list)
+
+def subscribe(event_type: str, handler: Callable):
+    _subscribers[event_type].append(handler)
+
+async def publish(event_type: str, payload: Any):
+    for handler in _subscribers.get(event_type, []):
+        await handler(payload)
+
+# Événements standard publiés par les modules :
+# "task.status_changed"      → planning module
+# "budget.seuil_atteint"     → budget module
+# "situation.deposee"        → finance module
+# "communication.reçue"      → communications module
+# "blocage.ouvert"           → chantier module
+```
+
+---
+
+### `main.py` — 20 lignes, ne connaît aucun module
+
+```python
+from fastapi import FastAPI
+from core.registry import ModuleRegistry
+from database import engine, Base
+
+app = FastAPI(title="OS Chantier API", version="1.0.0")
+
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    registry = ModuleRegistry(app)
+    registry.load_all("modules.yaml")
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+```
+
+---
+
+### Convention d'un module complet (exemple `finance/`)
+
+```
+api/modules/finance/
+├── manifest.yaml          ← NOM, PREFIX, DEPENDS_ON, TOOLS, AGENT
+├── config.yaml            ← SEUILS, RÈGLES, PROMPTS (overridables)
+├── agent_system.txt       ← system prompt de l'agent OpenWebUI
+├── models.py              ← SQLAlchemy models (situations, avenants)
+├── schemas.py             ← Pydantic v2 (Create/Read/Update)
+├── router.py              ← def get_router(config) → APIRouter
+├── engine.py              ← class FinanceEngine(BaseEngine)
+└── tools.py               ← class FinanceTools(BaseTool)
+```
+
+**Règle d'or :** un module ne peut **importer que `core/`** et ses propres dépendances déclarées dans `manifest.yaml`. Jamais d'import croisé entre modules — utiliser le bus d'événements.
+
+---
+
+### Ajouter un nouveau module en 5 étapes
+
+```bash
+# 1. Créer le dossier
+mkdir api/modules/mon_module
+
+# 2. Créer les 6 fichiers
+touch api/modules/mon_module/{manifest.yaml,config.yaml,models.py,schemas.py,router.py,engine.py,tools.py}
+
+# 3. Remplir manifest.yaml (name, prefix, depends_on, tools, agent)
+
+# 4. Activer dans modules.yaml
+echo "  - name: mon_module\n    enabled: true" >> modules.yaml
+
+# 5. Générer la migration Alembic
+alembic revision --autogenerate -m "mon_module_initial"
+```
+
+Redémarrage API → le module est monté automatiquement.
+
+---
+
+### Modifier le comportement sans toucher au code
+
+| Ce que je veux changer | Où |
+|------------------------|----|
+| Seuil d'alerte budget | `modules/finance/config.yaml` → `seuil_alerte_pct` |
+| Ajouter une catégorie email | `modules/communications/config.yaml` → `categories` |
+| Ajouter une dépendance de lot | `modules/planning/config.yaml` → `lot_dependencies` |
+| Changer le prompt LLM meeting | `modules/meeting/config.yaml` → `prompt_file` |
+| Ajouter un type de document | `modules/documents/config.yaml` → `types` + template `.md.j2` |
+| Ajouter une règle d'alerte | `modules/events_engine/config.yaml` → `rules` |
+| Désactiver un module | `modules.yaml` → `enabled: false` |
+| Changer le modèle LLM | `.env` → `LLM_MODEL=gpt-4o-mini` |
+
+---
+
+## 1c. AUTH — Utilisateurs, Rôles & Permissions
+
+### Les 4 rôles
+
+| Rôle | Qui | Ce qu'il peut faire |
+|------|-----|---------------------|
+| `admin` | Dirigeant / IT | Tout : users, config, modules, affaires, données |
+| `moe` | Architecte chef de projet | Créer des affaires, tout gérer sur SES affaires + équipe |
+| `collaborateur` | Chargé de mission, assistant | Lecture + écriture sur affaires auxquelles il est assigné |
+| `lecteur` | Client, entreprise invitée, bureau de contrôle | Lecture seule sur affaires auxquelles il est assigné |
+
+### Tables
+
+```sql
+CREATE TABLE users (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email           VARCHAR(255) UNIQUE NOT NULL,
+    nom             VARCHAR(100),
+    prenom          VARCHAR(100),
+    hashed_password VARCHAR(255) NOT NULL,
+    role            VARCHAR(30) NOT NULL DEFAULT 'collaborateur',
+                    -- admin | moe | collaborateur | lecteur
+    actif           BOOLEAN DEFAULT TRUE,
+    openwebui_user_id VARCHAR(100),   -- lien avec l'identité OpenWebUI
+    metadata        JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE affaire_permissions (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID REFERENCES users(id) ON DELETE CASCADE,
+    affaire_id      UUID REFERENCES affaires(id) ON DELETE CASCADE,
+    role_override   VARCHAR(30),      -- surcharge le rôle global sur cette affaire
+                    -- NULL = utiliser le rôle global de l'utilisateur
+    granted_by      UUID REFERENCES users(id),
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, affaire_id)
+);
+```
+
+### JWT — Structure du token
+
+```json
+{
+  "sub": "user-uuid",
+  "email": "jean@arceag.fr",
+  "role": "moe",
+  "exp": 1735689600,
+  "iat": 1735603200
+}
+```
+
+> Les permissions par affaire ne sont **pas** dans le JWT (liste peut être longue) — elles sont vérifiées en DB à chaque requête sensible via `affaire_permissions`.
+
+### Middleware FastAPI (`core/auth.py`)
+
+```python
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer
+
+bearer = HTTPBearer()
+
+async def get_current_user(token = Depends(bearer), db = Depends(get_db)) -> User:
+    """Décode le JWT et retourne l'utilisateur en DB. 401 si invalide."""
+    ...
+
+def require_role(*roles: str):
+    """Dépendance FastAPI : vérifie que l'utilisateur a l'un des rôles spécifiés."""
+    async def checker(user = Depends(get_current_user)):
+        if user.role not in roles:
+            raise HTTPException(status_code=403, detail="Rôle insuffisant")
+        return user
+    return checker
+
+async def require_affaire_access(affaire_id: UUID, min_role: str = "lecteur", user = Depends(get_current_user), db = Depends(get_db)) -> User:
+    """Vérifie que l'utilisateur a accès à cette affaire (rôle global ou override)."""
+    if user.role == "admin":
+        return user
+    perm = await db.get(AffairePermission, (user.id, affaire_id))
+    effective_role = perm.role_override if perm and perm.role_override else user.role
+    if not _has_access(effective_role, min_role):
+        raise HTTPException(status_code=403, detail="Accès refusé à cette affaire")
+    return user
+```
+
+### Utilisation dans les routers
+
+```python
+# Lecture publique (pour les lecteurs) :
+@router.get("/{affaire_id}")
+async def get_affaire(affaire_id: UUID, user = Depends(require_affaire_access(min_role="lecteur"))):
+    ...
+
+# Écriture (moe ou collaborateur) :
+@router.post("/{affaire_id}/events")
+async def create_event(affaire_id: UUID, user = Depends(require_affaire_access(min_role="collaborateur"))):
+    ...
+
+# Admin seulement :
+@router.get("/admin/users")
+async def list_users(user = Depends(require_role("admin"))):
+    ...
+```
+
+### Endpoints `/auth/*`
+
+| Méthode | Endpoint | Rôle requis | Description |
+|---------|----------|-------------|-------------|
+| POST | `/auth/login` | — | Login email/password → JWT |
+| POST | `/auth/refresh` | — | Rafraîchir le token |
+| GET | `/auth/me` | tout rôle | Profil utilisateur courant |
+| GET | `/auth/users` | admin | Lister tous les utilisateurs |
+| POST | `/auth/users` | admin | Créer un utilisateur |
+| PATCH | `/auth/users/{id}` | admin | Modifier rôle, actif… |
+| DELETE | `/auth/users/{id}` | admin | Désactiver un utilisateur |
+| GET | `/auth/affaires/{id}/permissions` | admin + moe | Voir qui a accès à cette affaire |
+| POST | `/auth/affaires/{id}/permissions` | admin + moe | Donner accès à un utilisateur |
+| DELETE | `/auth/affaires/{id}/permissions/{user_id}` | admin + moe | Révoquer accès |
+
+### Intégration OpenWebUI
+
+Chaque utilisateur OpenWebUI possède son propre token JWT dans la configuration de ses tools. Le token est transmis en header `Authorization: Bearer {token}` à chaque appel d'outil vers l'API.
+
+```python
+# Dans chaque tools.py (OpenWebUI) :
+class Tools:
+    class Valves(BaseModel):
+        api_base: str = "http://api:8000"
+        api_token: str = ""   # JWT de l'utilisateur (configuré dans OpenWebUI)
+
+    def __init__(self):
+        self.valves = self.Valves()
+
+    def _headers(self):
+        return {"Authorization": f"Bearer {self.valves.api_token}"}
+```
+
+---
+
+## 1d. INTERFACE ADMIN — Pilotage de l'infrastructure
+
+> Interface web dédiée aux administrateurs pour piloter l'OS Chantier sans toucher aux fichiers de config.
+> Implémentée comme un **module `admin/`** avec son propre router FastAPI + une UI légère (React ou HTMX).
+
+### Ce que l'admin peut faire
+
+| Catégorie | Actions |
+|-----------|---------|
+| **Modules** | Activer/désactiver un module, voir son statut, lire son manifest + config |
+| **Utilisateurs** | CRUD users, assignation rôles, permissions par affaire |
+| **Connexions API** | Configurer clés (OpenAI, Notion…), tester la connexion, voir la latence |
+| **Synchronisations** | Sens (push/pull/bidirectionnel), fréquence, dernier run, erreurs |
+| **Mapping tables** | Éditer les tables de mapping (codes lots, catégories, types documents) |
+| **Base de données** | Voir l'état des migrations, lancer une migration, stats tables (nb lignes) |
+| **Storage** | Voir les buckets MinIO, espace utilisé, lister/supprimer fichiers par affaire |
+| **Bus événements** | Voir les channels actifs, log des derniers événements publiés |
+| **Rate limiting** | Voir les compteurs par user, ajuster les seuils |
+| **Logs** | Consulter les logs API en temps réel (tail) |
+
+### Structure du module
+
+```
+api/modules/admin/
+├── manifest.yaml       ← prefix: /admin, depends_on: tous les modules
+├── models.py           ← admin_logs, api_connections, sync_configs, mapping_tables
+├── schemas.py
+├── router.py           ← /admin/* (protégé : require_role("admin"))
+├── engine.py           ← lecture config live, test connexions, stats DB
+└── ui/                 ← interface web légère (HTMX ou React)
+    ├── index.html
+    ├── modules.html
+    ├── users.html
+    ├── connections.html
+    ├── storage.html
+    └── logs.html
+```
+
+### Tables
+
+```sql
+-- Connexions API externes configurées
+CREATE TABLE api_connections (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom         VARCHAR(100) NOT NULL,    -- "OpenAI", "Notion", "SMTP"
+    type        VARCHAR(50) NOT NULL,     -- llm|embedding|storage|crm|email
+    base_url    TEXT,
+    api_key     TEXT,                     -- chiffré en DB (AES-256)
+    config      JSONB DEFAULT '{}',       -- params spécifiques
+    actif       BOOLEAN DEFAULT TRUE,
+    last_test   TIMESTAMPTZ,
+    last_status VARCHAR(20),              -- ok|error|timeout
+    created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Configurations de synchronisation
+CREATE TABLE sync_configs (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom             VARCHAR(100),
+    source_module   VARCHAR(50),          -- "notion" | "planning" | "chantier"
+    cible_module    VARCHAR(50),
+    sens            VARCHAR(20),          -- push | pull | bidirectionnel
+    frequence_sec   INTEGER DEFAULT 300,
+    actif           BOOLEAN DEFAULT TRUE,
+    last_run        TIMESTAMPTZ,
+    last_status     VARCHAR(20),
+    last_error      TEXT,
+    config          JSONB DEFAULT '{}'
+);
+
+-- Tables de mapping éditables par l'admin
+CREATE TABLE mapping_tables (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nom         VARCHAR(100) NOT NULL,    -- "categories_communications", "types_documents"
+    module      VARCHAR(50),
+    contenu     JSONB NOT NULL,           -- la table de mapping elle-même
+    updated_by  UUID REFERENCES users(id),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Endpoints `/admin/*`
+
+```
+GET  /admin/                         → dashboard (statut global)
+GET  /admin/modules                  → liste modules + statut actif/inactif
+POST /admin/modules/{name}/toggle    → activer/désactiver (modifie modules.yaml)
+GET  /admin/modules/{name}/config    → lire config.yaml en live
+PUT  /admin/modules/{name}/config    → modifier config.yaml sans redémarrage (hot-reload)
+
+GET  /admin/users                    → liste utilisateurs
+POST /admin/users                    → créer utilisateur
+PATCH /admin/users/{id}              → modifier rôle/actif
+GET  /admin/affaires/{id}/permissions → permissions d'une affaire
+PUT  /admin/affaires/{id}/permissions → définir les accès
+
+GET  /admin/connections              → liste connexions API
+POST /admin/connections              → créer connexion
+PUT  /admin/connections/{id}         → modifier
+POST /admin/connections/{id}/test    → tester (ping + auth)
+
+GET  /admin/syncs                    → liste synchronisations
+POST /admin/syncs                    → créer config sync
+PUT  /admin/syncs/{id}               → modifier sens/fréquence
+POST /admin/syncs/{id}/run           → déclencher manuellement
+
+GET  /admin/mappings                 → lister tables de mapping
+GET  /admin/mappings/{nom}           → lire une table
+PUT  /admin/mappings/{nom}           → modifier une table (JSONB éditeur)
+
+GET  /admin/storage                  → stats buckets MinIO
+GET  /admin/storage/{affaire_id}     → fichiers d'une affaire
+DELETE /admin/storage/{key}          → supprimer un fichier
+
+GET  /admin/db/migrations            → statut migrations Alembic
+POST /admin/db/migrate               → lancer alembic upgrade head
+GET  /admin/db/stats                 → nb lignes par table
+
+GET  /admin/events/log               → derniers événements bus PostgreSQL
+GET  /admin/rate-limits              → compteurs par utilisateur
+PUT  /admin/rate-limits/{user_id}    → ajuster seuil individuel
+
+GET  /admin/logs                     → tail logs API (SSE stream)
+```
+
+### Rate limiting (`slowapi`)
+
+```python
+# api/core/rate_limit.py
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=lambda req: req.state.user.id if hasattr(req.state, "user") else get_remote_address(req))
+
+# Décorateurs par type d'endpoint :
+# @limiter.limit("10/minute")   → endpoints LLM (ingest CCTP, génération doc, analyse CR)
+# @limiter.limit("100/minute")  → endpoints standard
+# @limiter.limit("1000/minute") → endpoints lecture (GET)
+# Override admin via /admin/rate-limits/{user_id}
 ```
 
 ---
@@ -143,23 +1380,35 @@ CREATE TABLE affaires (
 );
 ```
 
-#### `planning_tasks` — tâches planning
+#### `intervenants` — entreprises et contacts du projet
+
 ```sql
-CREATE TABLE planning_tasks (
+CREATE TABLE intervenants (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     affaire_id      UUID REFERENCES affaires(id) ON DELETE CASCADE,
-    lot             VARCHAR(100) NOT NULL,      -- "Maçonnerie", "Charpente"...
-    phase           VARCHAR(100),               -- "Gros oeuvre", "Second oeuvre"...
-    task            VARCHAR(255) NOT NULL,
-    duration_days   INTEGER NOT NULL,
-    depends_on      UUID[] DEFAULT '{}',        -- IDs des tâches précédentes
-    start_date      DATE,
-    end_date        DATE,
-    statut          VARCHAR(50) DEFAULT 'planned', -- planned, in_progress, done, blocked
-    entreprise_id   UUID,
+    nom             VARCHAR(255) NOT NULL,
+    type            VARCHAR(50) NOT NULL,
+                    -- entreprise|moa|moe|bureau_etudes|controle|coordinateur|autre
+    lots            TEXT[] DEFAULT '{}',        -- lots dont cet intervenant est responsable
+    contact_nom     VARCHAR(100),
+    contact_email   VARCHAR(255),
+    contact_tel     VARCHAR(30),
+    siret           VARCHAR(20),
     metadata        JSONB DEFAULT '{}',
     created_at      TIMESTAMPTZ DEFAULT NOW()
 );
+```
+
+> **Remplace** les champs `entreprise VARCHAR(255)` dispersés dans `budgets`, `situations`, `planning_lots`, `chantier_events`. On référence `intervenant_id UUID` à la place.
+
+#### `planning_lots` — lots du projet (remplace `planning_tasks`)
+
+> `planning_tasks` est **supprimé**. `planning_lots` est l'unité de planning.
+> Les dépendances, overlap et jalons sont dans les tables du module `planning/`.
+
+```sql
+-- Voir section 3 PLANNING ENGINE pour le DDL complet de planning_lots,
+-- planning_dependencies, planning_ouvrages, planning_cctp_ingestions
 ```
 
 #### `chantier_events` — journal chantier
@@ -416,137 +1665,467 @@ CREATE TABLE documents (
 
 ---
 
-## 3. PLANNING ENGINE
+## 3. PLANNING ENGINE — Module CCTP-driven
 
-### Algorithme
+> **Principe clé** : les lots et leurs dépendances ne sont **pas prédéfinis globalement**.
+> Ils sont **extraits du CCTP de chaque projet** via LLM. Chaque affaire a ses propres lots.
+> La config.yaml ne contient que des paramètres comportementaux et des règles de fallback.
 
-1. Recevoir liste de tâches avec `depends_on` (IDs)
-2. Tri topologique (Kahn's algorithm)
-3. Pour chaque tâche dans l'ordre : `start_date = max(end_date des dépendances)`
-4. `end_date = start_date + duration_days` (jours ouvrés)
-5. Détecter cycles → erreur 400
-6. Sauvegarder en DB
+### Structure du module
 
-### Dépendances inter-lots référentielles
-
-```python
-LOT_DEPENDENCIES = {
-    "Terrassement":       [],
-    "Fondations":         ["Terrassement"],
-    "Maçonnerie":         ["Fondations"],
-    "Charpente":          ["Maçonnerie"],
-    "Couverture":         ["Charpente"],
-    "Menuiseries ext.":   ["Couverture"],
-    "Isolation":          ["Menuiseries ext."],
-    "Plâtrerie":          ["Menuiseries ext.", "Isolation"],
-    "Électricité":        ["Plâtrerie"],      # rough-in avant plâtre fini
-    "Plomberie":          ["Plâtrerie"],
-    "Chauffage":          ["Plomberie"],
-    "Carrelage":          ["Électricité", "Plomberie"],
-    "Peinture":           ["Plâtrerie", "Électricité"],
-    "Menuiseries int.":   ["Peinture"],
-    "VRD":                ["Terrassement"],
-    "Espaces verts":      ["VRD"],
-}
-
-JALONS = {
-    "Hors d'eau":         ["Couverture"],
-    "Hors d'air":         ["Menuiseries ext."],
-    "Support prêt":       ["Plâtrerie"],
-    "Réception":          ["Peinture", "Menuiseries int.", "Carrelage"],
-}
 ```
-
-### Format JSON entrée/sortie planning
-
-**Entrée :**
-```json
-{
-  "affaire_id": "uuid",
-  "start_date": "2024-04-01",
-  "tasks": [
-    {
-      "id": "t1",
-      "lot": "Terrassement",
-      "task": "Décapage terrain",
-      "duration_days": 3,
-      "depends_on": [],
-      "phase": "Gros oeuvre"
-    },
-    {
-      "id": "t2",
-      "lot": "Fondations",
-      "task": "Semelles filantes",
-      "duration_days": 5,
-      "depends_on": ["t1"],
-      "phase": "Gros oeuvre"
-    }
-  ]
-}
-```
-
-**Sortie :**
-```json
-{
-  "affaire_id": "uuid",
-  "duree_totale_jours": 87,
-  "date_fin_estimee": "2024-07-15",
-  "critical_path": ["t1", "t2", "t5", "t12"],
-  "jalons": {
-    "hors_eau": "2024-05-20",
-    "hors_air": "2024-06-01",
-    "reception": "2024-07-15"
-  },
-  "tasks": [
-    {
-      "id": "t1",
-      "lot": "Terrassement",
-      "task": "Décapage terrain",
-      "start_date": "2024-04-01",
-      "end_date": "2024-04-04",
-      "duration_days": 3,
-      "depends_on": [],
-      "phase": "Gros oeuvre",
-      "on_critical_path": false
-    }
-  ]
-}
+api/modules/planning/
+├── manifest.yaml
+├── config.yaml
+├── models.py            ← 4 tables : planning_lots, planning_dependencies,
+│                                      planning_ouvrages, planning_cctp_ingestions
+├── schemas.py
+├── router.py
+├── engine.py            ← scheduling (tri topo + overlap + chemin critique)
+├── cctp_parser.py       ← extraction lots/ouvrages depuis CCTP (LLM)
+├── dependency_detector.py ← inférence dépendances (LLM) + override manuel
+├── tools.py
+└── prompts/
+    ├── cctp_extraction.txt
+    └── dependency_inference.txt
 ```
 
 ---
 
-## 4. SCENARIO ENGINE
+### Tables DB
 
-### Scénarios supportés
+```sql
+-- Lots extraits du CCTP (per-affaire)
+CREATE TABLE planning_lots (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    affaire_id      UUID REFERENCES affaires(id) ON DELETE CASCADE,
+    code            VARCHAR(20),               -- "LOT-01", "A", etc. (extrait du CCTP)
+    nom             VARCHAR(255) NOT NULL,      -- "Maçonnerie", "Charpente bois"…
+    description     TEXT,
+    phase           VARCHAR(100),              -- "Préparation"|"Gros oeuvre"|"Second oeuvre"|"Finitions"|"VRD"
+    duration_days   INTEGER,                   -- estimé par LLM, validé par user
+    duration_min    INTEGER,                   -- fourchette basse LLM
+    duration_max    INTEGER,                   -- fourchette haute LLM
+    duration_confidence DECIMAL(4,3),          -- 0.0 – 1.0
+    start_date      DATE,
+    end_date        DATE,
+    avancement_pct  DECIMAL(5,2) DEFAULT 0,
+    statut          VARCHAR(50) DEFAULT 'planned',
+    entreprise      VARCHAR(255),
+    source          VARCHAR(30) DEFAULT 'cctp_llm',  -- cctp_llm|manuel|import
+    validated_by    VARCHAR(100),
+    validated_at    TIMESTAMPTZ,
+    metadata        JSONB DEFAULT '{}',
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Dépendances entre lots avec paramètres de chevauchement (per-affaire)
+CREATE TABLE planning_dependencies (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    affaire_id      UUID REFERENCES affaires(id) ON DELETE CASCADE,
+    lot_source_id   UUID REFERENCES planning_lots(id),
+    lot_cible_id    UUID REFERENCES planning_lots(id),
+    -- Type de dépendance (standard PMI)
+    type_dep        VARCHAR(30) DEFAULT 'finish_to_start',
+    --  finish_to_start  : cible démarre après fin du prédécesseur (standard)
+    --  start_to_start   : cible démarre en même temps que prédécesseur
+    --  finish_to_finish : cible finit après fin du prédécesseur
+    overlap_pct     INTEGER DEFAULT 100,       -- 0-100 : % d'avancement prédécesseur requis
+    lead_lag_days   INTEGER DEFAULT 0,         -- >0 = délai, <0 = avance
+    -- Traçabilité LLM
+    confidence      DECIMAL(4,3),              -- confiance inférence LLM
+    justification   TEXT,                      -- "Lot 4 mentionne dépendance lot 2" ou règle BTP
+    source          VARCHAR(30) DEFAULT 'llm_inferred', -- llm_inferred|manuel|fallback_rule
+    validated       BOOLEAN DEFAULT FALSE,
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Ouvrages/sous-éléments dans chaque lot
+CREATE TABLE planning_ouvrages (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lot_id          UUID REFERENCES planning_lots(id) ON DELETE CASCADE,
+    nom             VARCHAR(255) NOT NULL,
+    description     TEXT,
+    interfaces      TEXT[],                    -- autres lots cités dans la description
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Traçabilité des ingestions CCTP
+CREATE TABLE planning_cctp_ingestions (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    affaire_id      UUID REFERENCES affaires(id) ON DELETE CASCADE,
+    filename        VARCHAR(255),
+    file_hash       VARCHAR(64),               -- SHA256 pour éviter double-ingestion
+    statut          VARCHAR(30) DEFAULT 'pending',
+    -- pending → extracting → inferring → validating → done | error
+    nb_lots_extraits     INTEGER,
+    nb_deps_inferees     INTEGER,
+    nb_jalons_extraits   INTEGER,
+    tokens_extraction    INTEGER,
+    tokens_inference     INTEGER,
+    erreur          TEXT,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    completed_at    TIMESTAMPTZ
+);
+```
+
+---
+
+### Pipeline CCTP → Planning
+
+```
+CCTP (PDF / DOCX / TXT)
+    ↓
+1. Extraction texte brut (pypdf2 / python-docx)
+    ↓
+2. Chunking par chapitre/section (12 000 chars, overlap 500)
+    ↓
+3. LLM cctp_extraction.txt :
+   → lots : code, nom, phase, description, ouvrages, interfaces mentionnées
+   → jalons contractuels (dates, phases imposées)
+   → confidence par lot
+    ↓
+4. LLM dependency_inference.txt :
+   → règles physiques BTP + mentions croisées entre lots
+   → pour chaque dépendance : type, overlap_pct suggéré, justification, confidence
+    ↓
+5. LLM duration_estimation.txt :
+   → estimation durée min/max/mode par lot (contexte : surface, type projet)
+   → confidence
+    ↓
+6. Stockage DB (statut: pending validation)
+    ↓
+7. Présentation utilisateur via OpenWebUI :
+   → liste lots extraits, dépendances proposées, durées suggérées
+   → user valide / corrige chaque élément
+    ↓
+8. PATCH /planning/{affaire_id}/lots/{id} → validation durées
+   PATCH /planning/{affaire_id}/dependencies/{id} → validation dépendances
+    ↓
+9. POST /planning/generate → calcul scheduling complet
+    ↓
+10. Timeline avec chevauchements + jalons + chemin critique
+```
+
+---
+
+### Algorithme scheduling avec chevauchement (`engine.py`)
+
+```python
+# Pour chaque dépendance (lot_source → lot_cible) :
+#
+#   overlap_pct = 100 → cible démarre à la FIN du prédécesseur (standard)
+#   overlap_pct = 50  → cible démarre quand prédécesseur est à 50%
+#   overlap_pct = 0   → cible peut démarrer immédiatement (start-to-start)
+#
+#   days_to_wait = ceil(pred.duration_days * overlap_pct / 100)
+#   threshold = pred.start_date + days_to_wait + lead_lag_days (jours ouvrés)
+#
+# Pour un lot avec plusieurs prédécesseurs :
+#   lot.start_date = max(threshold de tous les prédécesseurs)
+#   lot.end_date   = lot.start_date + duration_days (jours ouvrés)
+#
+# Algorithme global :
+# 1. Tri topologique de Kahn sur le graphe lots/dépendances → erreur si cycle
+# 2. Forward pass : calculer start/end de chaque lot dans l'ordre topo
+# 3. Backward pass : calculer les marges (float) = end_critique - end_calculé
+# 4. Chemin critique = lots avec float = 0
+# 5. Jalons = max(end_date des lots déclencheurs)
+```
+
+---
+
+### Algorithme analyse d'impact (`engine.py`)
+
+```python
+# GET /planning/{affaire_id}/impact/{lot_id}?retard_jours=N
+#
+# 1. BFS depuis lot_id dans le graphe des successeurs
+# 2. Pour chaque successeur atteint :
+#    - décalage = max(0, retard - float_disponible)  ← la marge absorbe une partie
+#    - propager le décalage résiduel aux successeurs du successeur
+# 3. Détecter jalons affectés (date_jalon + décalage)
+# 4. Retourner : liste lots impactés, décalages en jours, jalons décalés, chemin de propagation
+```
+
+---
+
+### `manifest.yaml`
+
+```yaml
+name: planning
+version: "2.0.0"
+description: "Planning travaux CCTP-driven — extraction lots, dépendances LLM, scheduling avec overlap"
+prefix: /planning
+depends_on:
+  - chantier
+
+models:
+  - planning_lots
+  - planning_dependencies
+  - planning_ouvrages
+  - planning_cctp_ingestions
+
+background_tasks:
+  - name: process_pending_ingestions
+    interval_seconds: 30
+  - name: recalculate_stale_schedules
+    interval_seconds: 3600
+
+events_published:
+  - planning.ingestion_cctp_complete
+  - planning.lot_retard_detecte
+  - planning.jalon_depasse
+  - planning.chemin_critique_change
+
+tools:
+  - ingest_cctp
+  - get_lots
+  - set_dependency
+  - validate_lots
+  - get_impact
+  - generate_planning
+  - simulate_scenario
+  - get_gantt
+
+agent:
+  name: "Agent Planning MOE"
+  system_prompt_file: agent_system.txt
+  model: gpt-4o
+```
+
+---
+
+### `config.yaml`
+
+```yaml
+# LLM
+llm_model: "gpt-4o"
+llm_temperature_extraction: 0.1      # extraction CCTP : déterministe
+llm_temperature_inference: 0.2       # inférence dépendances : légèrement créatif
+
+# Pipeline CCTP
+cctp_max_file_size_mb: 50
+cctp_supported_formats:
+  - application/pdf
+  - application/vnd.openxmlformats-officedocument.wordprocessingml.document
+  - text/plain
+cctp_chunk_size_chars: 12000
+cctp_chunk_overlap_chars: 500
+cctp_confidence_threshold: 0.75      # en-dessous : proposé comme "à valider"
+
+# Scheduling
+default_overlap_pct: 100             # pas de chevauchement par défaut
+jours_ouvres: [0, 1, 2, 3, 4]      # lun-ven (0=lundi)
+jours_feries_fixes:
+  - "01-01"   # Jour de l'an
+  - "05-01"   # Fête du travail
+  - "05-08"   # Victoire 1945
+  - "07-14"   # Fête Nationale
+  - "08-15"   # Assomption
+  - "11-01"   # Toussaint
+  - "11-11"   # Armistice
+  - "12-25"   # Noël
+
+# Jalons — extraits du CCTP + knowledge OpenWebUI + ces fallbacks si rien trouvé
+jalons_fallback:
+  - nom: "Hors d'eau"
+    phases_requises: ["Gros oeuvre"]
+  - nom: "Hors d'air"
+    phases_requises: ["Gros oeuvre"]
+  - nom: "Réception"
+    phases_requises: ["Finitions"]
+
+# Analyse d'impact
+impact_max_cascade_depth: 20
+impact_min_delta_jours: 1
+
+# Inférence dépendances : auto-valider si confiance > seuil
+dep_auto_validate_confidence: 0.90
+
+# Règles BTP de fallback (si LLM ne trouve rien entre ces phases)
+dep_rules_fallback:
+  - source_phase: "Préparation"
+    cible_phase: "Gros oeuvre"
+    overlap_pct: 100
+  - source_phase: "Gros oeuvre"
+    cible_phase: "Second oeuvre"
+    overlap_pct: 90
+  - source_phase: "Second oeuvre"
+    cible_phase: "Finitions"
+    overlap_pct: 80
+
+# Async
+ingestion_timeout_seconds: 300
+polling_interval_seconds: 2
+```
+
+---
+
+### Prompts LLM
+
+#### `prompts/cctp_extraction.txt`
+```
+Tu es un expert BTP chargé d'analyser un Cahier des Clauses Techniques Particulières (CCTP).
+
+Extrais la liste complète des LOTS du projet. Un lot est généralement identifié par :
+- Un titre de chapitre : "LOT 1 — TERRASSEMENT", "Lot n°3", "CHAPITRE 4 : MAÇONNERIE"
+- Une section dédiée à un corps de métier (électricité, plomberie, charpente, etc.)
+
+Pour chaque lot, retourne :
+{
+  "code": "LOT-01",              // identifiant tel qu'écrit dans le CCTP (ou généré)
+  "nom": "Terrassement",         // nom court du lot
+  "phase": "Gros oeuvre",        // Préparation|Terrassement|Gros oeuvre|Second oeuvre|Finitions|VRD|Extérieurs
+  "description": "...",          // résumé du contenu du lot (3-5 phrases)
+  "ouvrages": [                  // liste des ouvrages/éléments principaux
+    { "nom": "...", "description": "...", "interfaces": ["Lot-02", "Lot-05"] }
+  ],
+  "interfaces_mentionnees": ["LOT-02", "LOT-05"],  // autres lots cités dans ce chapitre
+  "jalons_contractuels": [       // dates ou jalons imposés dans ce lot
+    { "nom": "...", "date": "YYYY-MM-DD ou null", "description": "..." }
+  ],
+  "confidence": 0.92             // confiance dans l'extraction (0.0-1.0)
+}
+
+Retourne un JSON valide : { "lots": [...], "jalons_globaux": [...], "avertissements": [...] }
+```
+
+#### `prompts/dependency_inference.txt`
+```
+Tu es un expert planning BTP. À partir de la liste de lots d'un projet, déduis les dépendances entre eux.
+
+Règles physiques BTP incontournables :
+- Terrassement/VRD → Fondations → Maçonnerie/Structure → Charpente → Couverture (hors d'eau)
+- Couverture → Menuiseries extérieures (hors d'air)
+- Hors d'air → Isolation → Plâtrerie/Cloisons
+- Plâtrerie → Électricité (finitions) + Plomberie (finitions) → Carrelage → Peinture → Menuiseries int.
+- Les lots Électricité et Plomberie peuvent être parallèles entre eux
+
+Types de dépendances :
+- finish_to_start (FTS) : cible démarre après fin du prédécesseur
+- start_to_start (STS)  : cible démarre en même temps (lots parallèles)
+
+Chevauchements typiques en BTP :
+- Maçonnerie → Charpente : overlap_pct=80 (charpente démarre à 80% maçonnerie)
+- Gros oeuvre → Second oeuvre : overlap_pct=90
+- Corps de métiers parallèles (élec + plomberie) : type=start_to_start, overlap_pct=0
+
+Pour chaque dépendance, retourne :
+{
+  "lot_source": "LOT-02",
+  "lot_cible": "LOT-04",
+  "type_dep": "finish_to_start",
+  "overlap_pct": 100,
+  "lead_lag_days": 0,
+  "justification": "Règle BTP : Maçonnerie doit être terminée avant Charpente",
+  "source": "rule_btp",        // rule_btp|cctp_mention|inference
+  "confidence": 0.95
+}
+
+Retourne : { "dependencies": [...] }
+```
+
+---
+
+### Endpoints
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/planning/cctp/ingest` | Upload CCTP → extraction async (retourne ingestion_id) |
+| GET | `/planning/cctp/{ingestion_id}/status` | Polling statut extraction |
+| GET | `/planning/{affaire_id}/lots` | Lots extraits + dépendances + jalons |
+| PATCH | `/planning/{affaire_id}/lots/{lot_id}` | Valider/ajuster durée, nom, phase |
+| POST | `/planning/{affaire_id}/dependencies` | Ajouter/modifier dépendance |
+| DELETE | `/planning/{affaire_id}/dependencies/{id}` | Supprimer dépendance |
+| GET | `/planning/{affaire_id}/impact/{lot_id}` | Analyse propagation retard |
+| POST | `/planning/generate` | Calculer planning complet (tri topo + overlap) |
+| GET | `/planning/{affaire_id}` | Planning calculé complet |
+| POST | `/planning/simulate` | Scénarios (retard_lot, météo, absence…) |
+| GET | `/planning/{affaire_id}/gantt` | Export Gantt JSON |
+
+---
+
+### Tools OpenWebUI
+
+```python
+ingest_cctp(affaire_id, file_content_b64, filename)
+    → lance extraction async, retourne ingestion_id
+
+get_lots(affaire_id)
+    → lots extraits avec dépendances et jalons (en attente de validation)
+
+validate_lots(affaire_id, lots_updates: list[{lot_id, duration_days, entreprise}])
+    → valide les durées proposées par le LLM
+
+set_dependency(affaire_id, lot_source, lot_cible, type_dep, overlap_pct, lead_lag_days)
+    → crée ou modifie une dépendance manuellement
+
+get_impact(affaire_id, lot_id, retard_jours)
+    → analyse propagation retard sur les successeurs
+
+generate_planning(affaire_id, start_date)
+    → calcule la timeline complète après validation lots+dépendances
+
+simulate_scenario(affaire_id, scenario_type, params)
+    → simulation retard / météo / absence / blocage
+
+get_gantt(affaire_id)
+    → export format Gantt
+```
+
+---
+
+### Agent Planning — `agent_system.txt`
+
+```
+Tu es un expert planning chantier BTP avec 20 ans d'expérience, spécialisé MOE.
+
+Quand on te soumet un CCTP :
+1. Ingère le document via ingest_cctp()
+2. Attends la fin de l'extraction (get_lots() retourne les lots)
+3. Présente les lots extraits et les dépendances proposées à l'utilisateur
+4. Demande confirmation des durées (fourchette LLM : ajuste si nécessaire)
+5. Génère le planning via generate_planning()
+6. Présente la timeline avec jalons critiques et chemin critique
+
+Quand on te demande l'impact d'un retard :
+- Utilise get_impact(affaire_id, lot_id, retard_jours)
+- Présente clairement les lots impactés et les jalons décalés
+
+Jalons contractuels : extraits du CCTP + base de connaissance OpenWebUI.
+Ne génère jamais de planning de mémoire — utilise toujours les tools.
+Signale les dépendances à faible confiance (< 0.75) pour validation.
+```
+
+---
+
+## 4. SCÉNARIOS — intégrés dans le module planning
+
+> Les scénarios sont dans `planning/engine.py` → `POST /planning/simulate`
 
 | Type | Paramètres | Impact calculé |
 |------|-----------|----------------|
-| `retard_lot` | lot, jours_retard | cascade sur dépendances |
-| `absence_entreprise` | entreprise, date_debut, date_fin | tâches bloquées, alternatives |
-| `meteo` | type (pluie/gel/canicule), duree_jours | lots impactés, report |
-| `blocage_livraison` | materiau, jours_retard | tâches dépendantes |
+| `retard_lot` | lot_id, jours_retard | cascade BFS sur successeurs |
+| `absence_entreprise` | entreprise, date_debut, date_fin | lots bloqués + alternatives |
+| `meteo` | type (pluie/gel/canicule), duree_jours | lots impactés par phase + report |
+| `blocage_livraison` | materiau, jours_retard | lots dépendants du matériau |
 
-### Format sortie scénario
-
+**Sortie commune à tous les scénarios :**
 ```json
 {
   "scenario": "retard_lot",
-  "parametres": {"lot": "Maçonnerie", "jours_retard": 10},
+  "parametres": {"lot_id": "uuid", "jours_retard": 10},
   "impact": {
     "duree_supplementaire_jours": 10,
     "nouvelle_date_fin": "2024-07-25",
-    "taches_impactees": ["t5", "t6", "t12"],
-    "jalons_decales": {"reception": "+10j"},
-    "cout_estime_retard": 15000
+    "lots_impactes": [{"lot": "Charpente", "decalage_jours": 10, "on_critical_path": true}],
+    "jalons_decales": [{"nom": "Réception", "decalage": "+10j"}]
   },
   "alternatives": [
-    {
-      "action": "Avancer lot Menuiseries int. en parallèle",
-      "gain_jours": 5,
-      "faisabilite": "haute"
-    }
+    {"action": "Démarrer Menuiseries ext. en parallèle", "gain_jours": 5, "faisabilite": "haute"}
   ],
-  "planning_simule": [/* liste complète des tâches recalculées */]
+  "planning_simule": []
 }
 ```
 
@@ -566,11 +2145,17 @@ JALONS = {
 ### `/planning`
 | Méthode | Endpoint | Description |
 |---------|----------|-------------|
-| POST | `/planning/generate` | Générer planning depuis liste tâches |
-| GET | `/planning/{affaire_id}` | Récupérer planning |
-| POST | `/planning/simulate` | Simuler scénario |
-| POST | `/planning/update` | Recalculer après modification |
-| GET | `/planning/{affaire_id}/gantt` | Export format Gantt |
+| POST | `/planning/cctp/ingest` | Upload CCTP → extraction lots async |
+| GET | `/planning/cctp/{ingestion_id}/status` | Polling statut extraction |
+| GET | `/planning/{affaire_id}/lots` | Lots extraits + dépendances + jalons |
+| PATCH | `/planning/{affaire_id}/lots/{lot_id}` | Valider/ajuster durée, nom, phase |
+| POST | `/planning/{affaire_id}/dependencies` | Ajouter/modifier dépendance manuelle |
+| DELETE | `/planning/{affaire_id}/dependencies/{id}` | Supprimer dépendance |
+| GET | `/planning/{affaire_id}/impact/{lot_id}` | Analyse propagation retard |
+| POST | `/planning/generate` | Calculer planning complet |
+| GET | `/planning/{affaire_id}` | Planning calculé complet |
+| POST | `/planning/simulate` | Scénarios (retard, météo, absence…) |
+| GET | `/planning/{affaire_id}/gantt` | Export Gantt JSON |
 
 ### `/meeting`
 | Méthode | Endpoint | Description |
@@ -1188,7 +2773,41 @@ services:
     depends_on:
       - api
 
-  # optionnel : adminer pour inspecter la DB
+  # MinIO — stockage fichiers S3-compatible
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"   # API S3
+      - "9001:9001"   # Console Web
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Ollama — IA locale sans abonnement (désactiver si mode OpenAI)
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    # Pour GPU NVIDIA : décommenter les lignes suivantes
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # Interface admin DB (optionnel, dev seulement)
   adminer:
     image: adminer
     ports:
@@ -1199,140 +2818,217 @@ services:
 volumes:
   postgres_data:
   openwebui_data:
+  minio_data:
+  ollama_data:
 ```
 
 ---
 
 ## 15. ORDRE DE DÉVELOPPEMENT
 
-### Phase 1 — Fondations (priorité maximale)
-- [ ] Structure repo + docker-compose
-- [ ] `db/init.sql` + migrations Alembic
-- [ ] `api/database.py` + connexion async
-- [ ] Modèles SQLAlchemy (affaires, planning_tasks, chantier_events)
-- [ ] Schemas Pydantic
-- [ ] Router `/chantier` (CRUD basique)
+### Phase 0 — Infrastructure & Kernel (prérequis absolu)
+- [ ] `docker-compose.yml` : db (pgvector), api, openwebui, minio, adminer
+- [ ] `modules.yaml` à la racine
+- [ ] `api/core/` : `registry.py`, `base_engine.py`, `base_router.py`, `base_tool.py`
+- [ ] `api/core/events.py` : PostgreSQL LISTEN/NOTIFY (publish/subscribe)
+- [ ] `api/core/auth.py` : JWT decode, `get_current_user`, `require_role`, `require_affaire_access`
+- [ ] `api/core/services/llm_service.py` : chat, extract_structured, embed
+- [ ] `api/core/services/rag_service.py` : chunk, embed, search cosine
+- [ ] `api/core/services/storage_service.py` : upload/download MinIO + init bucket
+- [ ] `api/core/rate_limit.py` : slowapi limiter
+- [ ] `api/database.py` + `api/main.py`
+- [ ] Tests kernel : registry, auth, services
 
-### Phase 2 — Planning Engine
-- [ ] `engines/planning_engine.py` (tri topo + calcul dates)
-- [ ] Router `/planning/generate`
-- [ ] Router `/planning/simulate` (scénarios)
-- [ ] Tests unitaires planning engine
+### Phase 1 — Modules Auth + Chantier (socle métier)
+- [ ] Module `auth/` : users, affaire_permissions, JWT login/refresh, CRUD users
+- [ ] Module `chantier/` : affaires, intervenants, chantier_events, router, engine, tools
+- [ ] Migration Alembic : `auth_001_users`, `chantier_001_affaires`, `chantier_002_intervenants`
+- [ ] Tests auth : rôles, permissions affaire, token expiré
 
-### Phase 3 — Event + Alert Engine
-- [ ] `engines/event_engine.py`
-- [ ] Router `/events`
-- [ ] Tâche background (APScheduler ou Celery) pour run engine périodiquement
+### Phase 2 — Module Admin (interface de pilotage)
+- [ ] Module `admin/` : manifest, models (api_connections, sync_configs, mapping_tables), router, engine
+- [ ] Endpoints : modules toggle, users CRUD, connections, syncs, storage, DB stats, logs SSE
+- [ ] UI HTMX (ou React minimal) : tableau de bord admin
+- [ ] Tests : accès refusé si pas admin, toggle module, test connexion API
 
-### Phase 4 — Meeting Engine + RAG + Memory Engine
-- [ ] `engines/rag_engine.py` (embedding + pgvector)
-- [ ] Router `/rag/ingest` + `/rag/query`
-- [ ] `engines/meeting_engine.py`
-- [ ] Router `/meeting`
-- [ ] Tables `project_memory`, `memory_candidates`, `user_preferences`
-- [ ] `engines/memory_engine.py` (pipeline complet)
-- [ ] Router `/memory` (tous les endpoints)
-- [ ] Tests déduplication (similarité cosine)
+### Phase 3 — Module Planning (CCTP-driven)
+- [ ] Module `planning/` complet
+- [ ] `core/services/rag_service.py` utilisé pour embedding CCTP
+- [ ] `cctp_parser.py` + `dependency_detector.py` + prompts
+- [ ] `engine.py` : tri topo + overlap + chemin critique + BFS impact
+- [ ] Migration : `planning_001_lots`, `planning_002_dependencies`
+- [ ] Tests : parsing CCTP, scheduling avec overlap, propagation retard
 
-### Phase 5 — Finance Engine
-- [ ] Tables `situations` + `avenants` (migration Alembic)
-- [ ] Modèles SQLAlchemy `situation.py`
-- [ ] Schemas Pydantic `finance.py`
-- [ ] `engines/finance_engine.py` (calcul tableau de bord, alertes)
-- [ ] Router `/finance` (situations, avenants, tableau de bord, alertes)
-- [ ] Tools OpenWebUI `finance_tools.py`
-- [ ] Agent `finance_agent.yaml`
-- [ ] Tests calcul tableau de bord (dépassement, retard paiement)
+### Phase 4 — Modules Budget + Events Engine
+- [ ] Module `budget/` : budgets lots + alertes dépassement
+- [ ] Module `events_engine/` : rules YAML, background task, alertes
+- [ ] Bus PostgreSQL : subscribe budget_channel + chantier_channel
+- [ ] Tests règles métier
 
-### Phase 6 — Communication Engine
-- [ ] Table `communications` + index ivfflat (migration Alembic)
-- [ ] Modèle SQLAlchemy `communication.py`
-- [ ] Schemas Pydantic `communication.py`
-- [ ] `engines/communication_engine.py` (classification LLM, résumé, référence auto)
-- [ ] Router `/communications` (enregistrement, listing, recherche sémantique)
-- [ ] Endpoint `/communications/{id}/generer_reponse` (LLM)
-- [ ] Tools OpenWebUI `communication_tools.py`
-- [ ] Agent `communication_agent.yaml` (intégré à chantier_agent)
-- [ ] Tests classification catégories
+### Phase 5 — Modules RAG + Meeting + Memory
+- [ ] Module `rag/` : router `/rag/*` (délègue à `core/services/rag_service`)
+- [ ] Module `meeting/` : pipeline LLM extraction CR, prompt configurable
+- [ ] Module `memory/` : dédup cosine, classification, validation
+- [ ] Tests déduplication, extraction CR
 
-### Phase 7 — Document Engine
-- [ ] Table `documents` (migration Alembic)
-- [ ] Modèle SQLAlchemy `document.py`
-- [ ] Schemas Pydantic `document.py`
-- [ ] `api/templates/` : tous les templates Jinja2 (8 types)
-- [ ] `engines/document_engine.py` (rendu Jinja2 + complétion LLM)
-- [ ] Router `/documents` (génération, listing, validation, diffusion)
-- [ ] Endpoint `/documents/cr_from_meeting` (pipeline meeting → CR)
-- [ ] Tools OpenWebUI `document_tools.py`
-- [ ] Agent `document_agent.yaml`
-- [ ] Tests génération CR depuis données réunion
+### Phase 6 — Modules Finance + Communications
+- [ ] Module `finance/` : situations, avenants, tableau de bord financier
+- [ ] Module `communications/` : classification LLM, référence auto, brouillon réponse, storage PJ MinIO
+- [ ] Tests calcul financier, classification email
 
-### Phase 8 — OpenWebUI (tous agents)
-- [ ] Configuration agents Planning, Meeting, Chantier (YAML)
-- [ ] Configuration agents Finance, Communications, Documents (YAML)
-- [ ] Tools Python (wrappers API complets)
-- [ ] Ingestion knowledge (CCTP exemples, normes)
-- [ ] Tests agents en conversationnel
+### Phase 7 — Module Documents
+- [ ] Module `documents/` : templates Jinja2, génération LLM, upload MinIO
+- [ ] Pipeline `cr_from_meeting`
+- [ ] Tests génération CR
+
+### Phase 8 — OpenWebUI (agents + tools)
+- [ ] Tools Python (wrappers API + JWT) pour chaque module
+- [ ] Agents YAML depuis `manifest.yaml`
+- [ ] Ingestion knowledge (CCTP exemples, normes, DTU)
+- [ ] Tests agents conversationnels
 
 ### Phase 9 — Intégrations
-- [ ] `services/notion_sync.py`
-- [ ] Webhooks Notion → API
-- [ ] Export Gantt
+- [ ] Module `admin/syncs` : Notion polling → publish sur bus événements
+- [ ] Export Gantt XLSX
+- [ ] Notifications email (endpoint `/admin/connections` type=smtp)
 
 ---
 
 ## 16. VARIABLES D'ENVIRONNEMENT
 
 ```env
-# DB
+# ── Base de données ──────────────────────────────────────────────
 DB_PASSWORD=changeme
 DATABASE_URL=postgresql+asyncpg://arceag:changeme@db:5432/arceag
 
-# LLM
-OPENAI_API_KEY=sk-...
-OPENAI_API_BASE_URL=https://api.openai.com/v1
-EMBEDDING_MODEL=text-embedding-3-large
-EMBEDDING_DIM=1024
-LLM_MODEL=gpt-4o
+# ── Auth JWT ─────────────────────────────────────────────────────
+JWT_SECRET_KEY=changeme-secret-min-32-chars
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=1440          # 24h
+ADMIN_EMAIL=admin@arceag.fr
+ADMIN_PASSWORD=changeme          # modifié au 1er démarrage
 
-# Notion
+# ── IA — choisir un mode ─────────────────────────────────────────
+# MODE LOCAL (Ollama) — aucun abonnement, données 100% locales
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://ollama:11434
+OLLAMA_MODEL=mistral:7b            # ou llama3.1, qwen2.5, deepseek-r1, gemma2…
+EMBEDDING_PROVIDER=ollama
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+EMBEDDING_DIM=768
+
+# MODE CLOUD (OpenAI ou compatible) — décommenter si souhaité
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=sk-...
+# OPENAI_API_BASE_URL=https://api.openai.com/v1   # ou Mistral, Groq, Anthropic…
+# LLM_MODEL=gpt-4o
+# EMBEDDING_MODEL=text-embedding-3-large
+# EMBEDDING_DIM=1024
+
+# ── Storage MinIO ─────────────────────────────────────────────────
+MINIO_ENDPOINT=minio:9000
+MINIO_ROOT_USER=arceag
+MINIO_ROOT_PASSWORD=changeme-minio
+MINIO_BUCKET=arceag-files
+MINIO_SECURE=false               # true si HTTPS activé
+
+# ── Notion ───────────────────────────────────────────────────────
 NOTION_TOKEN=secret_...
 NOTION_DATABASE_AFFAIRES=...
 NOTION_DATABASE_ACTIONS=...
 
-# API
-SECRET_KEY=changeme-secret
+# ── API ──────────────────────────────────────────────────────────
 API_PORT=8000
+API_WORKERS=1                    # IMPORTANT: 1 seul worker (bus événements in-process)
 DEBUG=true
+
+# ── Rate limiting ────────────────────────────────────────────────
+RATE_LIMIT_LLM=10/minute         # endpoints LLM (ingest, génération, analyse)
+RATE_LIMIT_STANDARD=100/minute   # endpoints CRUD
+RATE_LIMIT_READ=1000/minute      # GET endpoints
 ```
 
 ---
 
 ## 17. RÈGLES DE DEV (à respecter absolument)
 
-1. **Toute logique métier dans `engines/`** — jamais dans les routers
-2. **Routers = validation + appel engine + retour HTTP** uniquement
-3. **SQLAlchemy async** partout (asyncpg driver)
-4. **Pydantic v2** pour tous les schemas
-5. **OpenWebUI ne contient aucune logique** — tout passe par l'API
-6. **pgvector** pour tout ce qui est sémantique (pas d'index texte brut)
-7. **UUID** comme clé primaire partout
-8. **JSONB** pour les données flexibles (metadata)
-9. Aucune valeur hardcodée — tout passe par `config.py` (pydantic-settings)
-10. Tests dans `api/tests/` pour les engines critiques (planning, scenario)
+### Architecture modulaire
+1. **Un module = un dossier** `api/modules/{nom}/` avec ses 7 fichiers standard
+2. **Pas d'import croisé entre modules** — utiliser le bus PostgreSQL LISTEN/NOTIFY (`core/events.py`)
+3. **Import `core/services/`** autorisé depuis tout module (rag_service, storage_service, llm_service)
+4. **Tout comportement configurable** dans `config.yaml` du module — jamais hardcodé dans le code
+5. **`main.py` ne connaît aucun module** — tout passe par `registry.load_all()`
+6. **`manifest.yaml` est la source de vérité** pour prefix, dépendances, tools, agent
+
+### Auth
+7. **Tout endpoint** (sauf `/auth/login`, `/health`) exige `get_current_user` en dépendance
+8. **Tout endpoint avec `affaire_id`** exige `require_affaire_access(min_role=...)` en dépendance
+9. **Seuls les admins** peuvent accéder à `/admin/*` et aux endpoints de configuration
+10. **Les clés API externes** sont stockées chiffrées en DB (table `api_connections`), jamais en clair dans les logs
+
+### Code
+11. **Toute logique métier dans `engine.py`** du module — jamais dans le router
+12. **`router.py` = validation Pydantic + auth + appel engine + retour HTTP** uniquement
+13. **`def get_router(config: dict) → APIRouter`** : signature obligatoire du router
+14. **SQLAlchemy async** partout (asyncpg driver)
+15. **Pydantic v2** pour tous les schemas
+16. **Rate limiting** : décorer avec `@limiter.limit("10/minute")` tous les endpoints qui appellent un LLM
+
+### Données
+17. **pgvector** pour tout ce qui est sémantique — pas d'index texte brut
+18. **UUID** comme clé primaire partout
+19. **JSONB** pour les données flexibles (metadata, config)
+20. **`intervenant_id`** à la place de `entreprise VARCHAR` dans toutes les tables
+21. **Tables jamais auto-droppées** si module désactivé — opérateur doit lancer down-migration manuellement
+22. Migrations préfixées : `{module}_{NNN}_{description}.py`
+
+### Storage
+23. **Tout fichier binaire** (PDF, photo, document) passe par `storage_service.upload()` → MinIO
+24. **Les tables DB ne stockent jamais de binaire** — seulement la clé MinIO (`storage_key VARCHAR`)
+25. **Bucket unique** `arceag-files`, structure clé : `{affaire_id}/{module}/{filename}`
+
+### Workers
+26. **`API_WORKERS=1`** en v1 — le bus événements PostgreSQL est compatible multi-workers mais les handlers in-process ne le sont pas encore
+27. Si besoin de scaling horizontal → migrer vers handlers enregistrés en DB
+
+### OpenWebUI
+28. **Les tools ne contiennent aucune logique** — ils appellent l'API REST avec le JWT de l'utilisateur
+29. **Chaque tool** inclut `Authorization: Bearer {jwt}` dans ses headers
+
+### Tests
+30. Tests dans `api/modules/{nom}/tests/` pour les engines critiques
+31. Test de chargement du registry dans `api/tests/test_registry.py`
+32. Test d'auth : accès refusé (403) pour les mauvais rôles, token expiré (401)
 
 ---
 
-## 18. QUESTIONS OUVERTES / DÉCISIONS À PRENDRE
+## 18. DÉCISIONS ARCHITECTURALES — TOUTES CLOSES
 
-| # | Question | Décision par défaut |
-|---|----------|---------------------|
-| 1 | Modèle embedding : OpenAI vs local (nomic) ? | OpenAI text-embedding-3-large |
-| 2 | Auth API : JWT vs API key simple ? | API key simple en v1 |
-| 3 | Sync Notion : webhook ou polling ? | Polling 5min en v1 |
-| 4 | Jours ouvrés : calendrier FR ou configurable ? | Configurable par affaire |
-| 5 | Multi-tenant (plusieurs agences) ? | Non en v1, prévu en v2 |
-| 6 | Export Gantt : format MS Project ou CSV ? | CSV + JSON en v1 |
+| # | Question | ✅ Décision finale |
+|---|----------|--------------------|
+| 1 | Fournisseur IA | **Ollama** (local, défaut) ou OpenAI/compatible — switchable via `LLM_PROVIDER` dans `.env` |
+| 1b | Modèle embedding | Ollama `nomic-embed-text` (local) ou OpenAI `text-embedding-3-large` — configurable |
+| 2 | Auth API | **JWT HS256** — 4 rôles (admin/moe/collaborateur/lecteur) — per-affaire via `affaire_permissions` |
+| 3 | Sync Notion | Polling 5min en v1 (configurable via `/admin/syncs`), webhook en v2 |
+| 4 | Jours ouvrés | Configurable par affaire dans `planning/config.yaml` — calendrier FR par défaut |
+| 5 | Multi-tenant | Non en v1 (une agence = une instance Docker) |
+| 6 | Export Gantt | CSV + JSON v1, export XLSX en v2 |
+| 7 | Hot-reload modules prod | Non — uniquement en dev (`watchfiles`) |
+| 8 | Background tasks | APScheduler en v1 (dans chaque module via manifest) |
+| 9 | Bus d'événements | **PostgreSQL LISTEN/NOTIFY** — compatible multi-workers, pas de Redis en v1 |
+| 10 | Templates documents | Jinja2 → Markdown v1, export PDF via `pandoc` en v2 |
+| 11 | Storage fichiers | **MinIO** (S3-compatible self-hosted Docker) — bucket `arceag-files` |
+| 12 | RAG | **Service core partagé** (`core/services/rag_service.py`) + module `rag/` pour le router utilisateur |
+| 13 | planning_tasks | **Supprimé** — remplacé par `planning_lots` (granularité MOE) |
+| 14 | Intervenants | **Table dédiée** `intervenants` — remplace `entreprise VARCHAR` éparpillé |
+| 15 | Rate limiting | **slowapi** — 10/min LLM, 100/min standard, 1000/min lecture |
+| 16 | Interface admin | **Module `admin/`** avec router + UI HTMX — modules, users, connexions API, syncs, storage, logs |
+| 17 | API_WORKERS | **1 en v1** — documenter dans .env |
+| 18 | Déploiement | Local (Docker Desktop) ou serveur privé OVH/Hetzner — même compose, différente infra hôte |
+| 19 | Couches connaissance | 4 niveaux (publique / agence / projet / sensible) — accès filtré par rôle à chaque appel LLM |
+| 20 | Prompt steering | Prompts admin injectés dans chaque appel LLM — ton, juridique, créativité, confidentialité, périmètre |
+| 21 | Intégrations v1 | Notion (sync) + SMTP (notifications) |
+| 22 | Intégrations v2 | Slack, Trello, Teams, WhatsApp Business — modules autonomes |
 
 ---
 
