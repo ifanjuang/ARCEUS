@@ -4,21 +4,13 @@
 
 ---
 
-## Le problème
+## Ce qu'OS Projet apporte
 
-Une agence MOE produit en continu une masse critique d'information : diagnostics, notes de calculs, CCTP, courriers, comptes-rendus, situations financières, décisions de chantier. Cette information est éparpillée dans les boîtes mails, des dossiers partagés mal nommés, des tableurs sans cohérence — et dans la tête des collaborateurs.
+**OS Projet est le système de mémoire et d'intelligence conçu pour les agences MOE.**
 
-On refait ce qui a déjà été fait. On cherche ce qu'on a pourtant déjà résolu. Et quand un collaborateur clé part, le savoir-faire part avec lui.
+Il enregistre ce que vous faites déjà, le comprend, le relie, et le rend accessible à tout moment par une simple question en langage naturel. Chaque acte de travail — poser une question technique, tenir une réunion, déposer un calcul, noter une observation de chantier — alimente automatiquement la mémoire du projet et de l'agence.
 
-Les IA génératives impressionnent, mais hallucinent. Sur une question réglementaire précise, une IA sans sources vérifiées peut donner une réponse convaincante et fausse. Pour une agence MOE, c'est inacceptable.
-
----
-
-## La réponse
-
-**OS Projet est un système de mémoire et d'intelligence pour agence MOE — avec des sources verrouillées.**
-
-Trois bases de connaissance, validées et maîtrisées par l'agence :
+L'IA répond en s'appuyant exclusivement sur trois bases de connaissance validées et maîtrisées par l'agence :
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -36,9 +28,20 @@ Trois bases de connaissance, validées et maîtrisées par l'agence :
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-L'IA reçoit uniquement ces sources vérifiées comme contexte. Elle ne peut pas inventer ce qui ne s'y trouve pas.
+L'IA travaille exclusivement sur ces sources vérifiées. La puissance de raisonnement des meilleurs modèles — déduction, induction, synthèse — est pleinement exploitée, sur des données que l'agence maîtrise et valide.
 
 **Résultat : une réponse chirurgicale, sourcée, applicable au contexte réel du projet.**
+
+---
+
+## Ce que ça change concrètement
+
+| Avant | Avec OS Projet |
+|-------|----------------|
+| Rechercher un email envoyé il y a 6 mois | "Retrouve la réponse de Bâti+ sur le recalage de planning" → 3 secondes |
+| Chercher sur Google une réponse DTU | La réponse vient de la base normative vérifiée — avec la référence exacte |
+| CR de réunion jamais à jour | L'agent extrait les décisions et alimente automatiquement le planning |
+| Le savoir-faire repose sur les personnes | Il est capitalisé dans la base agence, persistante et interrogeable |
 
 ---
 
