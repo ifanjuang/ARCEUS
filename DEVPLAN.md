@@ -518,6 +518,9 @@ Déploiement : **local ou serveur privé (OVH)** — données souveraines, zéro
 | **v2** | **Pilote** | Opérationnel — planning + impacts cascade, finance/situations, génération docs (CCTP, OS, courriers), Notion/Slack |
 | **v3** | **Agents** | Autonomie — agents proactifs sur données réelles (risques, anomalies, suggestions automatiques) |
 | **v4** | **Plateforme** | Ouverture — portail client MOA (lecteur), multi-tenant, API publique |
+| **v5** | **BIM** | *(en réflexion)* Plugin Revit — pont maquette ↔ OS Projet |
+
+> **v5 BIM — note d'intention :** l'idée est un plugin Revit qui synchronise des données de la maquette vers OS Projet (objets, phases, quantités, liaisons documentaires). La forme exacte — webhook, export IFC enrichi, API Revit native, ou autre — n'est pas encore arrêtée. Aucune décision technique avant que le besoin soit mûri.
 
 **Invariants schéma dès v0 :**
 - `affaire_id` présent sur toutes les tables — multi-projet natif

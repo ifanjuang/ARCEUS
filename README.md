@@ -78,6 +78,7 @@ Données souveraines. Zéro cloud obligatoire.
 | **v2** | **Pilote** | Planning + impacts cascade, finance/situations, génération docs, Notion/Slack |
 | **v3** | **Agents** | Agents proactifs — risques, anomalies, suggestions automatiques |
 | **v4** | **Plateforme** | Portail client MOA (lecteur), multi-tenant, API publique |
+| **v5** | **BIM** | *(en réflexion)* Plugin Revit — synchronisation maquette ↔ OS Projet |
 
 ---
 
