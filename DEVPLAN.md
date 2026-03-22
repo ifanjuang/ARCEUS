@@ -34,11 +34,12 @@ Il constitue deux types de bases de connaissance, validées et maîtrisées par 
 ┌─────────────────────────────────────────────────────────────────┐
 │  BASE GÉNÉRALE — Connaissance normative & réglementaire         │
 │  DTU, Eurocodes, RT/RE2020, NF, avis techniques CSTB,          │
-│  fiches fournisseurs, PLU importés — vérifiés, versionnés       │
+│  fiches fournisseurs — vérifiés, versionnés                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  BASE LOCALE — Mémoire de l'agence et de ses projets            │
 │  Notes de calculs, diagnostics, solutions retenues,             │
-│  produits qualifiés, détails constructifs éprouvés              │
+│  produits qualifiés, détails constructifs éprouvés,             │
+│  PLU par commune, règlements spécifiques par affaire            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
