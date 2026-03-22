@@ -14,112 +14,499 @@ Objectif : un "OS chantier" capable de générer des plannings, simuler des scé
 
 ## 1. ORGANISATION DU REPO
 
+> **Architecture modulaire** : chaque fonctionnalité est un module autonome dans `api/modules/{nom}/`.
+> `main.py` ne connaît aucun module : il appelle le registry qui les découvre et les monte automatiquement.
+> Pour ajouter, désactiver ou modifier un module → toucher uniquement son dossier.
+
 ```
 ARCEAG/
-├── DEVPLAN.md                  ← ce fichier
-├── docker-compose.yml          ← orchestration complète
+├── DEVPLAN.md
+├── docker-compose.yml
 ├── .env.example
-├── .gitignore
+├── modules.yaml                ← registre des modules activés/désactivés
 │
-├── api/                        ← FastAPI (LoongFlow API)
+├── api/
 │   ├── Dockerfile
 │   ├── requirements.txt
-│   ├── main.py                 ← point d'entrée
-│   ├── config.py               ← settings pydantic
-│   ├── database.py             ← connexion SQLAlchemy async
+│   ├── main.py                 ← 20 lignes : crée l'app + appelle registry.load_all()
+│   ├── config.py               ← settings globaux (pydantic-settings)
+│   ├── database.py             ← session SQLAlchemy async (partagée)
 │   │
-│   ├── models/                 ← ORM SQLAlchemy
+│   ├── core/                   ← KERNEL — ne pas modifier sauf refacto architecture
 │   │   ├── __init__.py
-│   │   ├── affaire.py
-│   │   ├── chantier_event.py
-│   │   ├── budget.py
-│   │   ├── planning_task.py
-│   │   ├── decision.py
-│   │   ├── alert.py
-│   │   ├── event.py
-│   │   ├── notion_chunk.py
-│   │   ├── project_memory.py   ← mémoire validée
-│   │   ├── user_preferences.py ← config comportement mémoire
-│   │   ├── situation.py        ← situations de travaux + avenants
-│   │   ├── communication.py    ← registre emails reçus/transmis
-│   │   └── document.py         ← pièces générées (CR, PV, FNC…)
+│   │   ├── registry.py         ← découverte + chargement auto des modules
+│   │   ├── base_engine.py      ← classe abstraite BaseEngine
+│   │   ├── base_router.py      ← classe abstraite BaseRouter
+│   │   ├── base_tool.py        ← classe abstraite BaseTool
+│   │   └── events.py           ← bus d'événements inter-modules (publish/subscribe)
 │   │
-│   ├── schemas/                ← Pydantic schemas (I/O)
-│   │   ├── __init__.py
-│   │   ├── affaire.py
-│   │   ├── chantier_event.py
-│   │   ├── planning.py
-│   │   ├── scenario.py
-│   │   ├── meeting.py
-│   │   ├── rag.py
-│   │   ├── memory.py           ← candidate, save, query schemas
-│   │   ├── finance.py          ← situations, avenants, DGD
-│   │   ├── communication.py    ← emails, courriers
-│   │   └── document.py         ← pièces, templates, CR
-│   │
-│   ├── routers/                ← endpoints FastAPI
-│   │   ├── __init__.py
-│   │   ├── chantier.py         ← /chantier/*
-│   │   ├── budget.py           ← /budget/*
-│   │   ├── planning.py         ← /planning/*
-│   │   ├── scenario.py         ← /scenario/*
-│   │   ├── meeting.py          ← /meeting/*
-│   │   ├── rag.py              ← /rag/*
-│   │   ├── events.py           ← /events/*
-│   │   ├── memory.py           ← /memory/*
-│   │   ├── finance.py          ← /finance/*
-│   │   ├── communications.py   ← /communications/*
-│   │   └── documents.py        ← /documents/*
-│   │
-│   ├── engines/                ← logique métier pure
-│   │   ├── __init__.py
-│   │   ├── planning_engine.py  ← tri topologique + calcul dates
-│   │   ├── scenario_engine.py  ← simulation retards / météo
-│   │   ├── event_engine.py     ← priorités + alertes
-│   │   ├── meeting_engine.py   ← analyse CR + extraction actions
-│   │   ├── rag_engine.py       ← embedding + recherche pgvector
-│   │   ├── memory_engine.py    ← mémoire projet : dédup, classification, validation
-│   │   ├── finance_engine.py   ← situations, avenants, tableau de bord financier
-│   │   ├── communication_engine.py ← classification, résumé, registre emails
-│   │   └── document_engine.py  ← génération pièces (Jinja2 + LLM)
-│   │
-│   └── services/               ← intégrations externes
-│       ├── __init__.py
-│       ├── notion_sync.py      ← sync Notion ↔ DB
-│       └── openai_client.py    ← appels LLM (embeddings, etc.)
+│   └── modules/                ← UN DOSSIER = UN MODULE COMPLET
+│       │
+│       ├── chantier/           ← module socle (affaires, journal)
+│       │   ├── manifest.yaml   ← déclaration du module
+│       │   ├── config.yaml     ← paramètres overridables
+│       │   ├── models.py       ← SQLAlchemy : affaires, chantier_events
+│       │   ├── schemas.py      ← Pydantic I/O
+│       │   ├── router.py       ← FastAPI router → /chantier/*
+│       │   ├── engine.py       ← logique métier
+│       │   └── tools.py        ← tools OpenWebUI
+│       │
+│       ├── planning/           ← planning + simulation scénarios
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← LOT_DEPENDENCIES, JALONS overridables
+│       │   ├── models.py       ← planning_tasks
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /planning/*
+│       │   ├── engine.py       ← tri topo, calcul dates, chemin critique
+│       │   ├── scenario.py     ← simulation retards / météo / absences
+│       │   └── tools.py
+│       │
+│       ├── budget/             ← budgets + alertes
+│       │   ├── manifest.yaml
+│       │   ├── models.py
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /budget/*
+│       │   ├── engine.py
+│       │   └── tools.py
+│       │
+│       ├── finance/            ← situations de travaux, avenants, DGD
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← seuils alertes (ex: pct_alerte: 0.95)
+│       │   ├── models.py       ← situations, avenants
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /finance/*
+│       │   ├── engine.py       ← calcul tableau de bord financier
+│       │   └── tools.py
+│       │
+│       ├── meeting/            ← analyse CR, extraction actions
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← prompt LLM overridable
+│       │   ├── models.py
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /meeting/*
+│       │   ├── engine.py       ← pipeline LLM extraction
+│       │   └── tools.py
+│       │
+│       ├── communications/     ← registre emails reçus/transmis
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← CATEGORIES, PRIORITES overridables
+│       │   ├── models.py       ← communications + vector(1024)
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /communications/*
+│       │   ├── engine.py       ← classification, résumé, référence auto
+│       │   └── tools.py
+│       │
+│       ├── documents/          ← génération pièces (CR, PV, FNC, OS…)
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← types de docs activés, templates utilisés
+│       │   ├── models.py
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /documents/*
+│       │   ├── engine.py       ← Jinja2 + LLM
+│       │   ├── tools.py
+│       │   └── templates/      ← templates Jinja2 (.md.j2) propres au module
+│       │       ├── cr_reunion.md.j2
+│       │       ├── pv_reception.md.j2
+│       │       ├── fiche_nc.md.j2
+│       │       ├── ordre_service.md.j2
+│       │       └── rapport_avancement.md.j2
+│       │
+│       ├── rag/                ← embedding, ingestion, recherche sémantique
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← chunk_size, overlap, top_k, model
+│       │   ├── models.py       ← notion_chunks
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /rag/*
+│       │   ├── engine.py
+│       │   └── tools.py
+│       │
+│       ├── memory/             ← mémoire projet validée + candidates
+│       │   ├── manifest.yaml
+│       │   ├── config.yaml     ← seuils similarité, comportement auto-save
+│       │   ├── models.py       ← project_memory, memory_candidates, user_preferences
+│       │   ├── schemas.py
+│       │   ├── router.py       ← /memory/*
+│       │   ├── engine.py       ← dédup cosine, classification, validation
+│       │   └── tools.py
+│       │
+│       └── events_engine/      ← moteur d'alertes (règles métier)
+│           ├── manifest.yaml
+│           ├── config.yaml     ← RULES overridables, intervalles
+│           ├── models.py       ← alerts
+│           ├── schemas.py
+│           ├── router.py       ← /events/*
+│           └── engine.py       ← évaluation règles, génération alertes
 │
-├── db/                         ← migrations et seeds
-│   ├── migrations/             ← Alembic
-│   │   └── versions/
+├── db/
 │   ├── alembic.ini
-│   ├── seeds/
-│   │   ├── seed_lots.py        ← lots standards BTP
-│   │   └── seed_examples.py    ← exemples plannings
-│   └── init.sql                ← extensions pgvector + schéma initial
+│   └── migrations/versions/    ← migrations générées par module (préfixe: nom_module_)
 │
-├── openwebui/                  ← configuration OpenWebUI
-│   ├── agents/
-│   │   ├── planning_agent.yaml
-│   │   ├── meeting_agent.yaml
-│   │   ├── chantier_agent.yaml
-│   │   ├── finance_agent.yaml      ← nouveau
-│   │   └── document_agent.yaml     ← nouveau
-│   ├── tools/
-│   │   ├── planning_tools.py       ← tools OpenWebUI → API
-│   │   ├── chantier_tools.py
-│   │   ├── rag_tools.py
-│   │   ├── memory_tools.py         ← candidate, save, query mémoire
-│   │   ├── finance_tools.py        ← nouveau
-│   │   ├── communication_tools.py  ← nouveau
-│   │   └── document_tools.py       ← nouveau
+├── openwebui/
+│   ├── agents/                 ← un agent par module (généré depuis manifest)
 │   └── knowledge/
-│       └── README.md               ← instructions ingestion docs
 │
 └── docs/
-    ├── architecture.md
-    ├── api_reference.md
-    └── lot_dependencies.md     ← référentiel dépendances inter-lots
 ```
+
+---
+
+## 1b. ARCHITECTURE MODULAIRE — Kernel & Plugin System
+
+### Principe
+
+```
+Ajouter un module  → créer api/modules/{nom}/ avec les 6 fichiers standard
+Désactiver          → modules.yaml : enabled: false  (pas de redémarrage requis en dev)
+Modifier behavior   → éditer config.yaml du module  (hot-reload via watchfiles)
+Modifier un prompt  → éditer config.yaml → prompt_file ou prompt inline
+Modifier une règle  → éditer config.yaml → RULES / CATEGORIES / seuils
+```
+
+---
+
+### `modules.yaml` — registre global
+
+```yaml
+# modules.yaml — à la racine du repo
+# Ordre = ordre de chargement (respecter les dépendances)
+
+modules:
+  - name: chantier
+    enabled: true
+
+  - name: budget
+    enabled: true
+
+  - name: planning
+    enabled: true
+
+  - name: finance
+    enabled: true
+
+  - name: meeting
+    enabled: true
+
+  - name: communications
+    enabled: true
+
+  - name: documents
+    enabled: true
+
+  - name: rag
+    enabled: true
+
+  - name: memory
+    enabled: true
+
+  - name: events_engine
+    enabled: true
+```
+
+---
+
+### `manifest.yaml` — déclaration d'un module
+
+Chaque module **doit** avoir ce fichier. C'est le contrat avec le registry.
+
+```yaml
+# api/modules/finance/manifest.yaml
+
+name: finance
+version: "1.0.0"
+description: "Suivi financier — situations de travaux, avenants, tableau de bord"
+prefix: /finance          # préfixe URL du router FastAPI
+depends_on:
+  - chantier              # modules requis (chargés avant)
+  - budget
+
+# Tables DB que ce module possède (pour Alembic auto-migration)
+models:
+  - situations
+  - avenants
+
+# Background tasks périodiques
+background_tasks:
+  - name: check_retards_paiement
+    interval_seconds: 3600   # toutes les heures
+
+# Tools exposés à OpenWebUI
+tools:
+  - enregistrer_situation
+  - valider_situation
+  - enregistrer_avenant
+  - get_tableau_bord_financier
+  - get_alertes_financieres
+
+# Agent OpenWebUI associé
+agent:
+  name: "Agent Finance MOE"
+  system_prompt_file: agent_system.txt   # dans le dossier du module
+  model: gpt-4o
+```
+
+---
+
+### `config.yaml` — comportement overridable sans toucher au code
+
+```yaml
+# api/modules/finance/config.yaml
+# Toutes les valeurs sont overridables par variable d'environnement
+# ex: FINANCE_SEUIL_ALERTE_PCT=0.90
+
+seuil_alerte_pct: 0.95          # alerte critique si cumul > 95% du marché
+seuil_warning_pct: 0.80         # alerte warning si cumul > 80%
+delai_paiement_warning_jours: 45
+retenue_garantie_pct: 0.05
+```
+
+```yaml
+# api/modules/communications/config.yaml
+
+categories:
+  demande_info:    ["question", "précision", "renseignement", "confirmer"]
+  mise_en_demeure: ["mise en demeure", "délai impératif", "formal notice"]
+  visa:            ["visa", "approbation", "validation document", "plan"]
+  compte_rendu:    ["CR", "compte rendu", "procès verbal", "réunion"]
+  bon_commande:    ["bon de commande", "BC", "ordre d'achat"]
+  situation:       ["situation de travaux", "facture", "acompte"]
+  reclamation:     ["réclamation", "litige", "contestation", "réserve"]
+
+priorites:
+  urgent: ["urgent", "URGENT", "mise en demeure", "délai 48h"]
+  high:   ["important", "délai", "relance", "attention"]
+  low:    ["pour info", "fyi", "copie"]
+
+delai_reponse_warning_jours: 7
+auto_reference: true
+reference_format: "MOE-{YYYY}-{NNN}"  # ex: MOE-2025-042
+```
+
+```yaml
+# api/modules/planning/config.yaml
+
+lot_dependencies:
+  Terrassement:      []
+  Fondations:        ["Terrassement"]
+  Maçonnerie:        ["Fondations"]
+  Charpente:         ["Maçonnerie"]
+  Couverture:        ["Charpente"]
+  "Menuiseries ext.": ["Couverture"]
+  Isolation:         ["Menuiseries ext."]
+  Plâtrerie:         ["Menuiseries ext.", "Isolation"]
+  Électricité:       ["Plâtrerie"]
+  Plomberie:         ["Plâtrerie"]
+  Chauffage:         ["Plomberie"]
+  Carrelage:         ["Électricité", "Plomberie"]
+  Peinture:          ["Plâtrerie", "Électricité"]
+  "Menuiseries int.": ["Peinture"]
+  VRD:               ["Terrassement"]
+  "Espaces verts":   ["VRD"]
+
+jalons:
+  "Hors d'eau":   ["Couverture"]
+  "Hors d'air":   ["Menuiseries ext."]
+  "Support prêt": ["Plâtrerie"]
+  Réception:      ["Peinture", "Menuiseries int.", "Carrelage"]
+
+# Modifier les dépendances ici suffit — aucun code à changer
+```
+
+---
+
+### Classes de base (`api/core/`)
+
+#### `base_engine.py`
+```python
+from abc import ABC, abstractmethod
+from sqlalchemy.ext.asyncio import AsyncSession
+
+class BaseEngine(ABC):
+    """Contrat minimal pour tout engine métier."""
+
+    def __init__(self, db: AsyncSession, config: dict):
+        self.db = db
+        self.config = config   # issu du config.yaml du module
+
+    @classmethod
+    def name(cls) -> str:
+        """Nom du module propriétaire."""
+        raise NotImplementedError
+
+    # Les engines implémentent leurs méthodes métier librement.
+    # Pas de méthodes abstraites supplémentaires : chaque engine est différent.
+```
+
+#### `base_router.py`
+```python
+from abc import ABC
+from fastapi import APIRouter
+
+class BaseRouter(ABC):
+    """Chaque module expose un router FastAPI standard."""
+
+    prefix: str = ""          # défini dans manifest.yaml
+    tags: list[str] = []
+
+    def get_router(self) -> APIRouter:
+        raise NotImplementedError
+```
+
+#### `base_tool.py`
+```python
+from abc import ABC, abstractmethod
+from typing import Any
+
+class BaseTool(ABC):
+    """Wrapper OpenWebUI — appelle l'API REST interne."""
+
+    api_base: str = "http://api:8000"
+
+    @abstractmethod
+    def get_tools(self) -> list[dict]:
+        """Retourne la liste des tools au format OpenWebUI."""
+        ...
+```
+
+#### `registry.py` — auto-discovery
+```python
+import yaml, importlib
+from pathlib import Path
+from fastapi import FastAPI
+
+class ModuleRegistry:
+    def __init__(self, app: FastAPI):
+        self.app = app
+        self._modules: dict = {}
+
+    def load_all(self, modules_yaml: str = "modules.yaml"):
+        config = yaml.safe_load(Path(modules_yaml).read_text())
+        for entry in config["modules"]:
+            if entry.get("enabled", True):
+                self._load_module(entry["name"])
+
+    def _load_module(self, name: str):
+        base = Path(f"api/modules/{name}")
+        manifest = yaml.safe_load((base / "manifest.yaml").read_text())
+        config = yaml.safe_load((base / "config.yaml").read_text()) if (base / "config.yaml").exists() else {}
+
+        # Vérifier dépendances
+        for dep in manifest.get("depends_on", []):
+            assert dep in self._modules, f"Module '{name}' requiert '{dep}' (non chargé)"
+
+        # Charger le router
+        mod = importlib.import_module(f"modules.{name}.router")
+        router = mod.get_router(config)
+        self.app.include_router(router, prefix=manifest["prefix"], tags=[name])
+
+        self._modules[name] = {"manifest": manifest, "config": config}
+        print(f"[registry] module '{name}' chargé → {manifest['prefix']}")
+```
+
+#### `events.py` — bus inter-modules (publish/subscribe)
+```python
+# Permet à un module d'écouter les événements d'un autre
+# sans couplage direct entre modules.
+
+# Exemple : le module events_engine s'abonne aux événements
+# publiés par planning, budget, chantier.
+
+from collections import defaultdict
+from typing import Callable, Any
+
+_subscribers: dict[str, list[Callable]] = defaultdict(list)
+
+def subscribe(event_type: str, handler: Callable):
+    _subscribers[event_type].append(handler)
+
+async def publish(event_type: str, payload: Any):
+    for handler in _subscribers.get(event_type, []):
+        await handler(payload)
+
+# Événements standard publiés par les modules :
+# "task.status_changed"      → planning module
+# "budget.seuil_atteint"     → budget module
+# "situation.deposee"        → finance module
+# "communication.reçue"      → communications module
+# "blocage.ouvert"           → chantier module
+```
+
+---
+
+### `main.py` — 20 lignes, ne connaît aucun module
+
+```python
+from fastapi import FastAPI
+from core.registry import ModuleRegistry
+from database import engine, Base
+
+app = FastAPI(title="OS Chantier API", version="1.0.0")
+
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    registry = ModuleRegistry(app)
+    registry.load_all("modules.yaml")
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+```
+
+---
+
+### Convention d'un module complet (exemple `finance/`)
+
+```
+api/modules/finance/
+├── manifest.yaml          ← NOM, PREFIX, DEPENDS_ON, TOOLS, AGENT
+├── config.yaml            ← SEUILS, RÈGLES, PROMPTS (overridables)
+├── agent_system.txt       ← system prompt de l'agent OpenWebUI
+├── models.py              ← SQLAlchemy models (situations, avenants)
+├── schemas.py             ← Pydantic v2 (Create/Read/Update)
+├── router.py              ← def get_router(config) → APIRouter
+├── engine.py              ← class FinanceEngine(BaseEngine)
+└── tools.py               ← class FinanceTools(BaseTool)
+```
+
+**Règle d'or :** un module ne peut **importer que `core/`** et ses propres dépendances déclarées dans `manifest.yaml`. Jamais d'import croisé entre modules — utiliser le bus d'événements.
+
+---
+
+### Ajouter un nouveau module en 5 étapes
+
+```bash
+# 1. Créer le dossier
+mkdir api/modules/mon_module
+
+# 2. Créer les 6 fichiers
+touch api/modules/mon_module/{manifest.yaml,config.yaml,models.py,schemas.py,router.py,engine.py,tools.py}
+
+# 3. Remplir manifest.yaml (name, prefix, depends_on, tools, agent)
+
+# 4. Activer dans modules.yaml
+echo "  - name: mon_module\n    enabled: true" >> modules.yaml
+
+# 5. Générer la migration Alembic
+alembic revision --autogenerate -m "mon_module_initial"
+```
+
+Redémarrage API → le module est monté automatiquement.
+
+---
+
+### Modifier le comportement sans toucher au code
+
+| Ce que je veux changer | Où |
+|------------------------|----|
+| Seuil d'alerte budget | `modules/finance/config.yaml` → `seuil_alerte_pct` |
+| Ajouter une catégorie email | `modules/communications/config.yaml` → `categories` |
+| Ajouter une dépendance de lot | `modules/planning/config.yaml` → `lot_dependencies` |
+| Changer le prompt LLM meeting | `modules/meeting/config.yaml` → `prompt_file` |
+| Ajouter un type de document | `modules/documents/config.yaml` → `types` + template `.md.j2` |
+| Ajouter une règle d'alerte | `modules/events_engine/config.yaml` → `rules` |
+| Désactiver un module | `modules.yaml` → `enabled: false` |
+| Changer le modèle LLM | `.env` → `LLM_MODEL=gpt-4o-mini` |
 
 ---
 
@@ -1205,78 +1592,63 @@ volumes:
 
 ## 15. ORDRE DE DÉVELOPPEMENT
 
-### Phase 1 — Fondations (priorité maximale)
-- [ ] Structure repo + docker-compose
-- [ ] `db/init.sql` + migrations Alembic
-- [ ] `api/database.py` + connexion async
-- [ ] Modèles SQLAlchemy (affaires, planning_tasks, chantier_events)
-- [ ] Schemas Pydantic
-- [ ] Router `/chantier` (CRUD basique)
+### Phase 1 — Kernel + Module Chantier (fondation)
+- [ ] Structure repo + docker-compose + `modules.yaml`
+- [ ] `api/core/` : `registry.py`, `base_engine.py`, `base_router.py`, `base_tool.py`, `events.py`
+- [ ] `api/database.py` + connexion async partagée
+- [ ] `api/main.py` (20 lignes)
+- [ ] Module `chantier/` : manifest, models, schemas, router, engine, tools
+- [ ] Alembic auto-migration depuis les models du module
+- [ ] Tests kernel : chargement registry, montage router
 
-### Phase 2 — Planning Engine
-- [ ] `engines/planning_engine.py` (tri topo + calcul dates)
-- [ ] Router `/planning/generate`
-- [ ] Router `/planning/simulate` (scénarios)
-- [ ] Tests unitaires planning engine
+### Phase 2 — Module Planning
+- [ ] Module `planning/` complet (manifest + config.yaml avec LOT_DEPENDENCIES)
+- [ ] `engine.py` : tri topologique, calcul dates, chemin critique
+- [ ] `scenario.py` : retard_lot, météo, absence, blocage livraison
+- [ ] Tests unitaires engine (tri topo, calcul dates)
 
-### Phase 3 — Event + Alert Engine
-- [ ] `engines/event_engine.py`
-- [ ] Router `/events`
-- [ ] Tâche background (APScheduler ou Celery) pour run engine périodiquement
+### Phase 3 — Module Budget + Events Engine
+- [ ] Module `budget/` complet
+- [ ] Module `events_engine/` : rules dans config.yaml, background task
+- [ ] Bus d'événements `core/events.py` : subscribe/publish
+- [ ] Tests règles métier (deadline, dépassement, blocage)
 
-### Phase 4 — Meeting Engine + RAG + Memory Engine
-- [ ] `engines/rag_engine.py` (embedding + pgvector)
-- [ ] Router `/rag/ingest` + `/rag/query`
-- [ ] `engines/meeting_engine.py`
-- [ ] Router `/meeting`
-- [ ] Tables `project_memory`, `memory_candidates`, `user_preferences`
-- [ ] `engines/memory_engine.py` (pipeline complet)
-- [ ] Router `/memory` (tous les endpoints)
-- [ ] Tests déduplication (similarité cosine)
+### Phase 4 — Modules RAG + Meeting + Memory
+- [ ] Module `rag/` : embedding pgvector, config chunk_size/overlap/top_k
+- [ ] Module `meeting/` : pipeline LLM, prompt dans config.yaml
+- [ ] Module `memory/` : dédup cosine, config seuils similarité
+- [ ] Tests déduplication mémoire
 
-### Phase 5 — Finance Engine
-- [ ] Tables `situations` + `avenants` (migration Alembic)
-- [ ] Modèles SQLAlchemy `situation.py`
-- [ ] Schemas Pydantic `finance.py`
-- [ ] `engines/finance_engine.py` (calcul tableau de bord, alertes)
-- [ ] Router `/finance` (situations, avenants, tableau de bord, alertes)
-- [ ] Tools OpenWebUI `finance_tools.py`
-- [ ] Agent `finance_agent.yaml`
-- [ ] Tests calcul tableau de bord (dépassement, retard paiement)
+### Phase 5 — Module Finance
+- [ ] Module `finance/` complet
+- [ ] `config.yaml` : seuil_alerte_pct, delai_paiement_warning_jours
+- [ ] `engine.py` : tableau de bord financier, alertes
+- [ ] Tools + Agent OpenWebUI
+- [ ] Tests calcul tableau de bord
 
-### Phase 6 — Communication Engine
-- [ ] Table `communications` + index ivfflat (migration Alembic)
-- [ ] Modèle SQLAlchemy `communication.py`
-- [ ] Schemas Pydantic `communication.py`
-- [ ] `engines/communication_engine.py` (classification LLM, résumé, référence auto)
-- [ ] Router `/communications` (enregistrement, listing, recherche sémantique)
-- [ ] Endpoint `/communications/{id}/generer_reponse` (LLM)
-- [ ] Tools OpenWebUI `communication_tools.py`
-- [ ] Agent `communication_agent.yaml` (intégré à chantier_agent)
+### Phase 6 — Module Communications
+- [ ] Module `communications/` complet
+- [ ] `config.yaml` : CATEGORIES, PRIORITES, reference_format (tous overridables)
+- [ ] `engine.py` : classification LLM, résumé, référence auto, brouillon réponse
 - [ ] Tests classification catégories
 
-### Phase 7 — Document Engine
-- [ ] Table `documents` (migration Alembic)
-- [ ] Modèle SQLAlchemy `document.py`
-- [ ] Schemas Pydantic `document.py`
-- [ ] `api/templates/` : tous les templates Jinja2 (8 types)
-- [ ] `engines/document_engine.py` (rendu Jinja2 + complétion LLM)
-- [ ] Router `/documents` (génération, listing, validation, diffusion)
-- [ ] Endpoint `/documents/cr_from_meeting` (pipeline meeting → CR)
-- [ ] Tools OpenWebUI `document_tools.py`
-- [ ] Agent `document_agent.yaml`
-- [ ] Tests génération CR depuis données réunion
+### Phase 7 — Module Documents
+- [ ] Module `documents/` complet
+- [ ] `templates/` Jinja2 (8 types) dans le dossier du module
+- [ ] `config.yaml` : types de docs activés, mapping template
+- [ ] `engine.py` : rendu Jinja2 + complétion LLM
+- [ ] Pipeline `cr_from_meeting`
+- [ ] Tests génération CR
 
-### Phase 8 — OpenWebUI (tous agents)
-- [ ] Configuration agents Planning, Meeting, Chantier (YAML)
-- [ ] Configuration agents Finance, Communications, Documents (YAML)
-- [ ] Tools Python (wrappers API complets)
-- [ ] Ingestion knowledge (CCTP exemples, normes)
-- [ ] Tests agents en conversationnel
+### Phase 8 — OpenWebUI (tous agents depuis manifests)
+- [ ] Génération automatique agents YAML depuis `manifest.yaml` de chaque module
+- [ ] Tools Python (wrappers API) pour chaque module
+- [ ] Ingestion knowledge (CCTP, normes)
+- [ ] Tests agents conversationnels
 
 ### Phase 9 — Intégrations
 - [ ] `services/notion_sync.py`
-- [ ] Webhooks Notion → API
+- [ ] Webhooks Notion → API (publish sur bus d'événements)
 - [ ] Export Gantt
 
 ---
@@ -1310,16 +1682,34 @@ DEBUG=true
 
 ## 17. RÈGLES DE DEV (à respecter absolument)
 
-1. **Toute logique métier dans `engines/`** — jamais dans les routers
-2. **Routers = validation + appel engine + retour HTTP** uniquement
-3. **SQLAlchemy async** partout (asyncpg driver)
-4. **Pydantic v2** pour tous les schemas
-5. **OpenWebUI ne contient aucune logique** — tout passe par l'API
-6. **pgvector** pour tout ce qui est sémantique (pas d'index texte brut)
-7. **UUID** comme clé primaire partout
-8. **JSONB** pour les données flexibles (metadata)
-9. Aucune valeur hardcodée — tout passe par `config.py` (pydantic-settings)
-10. Tests dans `api/tests/` pour les engines critiques (planning, scenario)
+### Architecture modulaire
+1. **Un module = un dossier** `api/modules/{nom}/` avec ses 7 fichiers standard
+2. **Pas d'import croisé entre modules** — utiliser le bus `core/events.py` (publish/subscribe)
+3. **Tout comportement configurable** dans `config.yaml` du module — jamais hardcodé dans le code
+4. **`main.py` ne connaît aucun module** — tout passe par `registry.load_all()`
+5. **`manifest.yaml` est la source de vérité** pour prefix, dépendances, tools, agent
+
+### Code
+6. **Toute logique métier dans `engine.py`** du module — jamais dans le router
+7. **`router.py` = validation Pydantic + appel engine + retour HTTP** uniquement
+8. **`def get_router(config: dict) → APIRouter`** : signature obligatoire du router
+9. **SQLAlchemy async** partout (asyncpg driver)
+10. **Pydantic v2** pour tous les schemas
+
+### Données
+11. **pgvector** pour tout ce qui est sémantique (embedding) — pas d'index texte brut
+12. **UUID** comme clé primaire partout
+13. **JSONB** pour les données flexibles (metadata)
+14. Migrations Alembic préfixées par le nom du module : `finance_001_situations.py`
+
+### OpenWebUI
+15. **Les tools ne contiennent aucune logique** — ils appellent l'API REST
+16. **Chaque module expose ses tools via `tools.py`** → générés depuis `manifest.yaml`
+17. **Les system prompts des agents** sont dans `agent_system.txt` du module (overridable)
+
+### Tests
+18. Tests dans `api/modules/{nom}/tests/` pour les engines critiques
+19. Test de chargement du registry dans `api/tests/test_registry.py`
 
 ---
 
@@ -1327,12 +1717,16 @@ DEBUG=true
 
 | # | Question | Décision par défaut |
 |---|----------|---------------------|
-| 1 | Modèle embedding : OpenAI vs local (nomic) ? | OpenAI text-embedding-3-large |
+| 1 | Modèle embedding : OpenAI vs local (nomic) ? | OpenAI text-embedding-3-large (config.yaml rag) |
 | 2 | Auth API : JWT vs API key simple ? | API key simple en v1 |
 | 3 | Sync Notion : webhook ou polling ? | Polling 5min en v1 |
-| 4 | Jours ouvrés : calendrier FR ou configurable ? | Configurable par affaire |
+| 4 | Jours ouvrés : calendrier FR ou configurable ? | Configurable par affaire (planning/config.yaml) |
 | 5 | Multi-tenant (plusieurs agences) ? | Non en v1, prévu en v2 |
 | 6 | Export Gantt : format MS Project ou CSV ? | CSV + JSON en v1 |
+| 7 | Hot-reload modules en prod ? | Non — reload uniquement en dev (watchfiles) |
+| 8 | Background tasks : APScheduler ou Celery ? | APScheduler en v1 (dans chaque module) |
+| 9 | Bus d'événements : sync ou async (Redis) ? | Async in-process en v1, Redis en v2 |
+| 10 | Templates documents : Jinja2 ou format Word ? | Jinja2 → Markdown en v1, export PDF via pandoc en v2 |
 
 ---
 
