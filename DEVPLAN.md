@@ -507,7 +507,22 @@ Déploiement : **local ou serveur privé (OVH)** — données souveraines, zéro
 - Gouvernance IA : **prompt steering admin** — ton, juridique, créativité, confidentialité
 - Intégrations v1 : Notion + SMTP / v2 : Slack, Trello, Teams
 - Rate limiting : **slowapi** sur les endpoints LLM
-- Multi-tenant : **non en v1** (une agence = une instance Docker)
+- Multi-tenant : **non avant v4** (une agence = une instance Docker)
+
+**Roadmap :**
+
+| Phase | Nom | Périmètre |
+|-------|-----|-----------|
+| **v0** | **Fondation** | Socle — auth 4 rôles, 3 bases (GÉNÉRALE/PROJET/AGENCE), RAG, upload docs, multi-projet natif, OpenClaw PWA |
+| **v1** | **Mémoire** | Capitalisation — journal chantier, meeting → CR auto, BASE AGENCE enrichie, alertes SMTP |
+| **v2** | **Pilote** | Opérationnel — planning + impacts cascade, finance/situations, génération docs (CCTP, OS, courriers), Notion/Slack |
+| **v3** | **Agents** | Autonomie — agents proactifs sur données réelles (risques, anomalies, suggestions automatiques) |
+| **v4** | **Plateforme** | Ouverture — portail client MOA (lecteur), multi-tenant, API publique |
+
+**Invariants schéma dès v0 :**
+- `affaire_id` présent sur toutes les tables — multi-projet natif
+- `agence_id` réservé dans le schéma, non utilisé avant v4
+- Rôle `lecteur` dans le modèle auth, aucune UI exposée avant v4
 
 ---
 
