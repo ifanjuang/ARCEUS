@@ -112,64 +112,204 @@ Chaque acteur du projet interagit avec l'outil selon ses besoins, et contribue n
 
 ---
 
-### Architecture
+### Souveraineté des données & modes de déploiement
+
+OS Projet est conçu pour fonctionner **entièrement sous contrôle de l'agence**. Aucune donnée projet ne transite par un service tiers sans décision explicite.
 
 ```
-OpenWebUI (agents IA + tools — un agent par domaine métier)
-        ↓  JWT
-FastAPI API modulaire (plugin system — chaque module = plugin autonome)
-   ├── core/ : registry, auth JWT, bus événements PostgreSQL
-   │           RAG service, storage service, LLM service
-   └── modules/
-       ├── conception : phases | notes_calculs | diagnostics
-       ├── transversal : memory (projet + agence) | rag | communications | documents | meeting
-       ├── chantier   : planning | finance | budget | journal | events_engine
-       └── système    : auth | admin | intervenants
-        ↓                    ↓                   ↓
-PostgreSQL + pgvector    MinIO (fichiers)    Notion (sync optionnel)
-(données + vecteurs)     (PDF, photos, docs)
+┌─────────────────────────────────────────────────────────────┐
+│  MODE LOCAL — machine de l'agence (Mac, Linux, NAS)         │
+│  Docker Compose en local · données sur disque local         │
+│  Accès réseau interne uniquement · zéro cloud               │
+├─────────────────────────────────────────────────────────────┤
+│  MODE SERVEUR PRIVÉ — VPS OVH / Hetzner / dédié             │
+│  Docker Compose sur serveur · HTTPS avec certificat         │
+│  Accès depuis partout · données sur serveur privé géré      │
+├─────────────────────────────────────────────────────────────┤
+│  MODE HYBRIDE (futur)                                        │
+│  Données sensibles en local · knowledge publique en cloud   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Le même `docker-compose.yml` fonctionne dans les trois cas.** La différence se joue uniquement sur l'infrastructure hôte et la configuration réseau.
+
+---
+
+### Intelligence locale sans abonnement — Ollama
+
+OS Projet supporte deux modes d'IA, configurables à tout moment :
+
+```
+LLM_PROVIDER=ollama      → IA locale via Ollama (aucun abonnement, données 100% locales)
+LLM_PROVIDER=openai      → OpenAI gpt-4o (performance maximale, données envoyées à OpenAI)
+LLM_PROVIDER=openai      → tout fournisseur compatible OpenAI API (Mistral, Groq, Anthropic…)
+```
+
+Avec Ollama, tout tourne sur le matériel de l'agence. Le modèle LLM et les embeddings ne quittent jamais le réseau interne. Recommandé pour les données sensibles (contrats, litiges, données financières).
+
+```yaml
+# .env — choisir le mode IA
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://ollama:11434
+OLLAMA_MODEL=mistral:7b            # ou llama3.1, qwen2.5, deepseek-r1…
+EMBEDDING_PROVIDER=ollama
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text   # embedding local 768 dims
+
+# Ou OpenAI si performance maximale souhaitée
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=sk-...
+# LLM_MODEL=gpt-4o
+```
+
+`llm_service.py` et `rag_service.py` abstraient le fournisseur — **les modules ne savent pas si l'IA est locale ou distante**.
+
+---
+
+### Couches de connaissance & niveaux d'accès
+
+L'intelligence de l'outil est organisée en **4 couches de connaissance**, chacune avec un niveau d'accès distinct :
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  COUCHE 4 — Connaissance sensible                               │
+│  Données financières, contrats, litiges, honoraires             │
+│  Accès : moe + admin uniquement                                 │
+├─────────────────────────────────────────────────────────────────┤
+│  COUCHE 3 — Mémoire projet                                      │
+│  Décisions, calculs, diagnostics, correspondances d'une affaire │
+│  Accès : selon permissions affaire (lecteur → admin)            │
+├─────────────────────────────────────────────────────────────────┤
+│  COUCHE 2 — Intelligence agence                                 │
+│  Leçons tirées, méthodes, détails constructifs, Q&R historiques │
+│  Accès : collaborateur → admin (interne agence uniquement)      │
+├─────────────────────────────────────────────────────────────────┤
+│  COUCHE 1 — Connaissance publique                               │
+│  Normes, DTU, réglementation, CCTP de référence                 │
+│  Accès : tous les rôles incluant les lecteurs externes          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+Quand un agent IA répond à une question, il consulte uniquement les couches auxquelles l'utilisateur a accès. Un lecteur (client, entreprise) ne peut jamais atteindre les données financières ou l'intelligence interne de l'agence, même indirectement via une question en langage naturel.
+
+---
+
+### Gouvernance de l'IA par l'admin — Prompt steering
+
+L'administrateur peut définir des **prompts système globaux** qui s'injectent dans chaque appel LLM et conditionnent le comportement de l'IA pour toute l'agence. Ils sont configurables sans toucher au code, depuis l'interface admin.
+
+| Paramètre | Exemple de configuration | Effet |
+|-----------|--------------------------|-------|
+| **Ton juridique** | "Ne fournis jamais de conseil engageant la responsabilité de l'agence. Recommande systématiquement de consulter un juriste pour toute question contractuelle." | L'IA prend de la distance sur les sujets sensibles |
+| **Niveau de créativité** | "Reste factuel et pragmatique. Propose des alternatives uniquement si explicitement demandé." | Répond sans sur-interpréter |
+| **Langue et registre** | "Réponds toujours en français professionnel. Évite le jargon non-BTP." | Cohérence stylistique dans tous les documents générés |
+| **Confidentialité** | "Ne mentionne jamais le nom du maître d'ouvrage dans les réponses accessibles aux entreprises." | Cloisonnement des données sensibles |
+| **Périmètre métier** | "Tu es un outil de pilotage MOE. Refuse les demandes sans rapport avec la gestion de projet d'architecture." | Empêche les dérives d'usage |
+| **Sources obligatoires** | "Cite toujours la référence normative (DTU, NF, RT) quand tu réponds à une question technique." | Traçabilité et fiabilité |
+
+Ces prompts sont stockés dans la table `mapping_tables` (admin), combinés et injectés dans `llm_service.py` à chaque appel. Chaque module peut avoir ses propres prompts en plus des prompts globaux.
+
+---
+
+### Connexions & intégrations
+
+**Intégrations disponibles en v1 :**
+
+| Service | Sens | Usage |
+|---------|------|-------|
+| **Notion** | Bidirectionnel | Sync affaires, actions, CR — base de travail déjà utilisée par l'agence |
+| **SMTP (email)** | Sortant | Notifications alertes, diffusion documents, confirmation réception |
+
+**Modules d'intégration prévus (v2+) :**
+
+| Service | Sens | Usage envisagé |
+|---------|------|----------------|
+| **Slack** | Bidirectionnel | Alertes push, questions à l'agent depuis Slack, résumé quotidien |
+| **Trello** | Sortant | Sync actions et tâches vers boards Trello de l'équipe |
+| **Microsoft Teams** | Entrant | Ingestion CR réunions Teams, transcription automatique |
+| **WhatsApp Business** | Entrant | Photos et notes chantier depuis mobile — ingestion directe |
+| **DocuSign / Yousign** | Sortant | Signature électronique des pièces générées |
+| **SMAC / Edilians** | Entrant | Tarifs et données techniques matériaux |
+
+Toutes les intégrations sont des **modules autonomes** activables/désactivables depuis l'interface admin. Leurs paramètres de connexion (clés API, webhooks, sens de synchronisation, fréquence) sont configurables sans redémarrage.
+
+---
+
+### Architecture complète
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  CLIENTS                                                            │
+│  OpenWebUI (agents IA)  ·  Interface Admin  ·  API directe          │
+└───────────────────────────────┬─────────────────────────────────────┘
+                                │ HTTPS + JWT
+┌───────────────────────────────▼─────────────────────────────────────┐
+│  FASTAPI — Plugin System                                            │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
+│  │conception│ │chantier  │ │transvers.│ │système   │ │intégrat. │  │
+│  │phases    │ │planning  │ │memory    │ │auth      │ │notion    │  │
+│  │calculs   │ │finance   │ │rag       │ │admin     │ │slack (v2)│  │
+│  │diagnost. │ │budget    │ │comms     │ │intervnts │ │trello(v2)│  │
+│  └──────────┘ │journal   │ │documents │ └──────────┘ └──────────┘  │
+│               │events    │ │meeting   │                             │
+│               └──────────┘ └──────────┘                             │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  CORE : registry · auth · events(PG) · prompt_steering      │   │
+│  │          rag_service · llm_service · storage_service         │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└──────────┬──────────────────────┬───────────────────┬───────────────┘
+           │                      │                   │
+┌──────────▼──────┐  ┌────────────▼────────┐  ┌──────▼────────────┐
+│  PostgreSQL 16  │  │  MinIO (fichiers)   │  │  Ollama / OpenAI  │
+│  + pgvector     │  │  PDF, photos, docs  │  │  (configurable)   │
+│  données+vecteurs│  │  bucket arceag-files│  │  LLM + embedding  │
+└─────────────────┘  └─────────────────────┘  └───────────────────┘
 ```
 
 **Principes :**
+- **Souverain** — données sur infrastructure de l'agence (local ou serveur privé)
+- **Sans abonnement obligatoire** — Ollama pour une IA 100% locale
 - **Modulaire** — plugin system, chaque fonctionnalité est indépendante
-- **Configurable** — comportement métier dans `config.yaml`, modifiable sans redéploiement
-- **Multi-utilisateurs** — 4 rôles (admin / moe / collaborateur / lecteur) avec permissions per-affaire
+- **Couches de connaissance** — 4 niveaux d'accès à l'intelligence du système
+- **Gouverné** — l'admin pilote le comportement de l'IA via prompt steering
+- **Connectable** — intégrations Notion, Slack, Trello, email en modules autonomes
 - **Cycle de vie complet** — de la faisabilité à la GPA
-- **Capitalisation naturelle** — chaque acte de travail alimente la mémoire sans effort supplémentaire
-- **Intelligence à deux niveaux** — mémoire projet + intelligence agence
+- **Capitalisation naturelle** — chaque acte de travail alimente la mémoire
 
 ---
 
 ### Stack technique
 
-| Composant | Technologie |
-|-----------|-------------|
-| Backend | FastAPI + SQLAlchemy async (asyncpg) |
-| Base de données | PostgreSQL 16 + pgvector |
-| Storage fichiers | MinIO (S3-compatible self-hosted) |
-| IA / LLM | OpenAI gpt-4o + text-embedding-3-large |
-| Interface IA | OpenWebUI (agents + tools) |
-| Auth | JWT HS256 — 4 rôles |
-| Bus événements | PostgreSQL LISTEN/NOTIFY |
-| Conteneurs | Docker Compose |
+| Composant | Technologie | Alternative |
+|-----------|-------------|-------------|
+| Backend | FastAPI + SQLAlchemy async | — |
+| Base de données | PostgreSQL 16 + pgvector | — |
+| Storage fichiers | MinIO (S3-compatible self-hosted) | — |
+| IA locale | Ollama + nomic-embed-text | — |
+| IA cloud | OpenAI gpt-4o + text-embedding-3-large | Mistral, Groq, Anthropic |
+| Interface IA | OpenWebUI (agents + tools) | — |
+| Auth | JWT HS256 — 4 rôles | — |
+| Bus événements | PostgreSQL LISTEN/NOTIFY | Redis Pub/Sub (v2) |
+| Conteneurs | Docker Compose | Kubernetes (v3+) |
 
 ---
 
 ## 0. TL;DR
 
-Système de pilotage intelligent de chantier pour une agence d'architecture (MOE).
-Stack : **FastAPI + PostgreSQL/pgvector + OpenWebUI + MinIO + Notion**.
+Intelligence opérationnelle et mémoire vivante d'une agence d'architecture MOE.
+Stack : **FastAPI + PostgreSQL/pgvector + OpenWebUI + MinIO + Ollama/OpenAI**.
+Déploiement : **local ou serveur privé (OVH)** — données souveraines, zéro cloud obligatoire.
 
 **Décisions d'architecture arrêtées :**
 - Auth : **JWT HS256** — 4 rôles (admin / moe / collaborateur / lecteur) — per-affaire
-- Storage : **MinIO** (S3-compatible, self-hosted Docker) — partagé entre tous les modules
-- RAG : **service core partagé** (`core/services/rag_service.py`) — plus un module isolé
-- Bus événements : **PostgreSQL LISTEN/NOTIFY** — fonctionne multi-workers, pas de Redis en v1
-- Planning : lots extraits du **CCTP par LLM** — per-affaire, plus de LOT_DEPENDENCIES global
-- Rate limiting : **slowapi** sur les endpoints LLM (10 req/min/user)
-- Multi-tenant : **non en v1** (une agence = une instance)
-
-Objectif : un "OS chantier" capable de gérer plannings, finances, communications et documents avec assistants IA.
+- Storage : **MinIO** (S3-compatible, self-hosted Docker)
+- IA : **Ollama** (local, sans abonnement) ou OpenAI (cloud) — switchable via `.env`
+- RAG : **service core partagé** (`core/services/rag_service.py`) — 4 couches de connaissance
+- Bus événements : **PostgreSQL LISTEN/NOTIFY** — compatible multi-workers
+- Planning : lots extraits du **CCTP par LLM** — per-affaire
+- Gouvernance IA : **prompt steering admin** — ton, juridique, créativité, confidentialité
+- Intégrations v1 : Notion + SMTP / v2 : Slack, Trello, Teams
+- Rate limiting : **slowapi** sur les endpoints LLM
+- Multi-tenant : **non en v1** (une agence = une instance Docker)
 
 ---
 
@@ -2481,7 +2621,23 @@ services:
       timeout: 5s
       retries: 5
 
-  # Interface admin DB (optionnel)
+  # Ollama — IA locale sans abonnement (désactiver si mode OpenAI)
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    # Pour GPU NVIDIA : décommenter les lignes suivantes
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # Interface admin DB (optionnel, dev seulement)
   adminer:
     image: adminer
     ports:
@@ -2493,6 +2649,7 @@ volumes:
   postgres_data:
   openwebui_data:
   minio_data:
+  ollama_data:
 ```
 
 ---
@@ -2581,12 +2738,22 @@ JWT_EXPIRE_MINUTES=1440          # 24h
 ADMIN_EMAIL=admin@arceag.fr
 ADMIN_PASSWORD=changeme          # modifié au 1er démarrage
 
-# ── LLM ──────────────────────────────────────────────────────────
-OPENAI_API_KEY=sk-...
-OPENAI_API_BASE_URL=https://api.openai.com/v1
-EMBEDDING_MODEL=text-embedding-3-large
-EMBEDDING_DIM=1024
-LLM_MODEL=gpt-4o
+# ── IA — choisir un mode ─────────────────────────────────────────
+# MODE LOCAL (Ollama) — aucun abonnement, données 100% locales
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://ollama:11434
+OLLAMA_MODEL=mistral:7b            # ou llama3.1, qwen2.5, deepseek-r1, gemma2…
+EMBEDDING_PROVIDER=ollama
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+EMBEDDING_DIM=768
+
+# MODE CLOUD (OpenAI ou compatible) — décommenter si souhaité
+# LLM_PROVIDER=openai
+# OPENAI_API_KEY=sk-...
+# OPENAI_API_BASE_URL=https://api.openai.com/v1   # ou Mistral, Groq, Anthropic…
+# LLM_MODEL=gpt-4o
+# EMBEDDING_MODEL=text-embedding-3-large
+# EMBEDDING_DIM=1024
 
 # ── Storage MinIO ─────────────────────────────────────────────────
 MINIO_ENDPOINT=minio:9000
@@ -2669,7 +2836,8 @@ RATE_LIMIT_READ=1000/minute      # GET endpoints
 
 | # | Question | ✅ Décision finale |
 |---|----------|--------------------|
-| 1 | Modèle embedding | OpenAI `text-embedding-3-large` — configurable dans `rag/config.yaml` |
+| 1 | Fournisseur IA | **Ollama** (local, défaut) ou OpenAI/compatible — switchable via `LLM_PROVIDER` dans `.env` |
+| 1b | Modèle embedding | Ollama `nomic-embed-text` (local) ou OpenAI `text-embedding-3-large` — configurable |
 | 2 | Auth API | **JWT HS256** — 4 rôles (admin/moe/collaborateur/lecteur) — per-affaire via `affaire_permissions` |
 | 3 | Sync Notion | Polling 5min en v1 (configurable via `/admin/syncs`), webhook en v2 |
 | 4 | Jours ouvrés | Configurable par affaire dans `planning/config.yaml` — calendrier FR par défaut |
@@ -2686,6 +2854,11 @@ RATE_LIMIT_READ=1000/minute      # GET endpoints
 | 15 | Rate limiting | **slowapi** — 10/min LLM, 100/min standard, 1000/min lecture |
 | 16 | Interface admin | **Module `admin/`** avec router + UI HTMX — modules, users, connexions API, syncs, storage, logs |
 | 17 | API_WORKERS | **1 en v1** — documenter dans .env |
+| 18 | Déploiement | Local (Docker Desktop) ou serveur privé OVH/Hetzner — même compose, différente infra hôte |
+| 19 | Couches connaissance | 4 niveaux (publique / agence / projet / sensible) — accès filtré par rôle à chaque appel LLM |
+| 20 | Prompt steering | Prompts admin injectés dans chaque appel LLM — ton, juridique, créativité, confidentialité, périmètre |
+| 21 | Intégrations v1 | Notion (sync) + SMTP (notifications) |
+| 22 | Intégrations v2 | Slack, Trello, Teams, WhatsApp Business — modules autonomes |
 
 ---
 
