@@ -78,9 +78,14 @@ Données souveraines. Zéro cloud obligatoire.
 | **v2** | **Pilote** | Planning + impacts cascade, finance/situations, génération docs, Notion/Slack |
 | **v3** | **Agents** | Agents proactifs — risques, anomalies, suggestions automatiques |
 | **v4** | **Plateforme** | Portail client MOA (lecteur), multi-tenant, API publique |
+| **v5** | **BIM** | *(en réflexion)* Plugin Revit — synchronisation maquette ↔ OS Projet |
 
 ---
 
 ## Documentation technique
 
-Voir [`DEVPLAN.md`](./DEVPLAN.md) — document de référence complet pour le développement.
+| Fichier | Contenu |
+|---------|---------|
+| [`DEVPLAN.md`](./DEVPLAN.md) | Référence complète de développement — modules, BDD, API, agents |
+| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Flux de données, formats inter-modules, modularité |
+| [`INSTALL.md`](./INSTALL.md) | Installation, configuration, maintenance, production |
