@@ -1,0 +1,46 @@
+# ── Web framework ────────────────────────────────────────────────
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# ── Base de données ───────────────────────────────────────────────
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+psycopg2-binary==2.9.10          # pour alembic env.py (sync)
+
+# ── Auth ──────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# ── Validation ────────────────────────────────────────────────────
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# ── IA — LLM + RAG ───────────────────────────────────────────────
+instructor==1.7.0
+openai==1.57.0                   # client OpenAI (compatible Ollama)
+llama-index-core==0.12.0
+llama-index-vector-stores-postgres==0.3.0
+llama-index-embeddings-openai==0.3.0
+llama-index-llms-openai==0.3.0
+
+# ── Storage MinIO ─────────────────────────────────────────────────
+minio==7.2.11
+
+# ── HTTP client ───────────────────────────────────────────────────
+httpx==0.28.1
+
+# ── Rate limiting ────────────────────────────────────────────────
+slowapi==0.1.9
+
+# ── Config & utils ───────────────────────────────────────────────
+pyyaml==6.0.2
+python-dotenv==1.0.1
+structlog==24.4.0
+
+# ── Notifications ────────────────────────────────────────────────
+python-telegram-bot==21.9
+
+# ── Scheduling ───────────────────────────────────────────────────
+apscheduler==3.10.4
