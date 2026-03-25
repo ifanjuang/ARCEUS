@@ -1,0 +1,43 @@
+# modules.yaml — registre global des modules
+# Ordre = ordre de chargement (respecter les dépendances déclarées dans manifest.yaml)
+# Désactiver un module : enabled: false  (pas de redémarrage requis en dev)
+
+modules:
+  - name: auth
+    enabled: true
+
+  - name: chantier
+    enabled: true
+
+  - name: admin
+    enabled: true
+
+  - name: planning
+    enabled: true
+
+  - name: budget
+    enabled: true
+
+  - name: events_engine
+    enabled: true
+
+  - name: rag
+    enabled: true
+
+  - name: meeting
+    enabled: true
+
+  - name: memory
+    enabled: true
+
+  - name: finance
+    enabled: true
+
+  - name: communications
+    enabled: true
+
+  - name: documents
+    enabled: true
+
+  - name: notifications
+    enabled: true

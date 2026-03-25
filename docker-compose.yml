@@ -1,0 +1,133 @@
+version: '3.9'
+
+services:
+
+  # ── Base de données PostgreSQL + pgvector ───────────────────────
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: arceag
+      POSTGRES_USER: arceag
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arceag"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── API FastAPI ─────────────────────────────────────────────────
+  api:
+    build: ./api
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://arceag:${DB_PASSWORD}@db:5432/arceag
+      DATABASE_URL_SYNC: postgresql://arceag:${DB_PASSWORD}@db:5432/arceag
+      ASYNCPG_URL: postgresql://arceag:${DB_PASSWORD}@db:5432/arceag
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./api:/app
+      - ./modules.yaml:/app/modules.yaml:ro
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --workers 1
+    restart: unless-stopped
+
+  # ── OpenWebUI — interface utilisateur ──────────────────────────
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    environment:
+      OPENAI_API_BASE_URL: http://api:8000/v1
+      OPENAI_API_KEY: ${JWT_SECRET_KEY}   # token interne
+      WEBUI_SECRET_KEY: ${JWT_SECRET_KEY}
+    volumes:
+      - openwebui_data:/app/backend/data
+    ports:
+      - "3000:8080"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ── MinIO — stockage fichiers S3-compatible ─────────────────────
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"   # API S3
+      - "9001:9001"   # Console Web
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ── Ollama — IA locale (optionnel, désactiver si mode OpenAI) ───
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    # GPU NVIDIA — décommenter si disponible :
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # ── Adminer — interface DB (dev uniquement) ─────────────────────
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    profiles: [dev]
+
+  # ── Evolution API — pont WhatsApp self-hosted (optionnel) ───────
+  # Activer avec : docker compose --profile whatsapp-evolution up -d
+  evolution-api:
+    image: atendai/evolution-api:latest
+    profiles: [whatsapp-evolution]
+    environment:
+      SERVER_URL: http://evolution-api:8080
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-changeme-evolution}
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://arceag:${DB_PASSWORD}@db:5432/arceag
+      QRCODE_LIMIT: 30
+    volumes:
+      - evolution_data:/evolution/instances
+    ports:
+      - "8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  postgres_data:
+  openwebui_data:
+  minio_data:
+  ollama_data:
+  evolution_data:

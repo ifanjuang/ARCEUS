@@ -2927,6 +2927,9 @@ volumes:
 - [ ] `api/core/services/rag_service.py` : chunk, embed, search cosine
 - [ ] `api/core/services/storage_service.py` : upload/download MinIO + init bucket
 - [ ] `api/core/rate_limit.py` : slowapi limiter
+- [ ] `api/core/logging.py` : structlog JSON (§23.1)
+- [ ] `api/core/health.py` : `/health` unifié db+minio+llm (§23.3)
+- [ ] `api/main.py` : vérification migrations au démarrage (§23.4)
 - [ ] `api/database.py` + `api/main.py`
 - [ ] Tests kernel : registry, auth, services
 
@@ -2934,12 +2937,19 @@ volumes:
 - [ ] Module `auth/` : users, affaire_permissions, JWT login/refresh, CRUD users
 - [ ] Module `chantier/` : affaires, intervenants, chantier_events, router, engine, tools
 - [ ] Migration Alembic : `auth_001_users`, `chantier_001_affaires`, `chantier_002_intervenants`
+- [ ] Migration `core_001_soft_delete` : colonne `deleted_at` sur tables critiques (§23.2)
+- [ ] Pagination cursor-based sur `chantier_events` + `affaires` (§23.8) — `core/pagination.py`
+- [ ] `db/seed_dev.py` : affaire fictive complète pour développement (§23.5)
 - [ ] Tests auth : rôles, permissions affaire, token expiré
 
 ### Phase 2 — Module Admin (interface de pilotage)
 - [ ] Module `admin/` : manifest, models (api_connections, sync_configs, mapping_tables), router, engine
 - [ ] Endpoints : modules toggle, users CRUD, connections, syncs, storage, DB stats, logs SSE
 - [ ] UI HTMX (ou React minimal) : tableau de bord admin
+- [ ] Migration `admin_002_prompt_versions` : table versioning prompts LLM (§23.7)
+- [ ] Endpoints `/admin/prompts` : CRUD versions + activation (§23.7)
+- [ ] Migration `admin_003_affaire_features` : feature flags par affaire (§23.9)
+- [ ] Endpoints `/admin/affaires/{id}/features` (§23.9)
 - [ ] Tests : accès refusé si pas admin, toggle module, test connexion API
 
 ### Phase 3 — Module Planning (CCTP-driven)
@@ -3037,6 +3047,30 @@ DEBUG=true
 RATE_LIMIT_LLM=10/minute         # endpoints LLM (ingest, génération, analyse)
 RATE_LIMIT_STANDARD=100/minute   # endpoints CRUD
 RATE_LIMIT_READ=1000/minute      # GET endpoints
+
+# ── Notifications — Telegram ──────────────────────────────────────
+TELEGRAM_TOKEN=                  # Token bot Telegram (via @BotFather) — laisser vide si non utilisé
+TELEGRAM_DEFAULT_CHAT_ID=        # chat_id fallback agence (optionnel)
+
+# ── Notifications — WhatsApp ──────────────────────────────────────
+WHATSAPP_ENABLED=false
+WHATSAPP_MODE=meta               # "meta" | "evolution"
+
+# Mode Meta WhatsApp Business Cloud API (recommandé)
+WA_PHONE_ID=                     # Phone Number ID depuis Meta Business Manager
+WA_TOKEN=                        # Access Token permanent Meta
+WA_TEMPLATE_NAME=os_projet_alerte
+
+# Mode Evolution API (self-hosted, sans compte Meta)
+EVOLUTION_API_KEY=changeme-evolution
+# EVOLUTION_URL et EVOLUTION_INSTANCE sont dans config.yaml du module
+
+# ── SMTP (notifications email) ────────────────────────────────────
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=notifications@agence.fr
+SMTP_PASSWORD=mot_de_passe_application
+SMTP_FROM=OS Projet <notifications@agence.fr>
 ```
 
 ---
@@ -3118,8 +3152,10 @@ RATE_LIMIT_READ=1000/minute      # GET endpoints
 | 18 | Déploiement | Local (Docker Desktop) ou serveur privé OVH/Hetzner — même compose, différente infra hôte |
 | 19 | Couches connaissance | 4 niveaux (publique / agence / projet / sensible) — accès filtré par rôle à chaque appel LLM |
 | 20 | Prompt steering | Prompts admin injectés dans chaque appel LLM — ton, juridique, créativité, confidentialité, périmètre |
-| 21 | Intégrations v1 | Notion (sync) + SMTP (notifications) |
-| 22 | Intégrations v2 | Slack, Trello, Teams, WhatsApp Business — modules autonomes |
+| 21 | Intégrations v1 | Notion (sync) + SMTP + Telegram + WhatsApp (module `notifications/`) |
+| 22 | Intégrations v2 | Slack, Teams — ajout via provider pattern sans modifier l'existant |
+| 23 | WhatsApp bidirectionnel | v2 — webhook Meta pour répondre aux alertes depuis WhatsApp |
+| 24 | Telegram bot commands | v2 — `/statut`, `/alertes`, `/planning` depuis Telegram |
 
 ---
 
@@ -3476,5 +3512,1075 @@ if alert.severite == 'critical':
 
 ---
 
-*Dernière mise à jour : 2026-03-21*
+---
+
+## 20. NOTIFICATIONS ENGINE — Telegram, WhatsApp & Multicanal
+
+### 20.1 Principe architectural — Provider pattern
+
+Le moteur de notifications utilise un **pattern provider** : chaque canal est un plugin indépendant. Ajouter un canal = ajouter un fichier dans `providers/` sans toucher au reste du code. Principe **Open/Closed** : ouvert à l'extension, fermé à la modification.
+
+```
+modules/notifications/
+├── manifest.yaml
+├── config.yaml
+├── models.py              # NotificationLog, UserNotificationPreference
+├── schemas.py
+├── router.py              # /notifications/*
+├── engine.py              # dispatch, retry, rate limiting
+└── providers/
+    ├── __init__.py
+    ├── base.py            # Abstract NotificationProvider
+    ├── smtp.py            # Email SMTP (toujours actif si configuré)
+    ├── telegram.py        # Telegram Bot API (python-telegram-bot)
+    └── whatsapp.py        # Meta WhatsApp Business Cloud API ou Evolution API
+```
+
+---
+
+### 20.2 Base abstraite (`providers/base.py`)
+
+```python
+from abc import ABC, abstractmethod
+from typing import Optional
+from dataclasses import dataclass
+
+@dataclass
+class NotificationPayload:
+    recipient: str          # email | telegram_chat_id | numéro whatsapp (ex: "33612345678")
+    subject: str            # objet (email) ou titre (autres canaux)
+    body: str               # corps du message (Markdown supporté)
+    affaire_id: Optional[str] = None
+    event_type: Optional[str] = None
+    priority: str = "info"  # info | warning | critical
+
+class NotificationProvider(ABC):
+    channel_name: str       # "smtp" | "telegram" | "whatsapp"
+
+    @abstractmethod
+    async def send(self, payload: NotificationPayload) -> bool:
+        """Envoie une notification. Retourne True si succès."""
+        ...
+
+    @abstractmethod
+    async def health_check(self) -> bool:
+        """Vérifie que le provider est opérationnel (utilisé par /notifications/providers/health)."""
+        ...
+```
+
+---
+
+### 20.3 Provider Telegram (`providers/telegram.py`)
+
+```python
+# Dépendance : pip install python-telegram-bot
+import telegram
+from .base import NotificationProvider, NotificationPayload
+
+ICONS = {"critical": "🔴", "warning": "🟡", "info": "🔵"}
+
+class TelegramProvider(NotificationProvider):
+    channel_name = "telegram"
+
+    def __init__(self, token: str):
+        self.bot = telegram.Bot(token=token)
+
+    async def send(self, payload: NotificationPayload) -> bool:
+        icon = ICONS.get(payload.priority, "⚪")
+        text = f"{icon} *{payload.subject}*\n\n{payload.body}"
+        if payload.affaire_id:
+            text += f"\n\n_Affaire : `{payload.affaire_id}`_"
+        await self.bot.send_message(
+            chat_id=payload.recipient,
+            text=text,
+            parse_mode="Markdown"
+        )
+        return True
+
+    async def health_check(self) -> bool:
+        me = await self.bot.get_me()
+        return me is not None
+```
+
+> **Setup Telegram** : créer un bot via @BotFather → récupérer `TELEGRAM_TOKEN`. Chaque utilisateur doit envoyer `/start` au bot pour que son `chat_id` soit enregistrable. Le chat_id est stocké dans `notification_preferences.recipient`.
+
+---
+
+### 20.4 Provider WhatsApp (`providers/whatsapp.py`)
+
+Deux modes supportés, sélectionnables via `WHATSAPP_MODE` dans `.env` :
+
+#### Mode A — Meta WhatsApp Business Cloud API *(recommandé, officiel)*
+
+```python
+import httpx
+from .base import NotificationProvider, NotificationPayload
+
+class WhatsAppMetaProvider(NotificationProvider):
+    channel_name = "whatsapp"
+    BASE_URL = "https://graph.facebook.com/v18.0"
+
+    def __init__(self, phone_id: str, token: str, template_name: str = "os_projet_alerte"):
+        self.phone_id = phone_id
+        self.token = token
+        self.template_name = template_name
+
+    async def send(self, payload: NotificationPayload) -> bool:
+        # Envoi via template WhatsApp approuvé par Meta
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{self.BASE_URL}/{self.phone_id}/messages",
+                headers={"Authorization": f"Bearer {self.token}"},
+                json={
+                    "messaging_product": "whatsapp",
+                    "to": payload.recipient,          # format international sans + : "33612345678"
+                    "type": "template",
+                    "template": {
+                        "name": self.template_name,
+                        "language": {"code": "fr"},
+                        "components": [{
+                            "type": "body",
+                            "parameters": [
+                                {"type": "text", "text": payload.subject},
+                                {"type": "text", "text": payload.body[:1000]},
+                            ]
+                        }]
+                    }
+                }
+            )
+        return resp.status_code == 200
+
+    async def health_check(self) -> bool:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self.BASE_URL}/{self.phone_id}",
+                headers={"Authorization": f"Bearer {self.token}"}
+            )
+        return resp.status_code == 200
+```
+
+> **Setup Meta** : créer un compte Meta Business → activer WhatsApp Business API → obtenir `WA_PHONE_ID` + `WA_TOKEN`. Créer un template de message approuvé (ex: `os_projet_alerte`) dans le Meta Business Manager. Délai d'approbation : 24-48h.
+
+#### Mode B — Evolution API *(self-hosted, sans compte Meta)*
+
+```python
+import httpx
+from .base import NotificationProvider, NotificationPayload
+
+ICONS = {"critical": "🔴", "warning": "🟡", "info": "🔵"}
+
+class WhatsAppEvolutionProvider(NotificationProvider):
+    channel_name = "whatsapp"
+
+    def __init__(self, base_url: str, api_key: str, instance: str):
+        self.base_url = base_url      # http://evolution-api:8080
+        self.api_key = api_key
+        self.instance = instance      # nom de l'instance (ex: "arceag")
+
+    async def send(self, payload: NotificationPayload) -> bool:
+        icon = ICONS.get(payload.priority, "⚪")
+        text = f"{icon} *{payload.subject}*\n\n{payload.body}"
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{self.base_url}/message/sendText/{self.instance}",
+                headers={"apikey": self.api_key},
+                json={"number": payload.recipient, "text": text}
+            )
+        return resp.status_code in (200, 201)
+
+    async def health_check(self) -> bool:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{self.base_url}/instance/fetchInstances",
+                headers={"apikey": self.api_key}
+            )
+        return resp.status_code == 200
+```
+
+> **Setup Evolution API** : scanner le QR code via l'interface web de l'Evolution API pour lier un compte WhatsApp. Nécessite un téléphone WhatsApp dédié ou un compte WhatsApp Business. Container Docker inclus (voir section 14).
+
+---
+
+### 20.5 Engine — Dispatch avec retry (`engine.py`)
+
+```python
+import asyncio
+from typing import Optional
+from core.events import subscribe
+from .models import NotificationLog, UserNotificationPreference
+from .providers.base import NotificationProvider, NotificationPayload
+
+class NotificationEngine:
+    def __init__(self, providers: dict[str, NotificationProvider]):
+        self.providers = providers  # {"smtp": ..., "telegram": ..., "whatsapp": ...}
+
+    async def on_event(self, payload: dict) -> None:
+        """Handler abonné au bus PostgreSQL (notifications_channel, planning_channel, etc.)"""
+        await self.dispatch(
+            event_type=payload["event_type"],
+            subject=payload["subject"],
+            body=payload["body"],
+            affaire_id=payload.get("affaire_id"),
+            priority=payload.get("priority", "info"),
+        )
+
+    async def dispatch(
+        self,
+        event_type: str,
+        subject: str,
+        body: str,
+        affaire_id: Optional[str] = None,
+        priority: str = "info",
+        user_ids: Optional[list[str]] = None,
+    ) -> None:
+        prefs = await UserNotificationPreference.get_for_affaire(affaire_id, user_ids)
+        for pref in prefs:
+            if not pref.should_notify(event_type, priority):
+                continue
+            for channel in pref.active_channels:
+                notif = NotificationPayload(
+                    recipient=pref.channel_recipient(channel),
+                    subject=subject,
+                    body=body,
+                    affaire_id=affaire_id,
+                    event_type=event_type,
+                    priority=priority,
+                )
+                asyncio.create_task(self._send_with_retry(channel, notif))
+
+    async def _send_with_retry(
+        self, channel: str, payload: NotificationPayload, max_attempts: int = 3
+    ) -> None:
+        """Retry exponentiel : 1s → 2s → 4s. Log chaque tentative."""
+        provider = self.providers.get(channel)
+        if not provider:
+            return
+        last_error = None
+        for attempt in range(max_attempts):
+            try:
+                success = await provider.send(payload)
+                status = "sent" if success else "failed"
+                await NotificationLog.create(channel=channel, payload=payload, status=status)
+                if success:
+                    return
+            except Exception as e:
+                last_error = e
+                await asyncio.sleep(2 ** attempt)
+        await NotificationLog.create(channel=channel, payload=payload, status="failed", error=str(last_error))
+
+    async def check_all_providers(self) -> dict[str, bool]:
+        """Health check de tous les providers (tâche planifiée toutes les 15 min)."""
+        return {name: await p.health_check() for name, p in self.providers.items()}
+```
+
+---
+
+### 20.6 Tables DB (`models.py`)
+
+```sql
+-- Préférences de notification par utilisateur et par canal
+CREATE TABLE notification_preferences (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    channel     VARCHAR(20)  NOT NULL,         -- smtp | telegram | whatsapp
+    recipient   VARCHAR(255) NOT NULL,         -- email | chat_id Telegram | numéro WhatsApp
+    min_priority VARCHAR(10) DEFAULT 'warning', -- info | warning | critical
+    event_types TEXT[],                        -- NULL = tous les événements
+    active      BOOLEAN DEFAULT true,
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(user_id, channel)
+);
+
+-- Journal de tous les envois (audit + debug)
+CREATE TABLE notification_logs (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id     UUID REFERENCES users(id),
+    channel     VARCHAR(20)  NOT NULL,
+    recipient   VARCHAR(255) NOT NULL,
+    event_type  VARCHAR(100),
+    affaire_id  UUID REFERENCES affaires(id),
+    subject     TEXT,
+    status      VARCHAR(20)  NOT NULL,         -- sent | failed | skipped
+    error       TEXT,
+    sent_at     TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX idx_notif_logs_affaire ON notification_logs(affaire_id);
+CREATE INDEX idx_notif_logs_user    ON notification_logs(user_id);
+CREATE INDEX idx_notif_logs_status  ON notification_logs(status, sent_at DESC);
+```
+
+---
+
+### 20.7 `manifest.yaml`
+
+```yaml
+name: notifications
+version: "1.0.0"
+prefix: /notifications
+enabled: true
+depends_on:
+  - auth
+  - events_engine
+description: "Moteur de notifications multicanal — SMTP, Telegram, WhatsApp"
+scheduled_tasks:
+  - name: health_check_providers
+    cron: "*/15 * * * *"
+    handler: engine.check_all_providers
+event_subscriptions:
+  - channel: notifications_channel
+    handler: engine.on_event
+  - channel: planning_channel
+    handler: engine.on_event
+  - channel: finance_channel
+    handler: engine.on_event
+```
+
+---
+
+### 20.8 `config.yaml`
+
+```yaml
+providers:
+  smtp:
+    enabled: true                    # toujours actif si SMTP_HOST défini
+  telegram:
+    enabled: false                   # activer avec TELEGRAM_TOKEN dans .env
+    default_chat_id: ""              # chat_id global agence (fallback si pas de préf user)
+  whatsapp:
+    enabled: false                   # activer avec WA_PHONE_ID + WA_TOKEN dans .env
+    mode: "meta"                     # "meta" | "evolution"
+    template_name: "os_projet_alerte"
+    evolution_url: "http://evolution-api:8080"
+    evolution_instance: "arceag"
+
+routing:
+  # Canaux par défaut selon la priorité (si l'utilisateur n'a pas de préférences)
+  critical: [smtp, telegram, whatsapp]
+  warning:  [smtp, telegram]
+  info:     [smtp]
+
+digest:
+  enabled: false                     # true = regrouper les notifications "info" en un digest quotidien
+  schedule: "08:00"
+  channels: [smtp]                   # le digest ne part que par email
+```
+
+---
+
+### 20.9 Endpoints (`router.py`)
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/notifications/test` | Envoyer une notification de test sur un canal |
+| GET | `/notifications/preferences` | Lire ses préférences (user courant) |
+| PUT | `/notifications/preferences` | Mettre à jour ses préférences (canaux, seuils, types) |
+| GET | `/notifications/logs` | Historique des envois (admin uniquement) |
+| GET | `/notifications/logs/{affaire_id}` | Historique par affaire |
+| GET | `/notifications/providers/health` | Statut de chaque provider (admin) |
+
+---
+
+### 20.10 Intégration dans le bus d'événements
+
+Les modules émetteurs publient sur `notifications_channel` via le bus PostgreSQL. Le module notifications est le seul abonné à ce canal.
+
+**Events engine** — sur alerte créée :
+```python
+await publish("notifications_channel", {
+    "event_type": alert.type,
+    "subject": f"[{alert.severite.upper()}] {alert.message[:80]}",
+    "body": alert.message,
+    "affaire_id": str(alert.affaire_id),
+    "priority": alert.severite,
+})
+```
+
+**Planning engine** — sur retard détecté :
+```python
+await publish("notifications_channel", {
+    "event_type": "retard_planning",
+    "subject": f"Retard — {lot.nom}",
+    "body": f"Le lot {lot.nom} accuse un retard de {delta}j. Impact cascade calculé.",
+    "affaire_id": str(lot.affaire_id),
+    "priority": "critical" if delta > 7 else "warning",
+})
+```
+
+**Finance engine** — sur dépassement budget :
+```python
+await publish("notifications_channel", {
+    "event_type": "budget_critique",
+    "subject": f"Budget critique — {lot.nom}",
+    "body": f"Lot {lot.nom} : {pct}% du marché engagé.",
+    "affaire_id": str(lot.affaire_id),
+    "priority": "critical",
+})
+```
+
+---
+
+### 20.11 Docker Compose — services optionnels notifications
+
+```yaml
+  # Bot Telegram — aucun container supplémentaire nécessaire
+  # Le polling fonctionne in-process via python-telegram-bot (Webhook optionnel en v2)
+
+  # Evolution API — pont WhatsApp self-hosted (mode B uniquement)
+  # Activer avec : docker compose --profile whatsapp-evolution up -d
+  evolution-api:
+    image: atendai/evolution-api:latest
+    profiles: [whatsapp-evolution]
+    environment:
+      SERVER_URL: http://evolution-api:8080
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://arceag:${DB_PASSWORD}@db:5432/arceag
+      QRCODE_LIMIT: 30
+    volumes:
+      - evolution_data:/evolution/instances
+    ports:
+      - "8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+```
+
+Ajouter dans la section `volumes:` :
+```yaml
+  evolution_data:
+```
+
+---
+
+## 21. OPTIMISATIONS — UX, Maintenabilité & Pérennité
+
+### 21.1 UX — Expérience utilisateur
+
+| Problème actuel | Solution recommandée |
+|-----------------|----------------------|
+| Pas de contrôle sur les notifications reçues | Table `notification_preferences` : chaque user choisit ses canaux, son seuil de priorité, et les types d'événements |
+| Flood de notifications sur des projets actifs | Mode **digest** : les notifications `info` sont regroupées en un seul email quotidien (configurable dans `config.yaml`) |
+| Messages non adaptés au canal | **Templates Jinja2 par canal** : `templates/notifications/{channel}/{event_type}.j2` — Telegram supporte le Markdown bold/italic, WhatsApp est plus limité, email peut être HTML |
+| Aucun retour si une notification échoue | `notification_logs` + endpoint `/notifications/logs` + alerte admin si provider en échec répété |
+| Impossible de tester sans déclencher un vrai événement | Endpoint `POST /notifications/test` avec payload libre — envoie sur le canal de son choix |
+
+**Templates de messages par canal** (recommandé v2) :
+```
+api/templates/notifications/
+├── telegram/
+│   ├── retard_planning.j2
+│   ├── budget_critique.j2
+│   └── blocage_prolonge.j2
+├── whatsapp/
+│   └── (templates courts, sans Markdown avancé)
+└── smtp/
+    ├── base.html.j2
+    └── retard_planning.html.j2
+```
+
+---
+
+### 21.2 Maintenabilité
+
+**Règles à respecter pour le module notifications :**
+
+1. **Jamais de logique métier dans un provider** — un provider fait uniquement l'appel réseau. La décision de notifier appartient à `engine.py`.
+2. **Un provider = un fichier** — pas de fichier `providers.py` monolithique.
+3. **Chaque provider est testable indépendamment** — mocker `httpx` pour WhatsApp, mocker `telegram.Bot` pour Telegram.
+4. **Config sans redéploiement** — activer/désactiver un canal via `config.yaml` (ou toggle admin), sans toucher au code.
+5. **Health check obligatoire** — chaque provider implémente `health_check()`. La tâche planifiée détecte les pannes et loggue une alerte admin.
+6. **Retry transparent** — l'engine gère le retry, pas le provider. Un provider qui lève une exception est considéré en échec.
+
+**Tests à écrire (par provider) :**
+```python
+# test_telegram_provider.py
+async def test_send_success(mock_bot):
+    provider = TelegramProvider(token="fake")
+    provider.bot = mock_bot
+    result = await provider.send(NotificationPayload(recipient="123", subject="Test", body="Corps"))
+    assert result is True
+    mock_bot.send_message.assert_called_once()
+
+# test_notification_engine.py
+async def test_dispatch_respects_min_priority():
+    # Un user avec min_priority="critical" ne reçoit pas un event "info"
+    ...
+
+async def test_retry_on_provider_failure():
+    # Vérifier que 3 tentatives sont faites avant d'abandonner
+    ...
+```
+
+---
+
+### 21.3 Pérennité — Future-proofing
+
+**Ajouter un nouveau canal (ex: Slack, Teams, Signal) :**
+1. Créer `providers/slack.py` héritant de `NotificationProvider`
+2. Implémenter `send()` et `health_check()`
+3. Ajouter `slack: {enabled: false, webhook_url: ""}` dans `config.yaml`
+4. Ajouter `SLACK_WEBHOOK_URL=` dans `.env`
+5. **Aucune autre modification requise** — l'engine et le router détectent le provider automatiquement
+
+**Évolutions planifiées :**
+
+| Version | Évolution |
+|---------|-----------|
+| v1 | SMTP + Telegram + WhatsApp (one-way, alertes sortantes uniquement) |
+| v2 | **WhatsApp bidirectionnel** — répondre à une alerte depuis WhatsApp déclenche une action (acquitter, commenter) via webhook Meta |
+| v2 | **Telegram bot commands** — `/statut {affaire_id}`, `/alertes`, `/planning` depuis Telegram |
+| v2 | **Templates HTML** pour emails (actuellement texte Markdown) |
+| v2 | Mode digest configurable par user (pas seulement global) |
+| v3 | Slack et Teams comme canaux additionnels |
+| v3 | **Notification push mobile** via PWA (OpenClaw) — Service Worker + Web Push API |
+
+**Décisions d'architecture notifications (closes) :**
+
+| # | Question | Décision |
+|---|----------|----------|
+| N1 | Polling vs Webhook pour Telegram | **Polling** en v1 (plus simple, pas d'exposition publique requise) — Webhook en v2 si serveur accessible |
+| N2 | Meta API vs Evolution API pour WhatsApp | **Meta Cloud API** recommandé (officiel, fiable) — Evolution API en alternative si pas de compte Meta |
+| N3 | Template engine | **Jinja2** (déjà utilisé dans `documents/`) — consistance avec le reste du projet |
+| N4 | Retry strategy | **Exponentiel backoff** 3 tentatives : 1s → 2s → 4s — après échec, log + alerte admin |
+| N5 | Stockage recipient | **Table `notification_preferences`** par user — jamais hardcodé dans `.env` sauf `TELEGRAM_DEFAULT_CHAT_ID` |
+
+---
+
+### 21.4 Refactoring recommandé — Autres modules
+
+Ces améliorations sont indépendantes du module notifications :
+
+#### Events Engine — règles externalisées
+Actuellement les règles sont codées en Python (`engine.py`). Recommandation : les migrer vers un fichier `rules.yaml` chargé au démarrage, permettant à l'admin de modifier les seuils sans redéploiement.
+
+```yaml
+# modules/events_engine/rules.yaml
+rules:
+  - id: deadline_depassee
+    condition: "planning_lot.end_date < today AND statut != 'done'"
+    severity: critical
+    threshold_days: 0
+    notification: true
+  - id: budget_critique
+    condition: "depenses > marche * threshold"
+    severity: critical
+    threshold: 0.95          # modifiable sans toucher au code
+    notification: true
+```
+
+#### Config centralisée — dashboard admin
+L'admin peut modifier les `config.yaml` de chaque module via l'interface admin (`/admin/modules/{name}/config`) sans accès SSH. Les changements sont persistés en DB dans `module_configs` (JSONB) et mergés avec le fichier YAML au démarrage.
+
+#### RAG — chunking adaptatif
+Actuellement le `chunk_size` est fixe. Recommandation : adapter selon le type de document :
+```yaml
+# modules/rag/config.yaml
+chunking:
+  cctp:     {size: 512,  overlap: 64}
+  dtu:      {size: 256,  overlap: 32}
+  email:    {size: 128,  overlap: 16}
+  cr:       {size: 256,  overlap: 32}
+```
+
+#### Memory Engine — archivage automatique
+Ajouter une tâche planifiée hebdomadaire pour archiver les `memory_candidates` en statut `pending` depuis > 7 jours (déjà mentionné en règle 19.9.5 mais pas implémenté dans le planning de développement).
+
+---
+
+## 22. ORDRE DE DÉVELOPPEMENT RÉVISÉ
+
+Suite aux ajouts (module notifications), voici la mise à jour de la Phase 9 :
+
+### Phase 9 — Intégrations & Notifications *(anciennement Phase 9)*
+
+```
+Phase 9a — Notifications engine (SMTP + Telegram)
+  - [ ] Module notifications/ : manifest, config, models, schemas, engine, router
+  - [ ] providers/base.py + providers/smtp.py (migrer la logique SMTP depuis events_engine)
+  - [ ] providers/telegram.py + test
+  - [ ] Tables : notification_preferences, notification_logs
+  - [ ] Migration : notifications_001_preferences, notifications_002_logs
+  - [ ] Endpoint /notifications/test + /preferences + /providers/health
+  - [ ] Abonnement bus : notifications_channel, planning_channel, finance_channel
+  - [ ] Tests : dispatch priorité, retry on failure, health check
+
+Phase 9b — WhatsApp
+  - [ ] providers/whatsapp.py — Mode Meta Cloud API (défaut)
+  - [ ] providers/whatsapp_evolution.py — Mode Evolution API (optionnel)
+  - [ ] Docker Compose : service evolution-api (profile whatsapp-evolution)
+  - [ ] Template WhatsApp approuvé dans Meta Business Manager
+  - [ ] Tests : send avec mock httpx, health check
+
+Phase 9c — Intégrations existantes
+  - [ ] Module admin/syncs : Notion polling → publish sur bus événements
+  - [ ] Export Gantt XLSX
+```
+
+---
+
+---
+
+## 23. OPTIMISATIONS TRANSVERSALES
+
+Ces améliorations s'appliquent à l'ensemble des modules. Elles sont indépendantes les unes des autres et peuvent être intégrées phase par phase.
+
+---
+
+### 23.1 Logs structurés JSON — `core/logging.py`
+
+Remplacer les `print()` et `logging` standard par `structlog` avec sortie JSON. Chaque log porte son contexte métier : affaire, module, durée.
+
+```python
+# api/core/logging.py
+import structlog
+
+log = structlog.get_logger()
+
+# Usage dans n'importe quel module
+log.info("rag.search",     affaire_id=affaire_id, query=query[:60], hits=len(results), duration_ms=elapsed)
+log.warning("llm.timeout", module="planning",     attempt=2,        model=model)
+log.error("storage.upload_failed", key=key,       error=str(e))
+```
+
+Configuration dans `main.py` au démarrage :
+```python
+structlog.configure(
+    processors=[
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.add_log_level,
+        structlog.processors.JSONRenderer(),
+    ]
+)
+```
+
+> **Règle** : tout appel LLM, toute recherche RAG, tout envoi de notification doit produire un log avec `duration_ms`. Filtrable dans Adminer, exportable vers Grafana Loki sans infrastructure supplémentaire.
+
+**À ajouter en Phase 0.** Dépendance : `pip install structlog`.
+
+---
+
+### 23.2 Soft delete sur les tables critiques
+
+Ajouter `deleted_at TIMESTAMPTZ DEFAULT NULL` sur les tables où une suppression accidentelle est irréversible.
+
+**Tables concernées :** `affaires`, `planning_lots`, `project_memory`, `communications`, `documents`, `memory_candidates`
+
+```sql
+ALTER TABLE affaires       ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE planning_lots  ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;
+ALTER TABLE project_memory ADD COLUMN deleted_at TIMESTAMPTZ DEFAULT NULL;
+-- (etc.)
+```
+
+**Règle dans tous les routers :**
+```python
+# DELETE → PATCH soft delete
+@router.delete("/{id}")
+async def soft_delete(id: UUID, db: AsyncSession = Depends(get_db)):
+    await db.execute(
+        update(Model).where(Model.id == id).values(deleted_at=datetime.utcnow())
+    )
+
+# Tous les SELECT filtrent automatiquement
+stmt = select(Model).where(Model.deleted_at.is_(None))
+```
+
+**Restauration (admin uniquement) :**
+```
+PATCH /admin/restore/{table}/{id}  →  SET deleted_at = NULL
+```
+
+> **Règle de dev (ajout à la section 17) :** Tout `DELETE` HTTP sur une ressource métier est un soft delete. Seul l'admin peut purger définitivement via `/admin/purge`.
+
+**À ajouter en Phase 1** (migration `core_001_soft_delete`).
+
+---
+
+### 23.3 `/health` — Endpoint de santé unifié
+
+```python
+# api/core/health.py
+@router.get("/health")
+async def health(db: AsyncSession = Depends(get_db)) -> dict:
+    checks = {}
+
+    # Base de données
+    try:
+        await db.execute(text("SELECT 1"))
+        checks["db"] = "ok"
+    except Exception:
+        checks["db"] = "error"
+
+    # MinIO
+    checks["minio"] = await storage_service.ping()
+
+    # Ollama / LLM
+    checks["llm"] = await llm_service.ping()
+
+    # Providers de notification (si module activé)
+    if registry.is_enabled("notifications"):
+        checks["notifications"] = await notification_engine.check_all_providers()
+
+    overall = "ok" if all(v == "ok" for v in checks.values() if isinstance(v, str)) else "degraded"
+    return {"status": overall, **checks}
+```
+
+Réponse exemple :
+```json
+{
+  "status": "degraded",
+  "db": "ok",
+  "minio": "ok",
+  "llm": "ok",
+  "notifications": {"smtp": "ok", "telegram": "ok", "whatsapp": "error"}
+}
+```
+
+> Utilisé par Docker `healthcheck`, Traefik, et la page d'accueil admin. Retourne HTTP 200 même en `"degraded"` — HTTP 503 uniquement si `db` est `"error"` (service inutilisable).
+
+**À ajouter en Phase 0.** Exempté d'auth (comme `/auth/login`).
+
+---
+
+### 23.4 Vérification des migrations au démarrage
+
+Dans `api/main.py`, avant `app.include_router(...)` :
+
+```python
+from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
+from sqlalchemy import create_engine
+
+def check_migrations() -> None:
+    engine = create_engine(settings.DATABASE_URL.replace("+asyncpg", ""))
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        current = ctx.get_current_revision()
+    script = ScriptDirectory.from_config(alembic_cfg)
+    head = script.get_current_head()
+    if current != head:
+        raise RuntimeError(
+            f"Base de données non à jour. Lancer : alembic upgrade head\n"
+            f"  Actuelle : {current}\n"
+            f"  Attendue : {head}"
+        )
+
+@app.on_event("startup")
+async def startup():
+    check_migrations()
+    await registry.load_all()
+```
+
+> Empêche le démarrage silencieux sur une base partiellement migrée. Crash explicite = bien meilleur que bug mystérieux en prod.
+
+**À ajouter en Phase 0.**
+
+---
+
+### 23.5 Seed data de développement — `db/seed_dev.py`
+
+Script à lancer une seule fois pour peupler la base avec une affaire fictive complète. Permet d'onboarder un nouveau développeur sans données réelles.
+
+```python
+# db/seed_dev.py
+"""
+Usage : python db/seed_dev.py
+Peuple la DB avec une affaire fictive "Réhabilitation Hôtel de Ville - Pontoise"
+"""
+SEED_AFFAIRE = {
+    "nom": "Réhabilitation Hôtel de Ville — Pontoise",
+    "reference": "2024-DEV-001",
+    "phase": "EXE",
+    "intervenants": [
+        {"nom": "Bâti+", "role": "GO", "email": "contact@batip.fr"},
+        {"nom": "ThermoPro", "role": "CVC", "email": "contact@thermopro.fr"},
+    ],
+    "lots": [
+        {"nom": "Gros Œuvre", "duree_jours": 60, "statut": "in_progress"},
+        {"nom": "Charpente", "duree_jours": 20, "statut": "pending", "depends_on": ["Gros Œuvre"]},
+        {"nom": "CVC", "duree_jours": 30, "statut": "pending"},
+    ],
+    "memory": [
+        {"content": "Isolation en ITE décidée en APS — EPS 120mm, enduit minéral.", "type_memory": "decision", "importance": "info"},
+        {"content": "Risque amiante confirmé en zone combles — expertise avant démolition obligatoire.", "type_memory": "risk", "importance": "critical"},
+    ],
+}
+```
+
+> Inclure dans le `README.md` : `python db/seed_dev.py` après `alembic upgrade head`.
+
+**À ajouter en Phase 1.** Ne jamais lancer en production (guard `if settings.DEBUG is False: raise`).
+
+---
+
+### 23.6 Cache sémantique des requêtes RAG
+
+Si la même question (ou une question très proche) est posée sur la même affaire dans les dernières 24h, retourner le résultat en cache sans appel LLM.
+
+```sql
+CREATE TABLE rag_cache (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    affaire_id      UUID NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
+    query_embedding vector(768) NOT NULL,
+    query_text      TEXT NOT NULL,
+    response        JSONB NOT NULL,           -- {answer, sources, model}
+    created_at      TIMESTAMPTZ DEFAULT now(),
+    expires_at      TIMESTAMPTZ NOT NULL       -- now() + interval '24h'
+);
+CREATE INDEX idx_rag_cache_affaire ON rag_cache(affaire_id, expires_at);
+```
+
+```python
+# Dans rag_service.py, avant l'appel LLM
+async def search_with_cache(query: str, affaire_id: str) -> dict:
+    query_emb = await embed(query)
+    # Chercher une entrée récente avec similarité > 0.90
+    cached = await db.execute(
+        text("""
+            SELECT response FROM rag_cache
+            WHERE affaire_id = :aid
+              AND expires_at > now()
+              AND 1 - (query_embedding <=> :emb) > 0.90
+            ORDER BY query_embedding <=> :emb
+            LIMIT 1
+        """),
+        {"aid": affaire_id, "emb": query_emb}
+    )
+    if cached.scalar():
+        log.info("rag.cache_hit", affaire_id=affaire_id)
+        return cached.scalar()
+    # Sinon, appel LLM normal + mise en cache
+    result = await _search_llm(query_emb, affaire_id)
+    await _store_cache(affaire_id, query_emb, query, result)
+    return result
+```
+
+> **Seuil recommandé :** 0.90 (légèrement moins strict que la dédup mémoire). TTL : 24h par défaut, configurable dans `rag/config.yaml`.
+
+**À ajouter en Phase 5** (avec le module RAG). Migration : `rag_001_cache`.
+
+---
+
+### 23.7 Versioning des prompts LLM
+
+Les prompts sont actuellement des strings dans le code. Les extraire en DB pour permettre modification et rollback sans redéploiement.
+
+```sql
+CREATE TABLE prompt_versions (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    module      VARCHAR(50) NOT NULL,     -- "planning", "meeting", "memory"…
+    name        VARCHAR(100) NOT NULL,    -- "cctp_extraction", "cr_analysis"…
+    version     INTEGER NOT NULL DEFAULT 1,
+    content     TEXT NOT NULL,
+    active      BOOLEAN DEFAULT false,    -- un seul actif par (module, name)
+    created_at  TIMESTAMPTZ DEFAULT now(),
+    created_by  UUID REFERENCES users(id),
+    UNIQUE(module, name, version)
+);
+CREATE UNIQUE INDEX idx_prompt_active ON prompt_versions(module, name) WHERE active = true;
+```
+
+```python
+# Dans core/services/llm_service.py
+async def get_prompt(module: str, name: str) -> str:
+    """Retourne le prompt actif. Fallback sur le fichier si absent en DB."""
+    row = await db.execute(
+        select(PromptVersion.content)
+        .where(PromptVersion.module == module, PromptVersion.name == name, PromptVersion.active == True)
+    )
+    return row.scalar() or _load_default_prompt(module, name)
+```
+
+Endpoints admin :
+```
+GET    /admin/prompts                     → lister tous les prompts (module, name, version, active)
+GET    /admin/prompts/{module}/{name}     → historique des versions
+POST   /admin/prompts/{module}/{name}     → créer une nouvelle version
+PATCH  /admin/prompts/{module}/{name}/activate/{version}  → activer une version
+```
+
+**À ajouter en Phase 2** (avec le module admin). Migration : `admin_002_prompt_versions`.
+
+---
+
+### 23.8 Pagination cursor-based
+
+Remplacer la pagination offset (`?page=2`) par la pagination cursor (`?after=<uuid>`) sur tous les endpoints de listing. Plus stable quand des enregistrements sont insérés entre deux requêtes.
+
+```python
+# core/pagination.py
+from typing import TypeVar, Generic, Optional
+from pydantic import BaseModel
+
+T = TypeVar("T")
+
+class CursorPage(BaseModel, Generic[T]):
+    items: list[T]
+    next_cursor: Optional[str] = None   # UUID du dernier item, None si dernière page
+    total: Optional[int] = None         # optionnel, coûteux sur grandes tables
+
+# Usage dans un router
+async def list_lots(
+    affaire_id: UUID,
+    after: Optional[UUID] = None,       # cursor
+    limit: int = Query(default=50, le=200),
+):
+    stmt = (
+        select(PlanningLot)
+        .where(PlanningLot.affaire_id == affaire_id, PlanningLot.deleted_at.is_(None))
+        .order_by(PlanningLot.created_at.asc(), PlanningLot.id.asc())
+        .limit(limit + 1)
+    )
+    if after:
+        # Récupérer le created_at du cursor pour paginer proprement
+        cursor_row = await db.get(PlanningLot, after)
+        stmt = stmt.where(
+            (PlanningLot.created_at > cursor_row.created_at) |
+            ((PlanningLot.created_at == cursor_row.created_at) & (PlanningLot.id > after))
+        )
+    rows = (await db.execute(stmt)).scalars().all()
+    has_more = len(rows) > limit
+    return CursorPage(
+        items=rows[:limit],
+        next_cursor=str(rows[limit - 1].id) if has_more else None,
+    )
+```
+
+**À appliquer sur :** `planning_lots`, `chantier_events`, `communications`, `notification_logs`, `project_memory`.
+
+**À ajouter en Phase 1.**
+
+---
+
+### 23.9 Feature flags par affaire
+
+Permet d'activer un module expérimental sur un projet test avant déploiement global.
+
+```sql
+CREATE TABLE affaire_features (
+    affaire_id  UUID NOT NULL REFERENCES affaires(id) ON DELETE CASCADE,
+    feature     VARCHAR(50) NOT NULL,   -- "memory", "notifications", "digest"
+    enabled     BOOLEAN DEFAULT true,
+    PRIMARY KEY (affaire_id, feature)
+);
+```
+
+```python
+# core/features.py
+async def is_enabled(affaire_id: str, feature: str) -> bool:
+    """
+    Priorité : affaire_features > modules.yaml global
+    Si absent de affaire_features → utilise le défaut du module (manifest.yaml)
+    """
+    row = await db.execute(
+        select(AffaireFeature.enabled)
+        .where(AffaireFeature.affaire_id == affaire_id, AffaireFeature.feature == feature)
+    )
+    result = row.scalar()
+    return result if result is not None else registry.is_enabled(feature)
+```
+
+```
+GET  /admin/affaires/{id}/features          → lister les features de l'affaire
+PUT  /admin/affaires/{id}/features/{name}   → activer/désactiver
+```
+
+**À ajouter en Phase 2** (avec le module admin). Migration : `admin_003_affaire_features`.
+
+---
+
+### 23.10 Export complet d'une affaire
+
+Génère un ZIP autonome contenant toutes les données d'une affaire. Garantit la non-dépendance à l'outil.
+
+```
+GET /admin/affaires/{id}/export
+```
+
+Contenu du ZIP `{reference}_{date}.zip` :
+```
+export/
+├── affaire.json              # métadonnées, intervenants, phases
+├── planning/
+│   ├── lots.json
+│   └── gantt.csv
+├── memory/
+│   └── project_memory.json
+├── communications/
+│   └── registre.json
+├── documents/
+│   └── cr_reunions.json
+├── files/                    # pièces binaires téléchargées depuis MinIO
+│   ├── {storage_key_1}.pdf
+│   └── {storage_key_2}.docx
+└── README.txt                # instructions pour réimporter
+```
+
+> Rassure les clients sur la portabilité. À documenter dans `INSTALL.md`.
+
+**À ajouter en Phase 9** (intégrations). Endpoint admin uniquement.
+
+---
+
+### 23.11 `CHANGELOG.md` — suivi des versions livrées
+
+Fichier à la racine, mis à jour à chaque merge sur `main` :
+
+```markdown
+# CHANGELOG
+
+## v0.1.0 — 2026-XX-XX
+### Ajouté
+- Infrastructure Docker (db, api, openwebui, minio, ollama)
+- Kernel : registry, auth JWT, services core
+- Module auth : users, rôles, permissions affaire
+
+## v0.2.0 — 2026-XX-XX
+### Ajouté
+- Module chantier : affaires, intervenants, chantier_events
+- Soft delete sur tables critiques
+- /health endpoint unifié
+```
+
+> Utilisé en début de session Claude pour reprendre le contexte exact de l'avancement sans relire 4 000 lignes de DEVPLAN.
+
+---
+
+### 23.12 Tableau récapitulatif — intégration dans le planning
+
+| # | Optimisation | Phase | Migration | Effort estimé |
+|---|---|---|---|---|
+| 23.1 | Logs structurés (`structlog`) | 0 | — | 2h |
+| 23.3 | `/health` unifié | 0 | — | 2h |
+| 23.4 | Vérification migrations au boot | 0 | — | 1h |
+| 23.5 | Seed data développement | 1 | — | 3h |
+| 23.2 | Soft delete tables critiques | 1 | `core_001_soft_delete` | 3h |
+| 23.8 | Pagination cursor-based | 1 | — | 4h |
+| 23.7 | Versioning prompts LLM | 2 | `admin_002_prompt_versions` | 1j |
+| 23.9 | Feature flags par affaire | 2 | `admin_003_affaire_features` | 1j |
+| 23.6 | Cache sémantique RAG | 5 | `rag_001_cache` | 1j |
+| 23.10 | Export ZIP affaire | 9 | — | 1j |
+| 23.11 | `CHANGELOG.md` | Maintenant | — | 30min |
+
+---
+
+### Règles de dev supplémentaires (compléments à la section 17)
+
+```
+33. Soft delete obligatoire sur toutes les tables métier (affaires, lots, mémoire, communications, documents)
+34. Tout appel LLM et toute recherche RAG produit un log structuré avec duration_ms
+35. /health est exempté d'auth — retourne 200 même en état dégradé, 503 uniquement si db=error
+36. Jamais de DELETE physique en HTTP pour une ressource métier — uniquement via /admin/purge (admin)
+37. Toute feature expérimentale passe par affaire_features avant activation globale
+38. Les prompts LLM sont versionnés en DB dès la Phase 2 — pas de string hardcodée au-delà de la Phase 1
+```
+
+---
+
+*Dernière mise à jour : 2026-03-24*
 *Auteur : Claude (session OS Chantier)*
