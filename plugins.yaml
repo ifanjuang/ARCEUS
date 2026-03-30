@@ -1,0 +1,86 @@
+# plugins.yaml — services externes optionnels
+# Activer un plugin → enabled: true + docker compose --profile <profile> up -d
+# Désactiver       → enabled: false  (le container sera ignoré au prochain up)
+
+plugins:
+
+  - name: portainer
+    label: "Portainer"
+    description: "Interface web de gestion Docker — stacks, containers, logs"
+    profile: portainer
+    enabled: true   # inclus dans docker-compose.yml de base (sans profile)
+    url: "http://localhost:9090"
+    icon: "🐳"
+    config_keys: []  # pas de config .env requise
+
+  - name: ollama
+    label: "Ollama (IA locale)"
+    description: "Serveur LLM local — modèles Mistral, Llama, Gemma…"
+    profile: ""      # inclus par défaut dans docker-compose.yml
+    enabled: true
+    url: "http://localhost:11434"
+    icon: "🦙"
+    config_keys:
+      - OLLAMA_BASE_URL
+      - OLLAMA_MODEL
+      - OLLAMA_EMBEDDING_MODEL
+      - EMBEDDING_DIM
+
+  - name: hermes-agent
+    label: "Hermes Agent"
+    description: "Agent IA autonome avec skills auto-améliorants — questions générales MOE"
+    profile: hermes
+    enabled: false
+    url: "http://localhost:8083"
+    icon: "🤖"
+    repo: "https://github.com/NousResearch/hermes-agent"
+    config_keys:
+      - HERMES_API_KEY
+      - HERMES_MODEL
+
+  - name: evolution-api
+    label: "Evolution API (WhatsApp)"
+    description: "Pont WhatsApp self-hosted — alternative à l'API Meta officielle"
+    profile: whatsapp-evolution
+    enabled: false
+    url: "http://localhost:8082"
+    icon: "💬"
+    config_keys:
+      - EVOLUTION_API_KEY
+      - WHATSAPP_MODE
+
+  - name: mem0
+    label: "mem0"
+    description: "Couche mémoire persistante pour agents IA — dédup + contexte cross-sessions"
+    profile: mem0
+    enabled: false
+    url: ""
+    icon: "🧠"
+    repo: "https://github.com/mem0ai/mem0"
+    config_keys: []  # intégré comme lib Python, pas de service séparé
+    note: "Intégré comme dépendance Python dans le module memory — pas un service Docker"
+
+  - name: evolver
+    label: "EvoMap Evolver"
+    description: "Agent méta-évolution GEP — auto-amélioration par analyse du runtime (Node.js, hub evomap.ai requis)"
+    profile: evolver
+    enabled: false
+    url: ""
+    icon: "🧬"
+    repo: "https://github.com/EvoMap/evolver"
+    note: "S'inspirer du protocole GEP pour le module memory — ne pas activer en production (dépendance evomap.ai externe)"
+    config_keys:
+      - A2A_NODE_ID
+      - A2A_HUB_URL
+      - EVOLVE_STRATEGY
+      - EVOLVER_ROLLBACK_MODE
+      - EVOLVER_LLM_REVIEW
+
+  - name: adminer
+    label: "Adminer (DB UI)"
+    description: "Interface web légère pour consulter la base PostgreSQL"
+    profile: dev
+    enabled: false
+    url: "http://localhost:8080"
+    icon: "🗄"
+    config_keys: []

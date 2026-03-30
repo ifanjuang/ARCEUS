@@ -4633,12 +4633,22 @@ Fichier à la racine, mis à jour à chaque merge sur `main` :
 
 ---
 
-### 24.5 Xiucheng Self-Improving Agent (clawhub.ai/xiucheng)
+### 24.5 EvoMap Evolver / GEP Protocol (clawhub.ai/xiucheng)
 
 - **URL :** https://clawhub.ai/xiucheng/xiucheng-self-improving-agent
-- **Ce que c'est :** Agent auto-améliorant (dans la veine de Hermes Agent — à confirmer, accès restreint).
-- **Pertinence :** 🔲 **À évaluer** — complémentaire ou alternatif à Hermes Agent pour les questions générales.
-- **À faire :** Comparer avec Hermes Agent lors de la Phase 6.
+- **Repo :** https://github.com/EvoMap/evolver
+- **Ce que c'est :** Meta-skill Node.js de récursive auto-amélioration via le **protocole GEP** (Gene Evolution Protocol). Inspecte son propre historique runtime, détecte failures/inefficacités, réécrit son propre code. Connecté au hub réseau EvoMap (evomap.ai) via protocole A2A.
+- **Stack :** Node.js, MIT, hub externe evomap.ai obligatoire pour A2A.
+- **Protocole GEP (le vrai apport) :**
+  - `genes.json` — définitions réutilisables de comportements
+  - `capsules.json` — succès capitalisés (évite de re-raisonner)
+  - `events.jsonl` — log append-only des évolutions (arborescent, auditable)
+  - Stratégies : `balanced / innovate / harden / repair-only / auto`
+- **Pertinence :** ⚠️ **Mitigée**
+  - ✅ Le **pattern GEP** (genes/capsules/events) est excellent — structure idéale pour la mémoire d'agent dans le module `memory`
+  - ❌ Dépendance externe evomap.ai obligatoire — contraire au principe self-hosted d'ARCEAG
+  - ❌ Node.js — service séparé dans un stack Python
+- **À faire :** S'inspirer du protocole GEP pour structurer la table `memory_items` (Phase 5) : `type IN ('gene','capsule','event')`. Ne pas intégrer le service Evolver en production.
 
 ---
 
@@ -4648,6 +4658,6 @@ Fichier à la racine, mis à jour à chaque merge sur `main` :
 |-------|-------------|----------|
 | mem0 | Phase 5 (memory) | ✅ Intégrer — candidat prioritaire |
 | Hermes Agent | Phase 6+ | ✅ Intégrer — agent général + gateway messagerie |
+| GEP Protocol | Phase 5 (memory) | ✅ S'inspirer du pattern — pas du service Evolver |
 | Ontology | Phase 4 (rag) | 🔲 Évaluer |
 | Byterover | Phase 4 (rag) | 🔲 Évaluer |
-| Xiucheng | Phase 6+ | 🔲 Évaluer vs Hermes |

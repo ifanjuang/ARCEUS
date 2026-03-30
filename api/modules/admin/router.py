@@ -208,6 +208,28 @@ def get_router(config: dict) -> APIRouter:
 
     # ── Setup / Installation ─────────────────────────────────────
 
+    # ── Plugins ──────────────────────────────────────────────────
+
+    @router.get("/plugins")
+    async def list_plugins(
+        _=Depends(require_role("admin", "moe")),
+        engine: AdminEngine = Depends(_engine),
+    ):
+        return {"plugins": engine.list_plugins()}
+
+    @router.post("/plugins/{name}/toggle")
+    async def toggle_plugin(
+        name: str,
+        payload: TogglePayload,
+        _=Depends(require_role("admin")),
+        engine: AdminEngine = Depends(_engine),
+    ):
+        try:
+            engine.toggle_plugin(name, payload.enabled)
+        except ValueError as e:
+            raise HTTPException(status_code=404, detail=str(e))
+        return {"ok": True, "plugin": name, "enabled": payload.enabled}
+
     # ── Setup : lecture ──────────────────────────────────────────
 
     @router.get("/setup/status")

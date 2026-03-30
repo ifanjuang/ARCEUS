@@ -128,6 +128,27 @@ class AdminEngine(BaseEngine):
 
     # ── Schéma de formulaire ─────────────────────────────────────
 
+    # ── plugins.yaml ────────────────────────────────────────────
+
+    def list_plugins(self) -> list[dict]:
+        plugins_yaml = PROJECT_ROOT / "plugins.yaml"
+        if not plugins_yaml.exists():
+            return []
+        data = yaml.safe_load(plugins_yaml.read_text(encoding="utf-8"))
+        return data.get("plugins", [])
+
+    def toggle_plugin(self, name: str, enabled: bool) -> None:
+        plugins_yaml = PROJECT_ROOT / "plugins.yaml"
+        data = yaml.safe_load(plugins_yaml.read_text(encoding="utf-8"))
+        for entry in data["plugins"]:
+            if entry["name"] == name:
+                entry["enabled"] = enabled
+                break
+        else:
+            raise ValueError(f"Plugin '{name}' introuvable dans plugins.yaml")
+        plugins_yaml.write_text(yaml.dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+        log.info("admin.plugin_toggled", plugin=name, enabled=enabled)
+
     def get_form_schema(self, module: str) -> dict:
         """
         Retourne {config_parsed, manifest_parsed, prompt_files}
