@@ -4582,5 +4582,82 @@ Fichier à la racine, mis à jour à chaque merge sur `main` :
 
 ---
 
-*Dernière mise à jour : 2026-03-24*
+*Dernière mise à jour : 2026-03-30*
 *Auteur : Claude (session OS Chantier)*
+
+---
+
+## 24. OUTILS & LIBRAIRIES À ÉVALUER
+
+> Références pour les prochaines phases — à intégrer au cas par cas, pas en bloc.
+
+---
+
+### 24.1 mem0 — Mémoire persistante pour agents IA
+
+- **Repo :** https://github.com/mem0ai/mem0
+- **Ce que c'est :** Couche mémoire universelle pour agents IA. Capture préférences utilisateur, état de session, comportement agent avec persistance cross-conversations. Réduction de tokens de ~90% vs historique complet.
+- **Stack :** Python + TypeScript, compatible OpenAI / Ollama, backends PostgreSQL + vector stores.
+- **Pertinence :** ✅ **Haute** — candidat direct pour le module `memory` (Phase 5). Remplace ou complète le code de dédup/persistance maison.
+- **À faire :** Évaluer lors du développement du module `memory`. Comparer avec implémentation LlamaIndex native.
+
+---
+
+### 24.2 Hermes Agent — Agent autonome auto-améliorant
+
+- **Repo :** https://github.com/NousResearch/hermes-agent
+- **Ce que c'est :** Agent IA autonome avec boucle d'auto-amélioration. Crée et affine ses propres "skills" au fil des interactions. Mémoire persistante avec full-text search. Gateway multi-messagerie (Telegram, Discord, Slack, WhatsApp, Signal).
+- **Stack :** Python 92%, compatible API OpenAI → fonctionne avec Ollama. MIT.
+- **Pertinence :** ✅ **Moyenne-haute** — deux cas d'usage distincts :
+  1. **Questions générales MOE** (interpréter clause CCAP, expliquer DTU, rédiger courrier) → agent "Hermes Général" dans OpenWebUI, distinct des agents ARCEAG métier.
+  2. **Gateway messagerie** → complémente le module `notifications` (WhatsApp + Telegram + Signal dans un seul service).
+- **À faire :** Ajouter comme service Docker optionnel (profile `hermes`). Connecter au RAG ARCEAG via `/rag/search`. Phase 6+.
+
+---
+
+### 24.3 Ontology (clawhub.ai/oswalpalash/ontology)
+
+- **URL :** https://clawhub.ai/oswalpalash/ontology
+- **Ce que c'est :** Outil de structuration ontologique (graphe de connaissances). Hypothèse basée sur le nom — à confirmer (accès restreint au moment de l'évaluation).
+- **Pertinence :** 🔲 **À évaluer** — potentiellement utile pour structurer les relations entre lots, DTU, réglementations, entreprises dans le RAG.
+- **À faire :** Obtenir accès et évaluer lors du développement du module `rag` (Phase 4).
+
+---
+
+### 24.4 Byterover (clawhub.ai/byteroverinc/byterover)
+
+- **URL :** https://clawhub.ai/byteroverinc/byterover
+- **Ce que c'est :** Outil de web crawling / scraping (hypothèse basée sur le nom — à confirmer).
+- **Pertinence :** 🔲 **À évaluer** — utile pour ingérer automatiquement des sources normatives (DTU, Eurocodes, CSTB) depuis le web dans le RAG.
+- **À faire :** Évaluer lors du développement de la Couche 1 RAG (base normative).
+
+---
+
+### 24.5 EvoMap Evolver / GEP Protocol (clawhub.ai/xiucheng)
+
+- **URL :** https://clawhub.ai/xiucheng/xiucheng-self-improving-agent
+- **Repo :** https://github.com/EvoMap/evolver
+- **Ce que c'est :** Meta-skill Node.js de récursive auto-amélioration via le **protocole GEP** (Gene Evolution Protocol). Inspecte son propre historique runtime, détecte failures/inefficacités, réécrit son propre code. Connecté au hub réseau EvoMap (evomap.ai) via protocole A2A.
+- **Stack :** Node.js, MIT, hub externe evomap.ai obligatoire pour A2A.
+- **Protocole GEP (le vrai apport) :**
+  - `genes.json` — définitions réutilisables de comportements
+  - `capsules.json` — succès capitalisés (évite de re-raisonner)
+  - `events.jsonl` — log append-only des évolutions (arborescent, auditable)
+  - Stratégies : `balanced / innovate / harden / repair-only / auto`
+- **Pertinence :** ⚠️ **Mitigée**
+  - ✅ Le **pattern GEP** (genes/capsules/events) est excellent — structure idéale pour la mémoire d'agent dans le module `memory`
+  - ❌ Dépendance externe evomap.ai obligatoire — contraire au principe self-hosted d'ARCEAG
+  - ❌ Node.js — service séparé dans un stack Python
+- **À faire :** S'inspirer du protocole GEP pour structurer la table `memory_items` (Phase 5) : `type IN ('gene','capsule','event')`. Ne pas intégrer le service Evolver en production.
+
+---
+
+### Tableau de décision
+
+| Outil | Phase cible | Décision |
+|-------|-------------|----------|
+| mem0 | Phase 5 (memory) | ✅ Intégrer — candidat prioritaire |
+| Hermes Agent | Phase 6+ | ✅ Intégrer — agent général + gateway messagerie |
+| GEP Protocol | Phase 5 (memory) | ✅ S'inspirer du pattern — pas du service Evolver |
+| Ontology | Phase 4 (rag) | 🔲 Évaluer |
+| Byterover | Phase 4 (rag) | 🔲 Évaluer |
