@@ -4668,7 +4668,7 @@ Fichier à la racine, mis à jour à chaque merge sur `main` :
                                       └── Agent Chantier
                                   → résultat consolidé → OpenWebUI
   ```
-- **À faire :** Ajouter comme service Docker optionnel (Phase 6+). Connecter via endpoint `/agents/run` dans l'API ARCEUS.
+- **Statut :** ✅ **Plugin optionnel** — déjà déclaré dans `plugins.yaml` (`enabled: false`, profile `agentscope`). Activable depuis l'interface Admin → Plugins. Connecter via endpoint `/agents/run` en Phase 6+.
 
 ---
 
@@ -4771,7 +4771,7 @@ Fichier à la racine, mis à jour à chaque merge sur `main` :
 | mem0 | Phase 5 (memory) | ✅ Intégrer — candidat prioritaire |
 | Hermes Agent | Phase 6+ | ✅ Intégrer — agent général + gateway messagerie |
 | GEP Protocol | Phase 5 (memory) | ✅ Implémenter en Python pur — zéro dépendance externe |
-| AgentScope | Phase 6+ | ✅ Intégrer — orchestration multi-agents complexes |
+| AgentScope | Phase 6+ | 🔌 Plugin optionnel — activable via Admin UI (plugins.yaml) |
 | Docling | Phase 4 (rag) | ✅ Intégrer — parsing PDF technique prioritaire |
 | Crawl4AI | Phase 4 (rag) | ✅ Intégrer — ingestion normative web |
 | Gotenberg | Phase 7 (documents) | ✅ Intégrer — service Docker PDF generation |
