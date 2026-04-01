@@ -43,6 +43,7 @@ def get_router(config: dict) -> APIRouter:
             instruction=payload.instruction,
             affaire_id=payload.affaire_id,
             user_id=current_user.id,
+            agent_name=payload.agent,
             max_iterations=payload.max_iterations,
         )
         return run

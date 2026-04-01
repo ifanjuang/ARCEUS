@@ -10,6 +10,7 @@ Fonctionnement :
 """
 import json
 import time
+from pathlib import Path
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +23,10 @@ from modules.agent.tools import DEFINITIONS, execute_tool
 
 log = get_logger("agent.service")
 
-SYSTEM_PROMPT = """Tu es un assistant copilote pour une agence d'architecture (MOE).
+AGENTS_DIR = Path(__file__).parent.parent.parent.parent.parent / "agents"
+VALID_AGENTS = {"themis", "argus", "hermes", "mnemosyne", "athena"}
+
+_DEFAULT_PROMPT = """Tu es un assistant copilote pour une agence d'architecture (MOE).
 Tu aides les chargés de projet à trouver des informations, analyser des documents
 et prendre des décisions sur leurs projets de construction.
 
@@ -34,16 +38,46 @@ Règles :
 - N'invente jamais de données chiffrées (délais, coûts, surfaces).
 """
 
+AGENTS_COMMON = (AGENTS_DIR / "AGENTS.md").read_text(encoding="utf-8") if (AGENTS_DIR / "AGENTS.md").exists() else ""
+
+
+def _build_system_prompt(agent_name: str) -> str:
+    """Charge SOUL.md + MEMORY.md de l'agent demandé. Fallback sur prompt par défaut."""
+    name = agent_name.lower() if agent_name else "athena"
+    if name not in VALID_AGENTS:
+        name = "athena"
+
+    soul_path = AGENTS_DIR / name / "SOUL.md"
+    memory_path = AGENTS_DIR / name / "MEMORY.md"
+
+    soul = soul_path.read_text(encoding="utf-8") if soul_path.exists() else _DEFAULT_PROMPT
+    memory_raw = memory_path.read_text(encoding="utf-8").strip() if memory_path.exists() else ""
+
+    # Ne charger la mémoire que si elle contient du contenu réel (pas juste les commentaires)
+    has_memory = any(
+        line.strip() and not line.strip().startswith("#") and not line.strip().startswith("<!--")
+        for line in memory_raw.splitlines()
+    )
+    memory_section = f"\n\n## Mémoire permanente\n{memory_raw}" if has_memory else ""
+
+    common_section = f"\n\n## Règles communes\n{AGENTS_COMMON}" if AGENTS_COMMON else ""
+
+    return f"{soul}{memory_section}{common_section}"
+
 
 async def run_agent(
     db: AsyncSession,
     instruction: str,
     affaire_id: UUID,
     user_id: UUID | None,
+    agent_name: str = "athena",
     max_iterations: int = 10,
 ) -> AgentRun:
     """Exécute la boucle agentique et persiste le résultat."""
     t_start = time.monotonic()
+    system_prompt = _build_system_prompt(agent_name)
+
+    log.info("agent.start", agent=agent_name, affaire_id=str(affaire_id))
 
     run = AgentRun(
         affaire_id=affaire_id,
@@ -56,7 +90,7 @@ async def run_agent(
     await db.flush()  # obtenir l'id sans commit
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": instruction},
     ]
 

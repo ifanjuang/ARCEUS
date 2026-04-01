@@ -7,6 +7,7 @@ from pydantic import BaseModel
 class AgentRunRequest(BaseModel):
     instruction: str
     affaire_id: UUID
+    agent: str = "athena"          # themis | argus | hermes | mnemosyne | athena
     max_iterations: int = 10
 
 
