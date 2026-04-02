@@ -28,28 +28,28 @@ modules:
     enabled: false
 
   - name: planning
-    enabled: true
+    enabled: false
 
   - name: budget
-    enabled: true
+    enabled: false
 
   - name: events_engine
-    enabled: true
+    enabled: false
 
   - name: rag
-    enabled: true
+    enabled: false
 
   - name: meeting
-    enabled: true
+    enabled: false
 
   - name: memory
-    enabled: true
+    enabled: false
 
   - name: finance
-    enabled: true
+    enabled: false
 
   - name: communications
-    enabled: true
+    enabled: false
 
   - name: notifications
     enabled: false
