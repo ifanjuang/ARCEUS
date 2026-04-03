@@ -34,7 +34,7 @@ log = get_logger("orchestra.service")
 
 AGENTS_DIR = Path(settings.AGENTS_DIR) if hasattr(settings, "AGENTS_DIR") else Path(__file__).parent.parent.parent.parent / "agents"
 DEFAULT_AGENTS = ["themis", "argus", "athena"]
-VALID_AGENTS = {"themis", "argus", "hermes", "mnemosyne", "athena", "apollon"}
+VALID_AGENTS = {"themis", "argus", "hermes", "mnemosyne", "athena", "apollon", "dionysos", "nemesis", "hephaistos"}
 
 # ── Prompts Zeus ────────────────────────────────────────────────────
 
@@ -372,7 +372,40 @@ def _make_nodes(affaire_uuid: UUID, user_uuid: UUID | None):
         agent_run_ids = list(state["agent_run_ids"]) + [run_id]
         return {"final_answer": final_answer, "agent_run_ids": agent_run_ids}
 
-    return plan_agents, zeus_distribute, execute_agents, zeus_judge, execute_complements, synthesize
+    async def nemesis_check(state: OrchestraState) -> dict:
+        """
+        Nœud Némésis — vérifie que les assignments de Zeus restent dans le
+        périmètre contractuel MOE avant l'exécution.
+
+        Injecte un avertissement dans agent_results si un dépassement est détecté.
+        Ne bloque pas l'exécution mais signale clairement.
+        """
+        assignments_text = "\n".join(
+            f"- {a.get('agent', '?').upper()} : {a.get('instruction', '')[:200]}"
+            for a in state.get("assignments", [])
+        )
+        nemesis_instruction = (
+            f"Vérifie que ces recommandations restent dans le périmètre de la mission MOE.\n\n"
+            f"Demande initiale : {state['instruction']}\n\n"
+            f"Actions proposées par Zeus :\n{assignments_text}\n\n"
+            "Pour chaque action : est-elle dans le contrat MOE ? "
+            "Si non, signale-le et propose un objet d'avenant."
+        )
+        log.info("orchestra.nemesis_check")
+        _, nemesis_result, run_id = await _run_agent_isolated(
+            agent="nemesis",
+            instruction=nemesis_instruction,
+            affaire_id=affaire_uuid,
+            user_id=user_uuid,
+        )
+        # Injecter le résultat Némésis — visible dans la synthèse finale
+        agent_results = dict(state.get("agent_results", {}))
+        agent_run_ids = list(state.get("agent_run_ids", []))
+        agent_results["nemesis"] = nemesis_result
+        agent_run_ids.append(run_id)
+        return {"agent_results": agent_results, "agent_run_ids": agent_run_ids}
+
+    return plan_agents, zeus_distribute, execute_agents, zeus_judge, execute_complements, synthesize, nemesis_check
 
 
 def _route_after_judge(state: OrchestraState) -> str:
@@ -384,12 +417,13 @@ def _route_after_judge(state: OrchestraState) -> str:
 # ── Graph factory ────────────────────────────────────────────────
 
 def build_graph(affaire_id: UUID, user_id: UUID | None):
-    plan_agents, zeus_distribute, execute_agents, zeus_judge, execute_complements, synthesize = \
+    plan_agents, zeus_distribute, execute_agents, zeus_judge, execute_complements, synthesize, nemesis_check = \
         _make_nodes(affaire_id, user_id)
 
     builder = StateGraph(OrchestraState)
     builder.add_node("plan_agents", plan_agents)
     builder.add_node("zeus_distribute", zeus_distribute)
+    builder.add_node("nemesis_check", nemesis_check)   # ← filtre contrat
     builder.add_node("execute_agents", execute_agents)
     builder.add_node("zeus_judge", zeus_judge)
     builder.add_node("execute_complements", execute_complements)
