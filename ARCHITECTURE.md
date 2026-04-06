@@ -234,18 +234,4 @@ users ────────────────────────�
 
 ---
 
-## Migrations Alembic — séquence
-
-```
-0001 → users, affaires, permissions, documents, chunks
-0002 → agent_runs
-0003 → orchestra_runs (plans, assignments, results, synthesis_agent)
-0004 → agent_memory
-0005 → agent_runs.sources (JSONB)
-0006 → orchestra_runs HITL (hitl_enabled, hitl_payload, checkpoint_thread_id)
-0007 → meeting (meeting_crs, meeting_actions, meeting_agendas)
-0008 → agent_memory.scope + orchestra_runs.criticite + project_decisions
-0009 → affaires contexte enrichi (typology, region, budget, phase, abf, zones)
-```
-
-Toujours exécuter : `docker compose exec api alembic upgrade head`
+→ Séquence des migrations et variables d'environnement : [CLAUDE.md](CLAUDE.md)
