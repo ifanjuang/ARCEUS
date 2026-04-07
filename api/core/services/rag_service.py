@@ -1,13 +1,22 @@
 """
-RagService — pipeline RAG (§1b).
+RagService — pipeline RAG hybride (sémantique + full-text + RRF).
 
-- embed()   : génère un vecteur pour un texte
-- ingest()  : fichier → chunks → embeddings → INSERT dans la table chunks
-- search()  : embed query → SELECT cosine distance (pgvector) → résultats triés
-- delete_document() : supprime tous les chunks d'un document
+Méthodes publiques :
+  embed()          : génère un vecteur pour un texte
+  ingest()         : fichier → chunks → embeddings → INSERT chunks
+  search()         : recherche hybride par défaut (délègue à search_hybrid)
+  search_hybrid()  : cosine pgvector + FTS PostgreSQL fusionnés via RRF
+  search_semantic(): cosine pgvector seul (pour cas spécifiques)
+  delete_document(): supprime tous les chunks d'un document
 
-Stockage : table `chunks` gérée par SQLAlchemy (pas la table interne LlamaIndex).
-Recherche : requête SQL directe avec l'opérateur <=> de pgvector.
+Chunking :
+  - SentenceWindowNodeParser pour cctp/dtu (window=3 phrases, contexte enrichi)
+  - SentenceSplitter standard pour les autres types
+
+Hybrid search :
+  - Sémantique : cosine similarity pgvector (HNSW index)
+  - Full-text   : ts_rank PostgreSQL, to_tsvector('french', contenu)
+  - Fusion      : Reciprocal Rank Fusion (RRF, k=60)
 """
 import json
 import tempfile
@@ -25,7 +34,10 @@ from core.settings import settings
 
 log = get_logger("rag_service")
 
-# Configuration chunking adaptatif par type de document (§23.6 + §21.4)
+# Types de documents utilisant le SentenceWindowNodeParser (context enrichi)
+_WINDOW_TYPES = {"cctp", "dtu"}
+
+# Configuration chunking adaptatif par type de document
 CHUNK_CONFIG: dict[str, dict] = {
     "cctp":  {"chunk_size": 512, "chunk_overlap": 64},
     "dtu":   {"chunk_size": 256, "chunk_overlap": 32},
@@ -35,9 +47,11 @@ CHUNK_CONFIG: dict[str, dict] = {
 }
 DEFAULT_CHUNK = {"chunk_size": 256, "chunk_overlap": 32}
 
+# Constante RRF (standard = 60)
+_RRF_K = 60
+
 
 def _db_params() -> dict:
-    """Extrait host/port/user/password/dbname depuis DATABASE_URL_SYNC."""
     parsed = urlparse(settings.DATABASE_URL_SYNC)
     return {
         "host": parsed.hostname or "db",
@@ -46,6 +60,45 @@ def _db_params() -> dict:
         "password": parsed.password or "",
         "database": (parsed.path or "/arceus").lstrip("/"),
     }
+
+
+def _rrf_score(rank: int, k: int = _RRF_K) -> float:
+    """Reciprocal Rank Fusion score pour un document au rang `rank` (1-indexed)."""
+    return 1.0 / (k + rank)
+
+
+def _rrf_fusion(
+    semantic_hits: list[dict],
+    fts_hits: list[dict],
+    top_k: int,
+) -> list[dict]:
+    """
+    Fusionne deux listes de résultats via RRF.
+    Chaque hit : {chunk_id, document_id, contenu, meta, score}
+    Retourne top_k résultats triés par score RRF décroissant.
+    """
+    scores: dict[str, float] = {}
+    by_id: dict[str, dict] = {}
+
+    for rank, hit in enumerate(semantic_hits, start=1):
+        cid = hit["chunk_id"]
+        scores[cid] = scores.get(cid, 0.0) + _rrf_score(rank)
+        by_id[cid] = hit
+
+    for rank, hit in enumerate(fts_hits, start=1):
+        cid = hit["chunk_id"]
+        scores[cid] = scores.get(cid, 0.0) + _rrf_score(rank)
+        if cid not in by_id:
+            by_id[cid] = hit
+
+    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
+    results = []
+    for cid, rrf in ranked:
+        hit = dict(by_id[cid])
+        hit["score"] = rrf
+        hit["score_type"] = "rrf"
+        results.append(hit)
+    return results
 
 
 class RagService:
@@ -89,9 +142,11 @@ class RagService:
         """
         Ingère un fichier :
           1. Extrait le texte via LlamaIndex SimpleDirectoryReader
-          2. Découpe en chunks (SentenceSplitter, config par source_type)
+          2. Découpe en chunks :
+             - SentenceWindowNodeParser (window=3) pour cctp/dtu
+             - SentenceSplitter standard pour les autres types
           3. Calcule l'embedding de chaque chunk
-          4. INSERT dans la table chunks
+          4. INSERT dans la table chunks (contenu + window dans meta si applicable)
 
         Retourne le nombre de chunks créés.
         """
@@ -102,7 +157,6 @@ class RagService:
         chunk_cfg = CHUNK_CONFIG.get(source_type, DEFAULT_CHUNK)
         extra_meta = extra_meta or {}
 
-        # Écrire dans un fichier temporaire pour SimpleDirectoryReader
         suffix = Path(filename).suffix or ".txt"
         with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
             tmp.write(file_bytes)
@@ -118,24 +172,38 @@ class RagService:
             log.warning("rag.ingest_empty", document_id=str(document_id), filename=filename)
             return 0
 
-        splitter = SentenceSplitter(
-            chunk_size=chunk_cfg["chunk_size"],
-            chunk_overlap=chunk_cfg["chunk_overlap"],
-        )
-        nodes = splitter.get_nodes_from_documents(documents)
+        # Chunking adaptatif selon le type de document
+        if source_type in _WINDOW_TYPES:
+            from llama_index.core.node_parser import SentenceWindowNodeParser
+            parser = SentenceWindowNodeParser.from_defaults(
+                window_size=3,
+                window_metadata_key="window",
+                original_text_metadata_key="original_text",
+            )
+            nodes = parser.get_nodes_from_documents(documents)
+            log.debug("rag.ingest_window", source_type=source_type, nodes=len(nodes))
+        else:
+            splitter = SentenceSplitter(
+                chunk_size=chunk_cfg["chunk_size"],
+                chunk_overlap=chunk_cfg["chunk_overlap"],
+            )
+            nodes = splitter.get_nodes_from_documents(documents)
 
-        # Embedding en batch
+        # Embedding en batch sur le contenu principal (pas la window)
         texts = [node.get_content() for node in nodes]
         embeddings = await cls._get_embed_model().aget_text_embedding_batch(texts)
 
-        # INSERT dans la table chunks
         for idx, (node, embedding) in enumerate(zip(nodes, embeddings)):
             meta = {
                 "source_type": source_type,
                 "filename": filename,
                 **extra_meta,
-                **node.metadata,
+                **{k: v for k, v in node.metadata.items() if k != "window"},
             }
+            # Stocker la fenêtre contextuelle si présente (SentenceWindow)
+            if "window" in node.metadata:
+                meta["window"] = node.metadata["window"]
+
             await db.execute(
                 text("""
                     INSERT INTO chunks
@@ -162,9 +230,12 @@ class RagService:
             affaire_id=str(affaire_id),
             source_type=source_type,
             chunks=len(nodes),
+            window=source_type in _WINDOW_TYPES,
             duration_ms=int((time.monotonic() - t0) * 1000),
         )
         return len(nodes)
+
+    # ── Recherche ───────────────────────────────────────────────────
 
     @classmethod
     async def search(
@@ -175,16 +246,68 @@ class RagService:
         top_k: int = 5,
         source_type: Optional[str] = None,
         couche: Optional[str] = None,
+        mode: str = "hybrid",
     ) -> list[dict]:
         """
-        Recherche sémantique via pgvector (<=> cosine distance).
-        Retourne [{chunk_id, document_id, contenu, score, meta}]
+        Recherche dans les chunks.
+        mode="hybrid"   (défaut) : sémantique + FTS fusionnés via RRF
+        mode="semantic" : cosine pgvector seul
+        mode="fts"      : full-text PostgreSQL seul
+        """
+        if mode == "semantic":
+            return await cls.search_semantic(db, query, affaire_id, top_k, source_type)
+        if mode == "fts":
+            return await cls._search_fts(db, query, affaire_id, top_k * 2, source_type)
+        return await cls.search_hybrid(db, query, affaire_id, top_k, source_type)
+
+    @classmethod
+    async def search_hybrid(
+        cls,
+        db: AsyncSession,
+        query: str,
+        affaire_id: UUID,
+        top_k: int = 5,
+        source_type: Optional[str] = None,
+    ) -> list[dict]:
+        """
+        Recherche hybride : cosine pgvector + FTS PostgreSQL fusionnés via RRF.
+        Améliore la précision sur les entités spécifiques (noms d'articles,
+        références DTU, numéros de permis, termes techniques exacts).
         """
         t0 = time.monotonic()
+        fetch_k = top_k * 3  # Récupérer plus pour la fusion
+
+        semantic_hits, fts_hits = await __import__("asyncio").gather(
+            cls.search_semantic(db, query, affaire_id, fetch_k, source_type),
+            cls._search_fts(db, query, affaire_id, fetch_k, source_type),
+        )
+
+        results = _rrf_fusion(semantic_hits, fts_hits, top_k)
+
+        log.info(
+            "rag.search_hybrid",
+            affaire_id=str(affaire_id),
+            query=query[:60],
+            semantic_hits=len(semantic_hits),
+            fts_hits=len(fts_hits),
+            fused=len(results),
+            duration_ms=int((time.monotonic() - t0) * 1000),
+        )
+        return results
+
+    @classmethod
+    async def search_semantic(
+        cls,
+        db: AsyncSession,
+        query: str,
+        affaire_id: UUID,
+        top_k: int = 5,
+        source_type: Optional[str] = None,
+    ) -> list[dict]:
+        """Recherche par cosine similarity pgvector (HNSW index)."""
         query_emb = await cls.embed(query)
         emb_str = str(query_emb)
 
-        # Filtre optionnel sur source_type (stocké dans meta JSONB)
         extra_filter = ""
         params: dict = {
             "qvec": emb_str,
@@ -192,7 +315,7 @@ class RagService:
             "top_k": top_k,
         }
         if source_type:
-            extra_filter += " AND meta->>'source_type' = :source_type"
+            extra_filter = " AND meta->>'source_type' = :source_type"
             params["source_type"] = source_type
 
         rows = await db.execute(
@@ -211,26 +334,75 @@ class RagService:
             """),
             params,
         )
-
-        results = [
+        return [
             {
                 "chunk_id": str(row.id),
                 "document_id": str(row.document_id),
                 "contenu": row.contenu,
                 "meta": row.meta,
                 "score": float(row.score),
+                "score_type": "semantic",
             }
             for row in rows
         ]
 
-        log.info(
-            "rag.search",
-            affaire_id=str(affaire_id),
-            query=query[:60],
-            hits=len(results),
-            duration_ms=int((time.monotonic() - t0) * 1000),
-        )
-        return results
+    @classmethod
+    async def _search_fts(
+        cls,
+        db: AsyncSession,
+        query: str,
+        affaire_id: UUID,
+        top_k: int = 15,
+        source_type: Optional[str] = None,
+    ) -> list[dict]:
+        """Recherche full-text via to_tsvector PostgreSQL (GIN index)."""
+        extra_filter = ""
+        params: dict = {
+            "query": query,
+            "affaire_id": str(affaire_id),
+            "top_k": top_k,
+        }
+        if source_type:
+            extra_filter = " AND meta->>'source_type' = :source_type"
+            params["source_type"] = source_type
+
+        try:
+            rows = await db.execute(
+                text(f"""
+                    SELECT
+                        id,
+                        document_id,
+                        contenu,
+                        meta,
+                        ts_rank_cd(
+                            to_tsvector('french', contenu),
+                            plainto_tsquery('french', :query)
+                        ) AS score
+                    FROM chunks
+                    WHERE affaire_id = :affaire_id
+                      AND to_tsvector('french', contenu) @@
+                          plainto_tsquery('french', :query)
+                    {extra_filter}
+                    ORDER BY score DESC
+                    LIMIT :top_k
+                """),
+                params,
+            )
+            return [
+                {
+                    "chunk_id": str(row.id),
+                    "document_id": str(row.document_id),
+                    "contenu": row.contenu,
+                    "meta": row.meta,
+                    "score": float(row.score),
+                    "score_type": "fts",
+                }
+                for row in rows
+            ]
+        except Exception as exc:
+            # FTS peut échouer si la query contient des caractères spéciaux
+            log.warning("rag.fts_failed", query=query[:60], error=str(exc))
+            return []
 
     @classmethod
     async def delete_document(cls, db: AsyncSession, document_id: UUID) -> int:
