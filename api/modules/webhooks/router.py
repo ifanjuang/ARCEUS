@@ -1,8 +1,8 @@
 """
-Router webhooks — endpoints pour orchestrateurs externes (Paperclip, n8n, cron)
+Router webhooks — endpoints pour orchestrateurs externes (Paperclip, n8n, cron, Telegram)
 
 POST /webhooks/heartbeat
-    Déclenche l'agent Argus (vigie) sur toutes les affaires actives.
+    Déclenche l'agent Argos (vigie) sur toutes les affaires actives.
     Conçu pour être appelé quotidiennement par Paperclip.
 
 POST /webhooks/document-uploaded
@@ -13,25 +13,30 @@ POST /webhooks/agent/{agent_name}
     Déclenche un agent spécifique sur une affaire donnée.
     Endpoint générique pour Paperclip.
 
+POST /webhooks/telegram
+    Webhook Telegram — reçoit les mises à jour du bot et les route via ARQ.
+
 GET  /webhooks/health
     Healthcheck pour Paperclip (vérifie que ARCEUS répond).
 
 Auth : Bearer = WEBHOOK_SECRET (distinct du JWT_SECRET_KEY, configurable dans .env)
 """
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logging import get_logger
+from core.queue import get_queue
 from core.settings import settings
 from database import get_db
 from modules.affaires.models import Affaire
 from modules.agent.service import run_agent
 from modules.orchestra.service import run_orchestra
+from modules.webhooks.telegram import is_chat_allowed, tg_send
 
 log = get_logger("webhooks.router")
 
@@ -217,5 +222,55 @@ def get_router(config: dict) -> APIRouter:
             status=run.status,
             result=run.result,
         )
+
+    @router.post("/telegram", status_code=200)
+    async def telegram_webhook(
+        request: Request,
+        db: AsyncSession = Depends(get_db),
+    ):
+        """
+        Reçoit les updates Telegram et les délègue à telegram_message_job via ARQ.
+        Valide l'en-tête X-Telegram-Bot-Api-Secret-Token si WEBHOOK_SECRET est défini.
+        """
+        # Validation du secret Telegram (optionnelle mais recommandée)
+        webhook_secret = getattr(settings, "WEBHOOK_SECRET", None)
+        if webhook_secret:
+            tg_secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token", "")
+            if tg_secret != webhook_secret:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token invalide")
+
+        if not settings.TELEGRAM_TOKEN:
+            raise HTTPException(status_code=503, detail="Telegram non configuré")
+
+        update: dict[str, Any] = await request.json()
+
+        # Extraire message ou callback_query
+        message = update.get("message") or update.get("edited_message")
+        if not message:
+            return {"ok": True}  # update non géré (inline query, etc.)
+
+        chat_id = str(message.get("chat", {}).get("id", ""))
+        if not chat_id:
+            return {"ok": True}
+
+        # Vérification de l'autorisation du chat
+        if not is_chat_allowed(chat_id):
+            log.warning("telegram.chat_not_allowed", chat_id=chat_id)
+            return {"ok": True}
+
+        # Déléguer le traitement à ARQ (non bloquant)
+        try:
+            pool = await get_queue()
+            await pool.enqueue_job(
+                "telegram_message_job",
+                chat_id=chat_id,
+                message=message,
+            )
+        except Exception as exc:
+            log.error("telegram.enqueue_failed", chat_id=chat_id, error=str(exc))
+            # Répondre quand même OK à Telegram pour éviter les retries
+            await tg_send(chat_id, "Désolé, une erreur interne s'est produite. Réessaie dans un instant.")
+
+        return {"ok": True}
 
     return router

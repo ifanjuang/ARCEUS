@@ -72,6 +72,8 @@ class Settings(BaseSettings):
     # ── Telegram ─────────────────────────────────────────────────
     TELEGRAM_TOKEN: Optional[str] = None
     TELEGRAM_DEFAULT_CHAT_ID: Optional[str] = None
+    # Chat IDs autorisés, séparés par virgule. Vide = tous autorisés.
+    TELEGRAM_ALLOWED_CHAT_IDS: Optional[str] = None
 
     # ── WhatsApp ─────────────────────────────────────────────────
     WHATSAPP_ENABLED: bool = False

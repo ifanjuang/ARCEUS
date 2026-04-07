@@ -80,6 +80,118 @@ async def agent_job(
     log.info(f"[agent_job] done run_id={run_id}")
 
 
+async def telegram_message_job(
+    ctx,
+    chat_id: str,
+    message: dict,
+):
+    """
+    Traite un message Telegram entrant : commande, mention @agent, photo ou texte libre.
+    Délégué depuis le webhook POST /webhooks/telegram via ARQ.
+    """
+    from modules.webhooks.telegram import (
+        build_photo_instruction,
+        get_or_create_session,
+        handle_command,
+        route_message,
+        tg_send,
+        tg_send_typing,
+        tg_download_file,
+    )
+    from modules.agent.service import run_agent
+    from modules.orchestra.service import run_orchestra
+
+    log.info(f"[telegram_job] start chat_id={chat_id}")
+
+    async with AsyncSessionLocal() as db:
+        text: str = message.get("text") or message.get("caption") or ""
+        photos: list = message.get("photo") or []
+
+        # ── Commandes /start /help /affaire /agents ────────────────────────
+        if text.startswith("/"):
+            parts = text.lstrip("/").split(None, 1)
+            command = parts[0].lower().split("@")[0]  # /start@BotName → start
+            args = parts[1] if len(parts) > 1 else ""
+            reply = await handle_command(db=db, chat_id=chat_id, command=command, args=args)
+            await tg_send(chat_id, reply)
+            return
+
+        # ── Session & affaire active ───────────────────────────────────────
+        session = await get_or_create_session(db, chat_id)
+        affaire_id = session.affaire_id
+
+        await tg_send_typing(chat_id)
+
+        # ── Photo → cascade Argos ──────────────────────────────────────────
+        if photos:
+            # Prendre la photo de meilleure résolution (dernier élément)
+            best = photos[-1]
+            file_id = best.get("file_id")
+            caption = message.get("caption")
+            instruction = await build_photo_instruction(caption=caption, filename=f"photo_{file_id}.jpg")
+
+            if not affaire_id:
+                await tg_send(chat_id, "⚠️ Aucune affaire définie. Utilise `/affaire <CODE>` d'abord.")
+                return
+
+            run = await run_agent(
+                db=db,
+                instruction=instruction,
+                affaire_id=UUID(affaire_id),
+                user_id=None,
+                agent_name="argos",
+                max_iterations=5,
+            )
+            result_text = run.result or "Analyse terminée (pas de résultat textuel)."
+            await tg_send(chat_id, f"*Argos — analyse photo :*\n\n{result_text}")
+            return
+
+        # ── Texte libre / @mention ─────────────────────────────────────────
+        if not text.strip():
+            return
+
+        agent, instruction = await route_message(
+            db=db, chat_id=chat_id, text=text, affaire_id=affaire_id
+        )
+
+        if not instruction:
+            await tg_send(chat_id, "Je n'ai pas compris. Envoie une question ou `/help`.")
+            return
+
+        if not affaire_id:
+            await tg_send(chat_id, "⚠️ Aucune affaire définie. Utilise `/affaire <CODE>` d'abord.")
+            return
+
+        # Zeus → orchestration complète ; autres → agent direct
+        if agent == "zeus":
+            run = await run_orchestra(
+                db=db,
+                instruction=instruction,
+                affaire_id=UUID(affaire_id),
+                user_id=None,
+            )
+            result_text = (run.final_answer or run.result or "Orchestration terminée.").strip()
+        else:
+            run = await run_agent(
+                db=db,
+                instruction=instruction,
+                affaire_id=UUID(affaire_id),
+                user_id=None,
+                agent_name=agent,
+                max_iterations=8,
+            )
+            result_text = (run.result or "Pas de réponse.").strip()
+
+        # Truncate à 4000 chars (limite Telegram)
+        if len(result_text) > 4000:
+            result_text = result_text[:3950] + "\n\n_(réponse tronquée)_"
+
+        agent_label = agent.capitalize()
+        await tg_send(chat_id, f"*{agent_label} :*\n\n{result_text}")
+
+    log.info(f"[telegram_job] done chat_id={chat_id} agent={agent}")
+
+
 async def memory_job(
     ctx,
     agent_name: str,
@@ -109,7 +221,7 @@ async def memory_job(
 # ── Configuration worker ──────────────────────────────────────────────────────
 
 class WorkerSettings:
-    functions = [orchestra_job, agent_job, memory_job]
+    functions = [orchestra_job, agent_job, memory_job, telegram_message_job]
     redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
     max_jobs = 10
     job_timeout = 600           # 10 min max par job
