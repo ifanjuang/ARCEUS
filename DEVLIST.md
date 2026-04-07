@@ -149,13 +149,31 @@ Chaque nœud veto appelle l'agent avec une instruction structurée et attend `{"
 
 ---
 
-### ⬜ Retrieval hybride (BM25 + sémantique)
-Améliorer la précision RAG en combinant cosine similarity pgvector + full-text `pg_trgm`.
+### ✅ Retrieval hybride (BM25 + sémantique)
+Implémenté via `search_hybrid()` dans `rag_service.py` :
+- PostgreSQL FTS (`to_tsvector('french')`) + cosine pgvector
+- RRF (Reciprocal Rank Fusion) pour fusionner les rankings
+- `SentenceWindowNodeParser` pour les types cctp/dtu (context enrichi)
+- Index GIN `ix_chunks_contenu_fts` (migration 0010)
+- `search()` délègue à `search_hybrid()` par défaut — rétrocompat totale
 
-**Approche :**
-- Activer `pg_trgm` (déjà dans `db/init.sql`)
-- Modifier `rag_service.py` : requête hybride avec RRF (Reciprocal Rank Fusion)
-- Gain attendu : meilleure précision sur les requêtes avec entités spécifiques (noms, références, numéros d'article)
+---
+
+### ⬜ DSPy — optimisation des prompts (plan phasé)
+
+**Phase 1 (maintenant)** — instrumenter pour collecter des données :
+- Chaque run `agent_runs` est un exemple potentiel (instruction → result)
+- Aucun code DSPy encore, juste structurer les annotations
+
+**Phase 2 (après ~100 runs annotés)** — DSPy ciblé sur modules structurés :
+- `meeting/service.py` : extraction CR → actions (Signature claire)
+- `hermes` routing : classification C1-C5 (bien défini, optimisable)
+- Extraction métadonnées documents (type, références DTU, dates)
+- Optimizer : `MIPROv2` ou `BootstrapFewShot`
+
+**Phase 3 (V2)** — Zeus et Hermès si assez d'exemples annotés
+
+**Ne pas utiliser DSPy pour** : agents créatifs, SOUL.md — la personnalité est le produit.
 
 ---
 
@@ -171,8 +189,16 @@ Après chaque `synthesize` dans LangGraph, Hestia devrait automatiquement :
 
 ### 💡 Hindsight (vectorize-io) — exploration
 Système de mémoire agentique avec TEMPR (sémantique + BM25 + graphe entités + temporel).
-Pertinent pour remplacer `agent_memory` à terme.
+Pertinent pour enrichir `agent_memory` à terme (Hestia + Mnémosyne).
 **Évaluation :** tester sur une affaire pilote avant migration.
+**Note :** MemGPT/Letta écarté — gestion overflow contexte non pertinente pour ARCEUS.
+
+---
+
+### 💡 Neo4j — graphe de connaissances (V2)
+Relations entre entités projet : décisions ↔ documents ↔ acteurs ↔ DTU.
+À envisager quand les projets sont assez complexes pour justifier un 6ème store.
+PostgreSQL SQL récursif peut couvrir les besoins actuels.
 
 ---
 
