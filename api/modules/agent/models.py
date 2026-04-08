@@ -64,6 +64,8 @@ class AgentRun(Base):
     )
     instruction: Mapped[str] = mapped_column(Text, nullable=False)
     result: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Erreur séparée du contenu produit (failure distincte du résultat utile)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="running")
     # running | completed | failed
     steps: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
