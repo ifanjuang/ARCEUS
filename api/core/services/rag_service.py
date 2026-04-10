@@ -279,10 +279,18 @@ class RagService:
         t0 = time.monotonic()
         fetch_k = top_k * 3  # Récupérer plus pour la fusion
 
-        semantic_hits, fts_hits = await asyncio.gather(
+        results_or_errors = await asyncio.gather(
             cls.search_semantic(db, query, affaire_id, fetch_k, source_type),
             cls._search_fts(db, query, affaire_id, fetch_k, source_type),
+            return_exceptions=True,
         )
+        semantic_hits = results_or_errors[0] if not isinstance(results_or_errors[0], Exception) else []
+        fts_hits = results_or_errors[1] if not isinstance(results_or_errors[1], Exception) else []
+
+        if isinstance(results_or_errors[0], Exception):
+            log.warning("rag.semantic_failed", error=str(results_or_errors[0]))
+        if isinstance(results_or_errors[1], Exception):
+            log.warning("rag.fts_failed_gather", error=str(results_or_errors[1]))
 
         results = _rrf_fusion(semantic_hits, fts_hits, top_k)
 
