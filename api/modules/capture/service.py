@@ -57,20 +57,31 @@ async def transcribe_audio(audio_bytes: bytes, filename: str) -> str | None:
 async def process_capture(
     db: AsyncSession,
     capture_id: uuid.UUID,
-    transcription: str,
     affaire_id: uuid.UUID,
     user_id: uuid.UUID | None,
+    transcription: str | None = None,
 ) -> None:
-    """Traite une transcription via l'agent et met a jour la CaptureSession.
+    """Traite une capture vocale via l'agent et met a jour la CaptureSession.
 
-    1. Passe la transcription a l'agent Hermes (routage + structuration).
-    2. Stocke le resultat structure et le lien vers l'AgentRun.
+    1. Charge la transcription depuis la DB si non fournie (cas worker ARQ).
+    2. Passe la transcription a l'agent Hermes (routage + structuration).
+    3. Stocke le resultat structure et le lien vers l'AgentRun.
     """
     from modules.capture.models import CaptureSession
 
     capture = await db.get(CaptureSession, capture_id)
     if not capture:
         log.error("capture.process.not_found", capture_id=str(capture_id))
+        return
+
+    # Si pas de transcription fournie, utiliser celle stockée en DB
+    if transcription is None:
+        transcription = capture.transcription
+    if not transcription:
+        log.error("capture.process.no_transcription", capture_id=str(capture_id))
+        capture.status = "failed"
+        capture.error_message = "Aucune transcription disponible"
+        await db.commit()
         return
 
     capture.status = "processing"

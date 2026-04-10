@@ -196,6 +196,10 @@ ADMIN_PASSWORD=changeme
 | 0007 | meeting (crs, actions, agendas) |
 | 0008 | agent_memory.scope + orchestra_runs.criticite + project_decisions |
 | 0009 | affaires contexte enrichi (typology, region, budget, phase, ABF, zones) |
+| 0010 | index GIN full-text sur chunks.contenu (hybrid search RRF) |
+| 0011 | webhook_sessions (canal externe → affaire) |
+| 0012 | traçabilité orchestra (subtasks, veto) + agent error_message + memory category |
+| 0013 | capture_sessions + chunks.tsv tsvector + trigger auto-update |
 
 ---
 
