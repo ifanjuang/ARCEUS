@@ -30,6 +30,9 @@ modules:
   - name: meeting
     enabled: true
 
+  - name: wiki
+    enabled: true
+
   - name: chantier
     enabled: false
 
