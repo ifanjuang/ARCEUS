@@ -24,6 +24,9 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 ## [Unreleased]
 
 ### Added
+- **Orchestra — suppression du nœud `plan_agents`** : le nœud intermédiaire qui demandait à chaque agent sélectionné son plan d'action via un appel LLM individuel est supprimé. Remplacé par `_get_agent_summary(agent_name)` — extraction statique et LRU-cachée du titre + premier paragraphe de rôle de chaque `SOUL.md`, 0 appel LLM. `zeus_distribute` reçoit directement ces `agent_summaries` et planifie les sous-tâches en une seule étape Zeus. Gain estimé : -3 à -5 appels LLM par orchestration C3+, -25 % de latence sur le chemin C4/C5. Nouveau prompt `_ZEUS_UNIFIED_PROMPT` (remplace `_ZEUS_PLAN_PROMPT`). Le champ `agent_plans` dans `OrchestraState` / DB est conservé (legacy, toujours `{}`). L'événement SSE `plans_ready` est maintenu mais émis depuis `zeus_distribute` avec les résumés statiques.
+
+### Added
 - **Guards — veto hybride couche 0 + couche 1** : nouveau fichier `veto_patterns.py` implémentant `fast_veto_check(agent, output)` — détection déterministe par regex de ~20 patterns critiques (Thémis : hors mission, litige, mise en demeure, avenant requis ; Héphaïstos : non-conforme DTU, infaisable, danger structurel ; Apollon : contradiction normative ; génériques : opposition formelle, veto explicite, expert externe requis). `structured_veto` appelle d'abord `fast_veto_check` (couche 0, 0 token LLM) puis bascule sur LLM Instructor uniquement si aucun pattern n'a conclu. Gain estimé : ~80 % des vetos bloquants évidents sans appel LLM, latence divisée par 3 sur ces cas.
 - **Guards — `MAX_COMPLEMENTS_BY_CRITICITE`** : constante dict exportée depuis `guards/service.py` — `{C1: 0, C2: 0, C3: 1, C4: 2, C5: 3}`. Le nœud `zeus_judge` dans le graphe Zeus utilise désormais ce seuil en fonction de la criticité de la demande (plus `max_complements=1` hardcodé global). C1/C2 ne déclenchent plus jamais de boucle d'enrichissement.
 

@@ -2,10 +2,10 @@
 OrchestraService — boucle de coordination multi-agents via LangGraph.
 
 Graphe Zeus :
-  [preprocess] → [plan_agents] → [zeus_distribute] → [workflow_precheck]
-                                        ↑ HITL C4/C5   │ approved|trim|upgrade
-                                                       │ (clarification|blocked → END)
-                                                       ▼
+  [preprocess] → [zeus_distribute] → [workflow_precheck]
+                       ↑ HITL C4/C5   │ approved|trim|upgrade
+                                      │ (clarification|blocked → END)
+                                      ▼
                                                 [dispatch_subtasks] → [veto_check] → [zeus_judge]
                                                                                         │ needs_complement
                                                                           ┌─────────────┘
@@ -35,6 +35,7 @@ Patterns d'exécution dans dispatch_subtasks :
 import asyncio
 import functools
 import json
+import re
 import time
 from pathlib import Path
 from typing import TypedDict, Optional
@@ -89,20 +90,21 @@ VALID_AGENTS = {
 
 # ── Prompts Zeus ────────────────────────────────────────────────────
 
-_ZEUS_PLAN_PROMPT = """\
-Tu reçois une demande et les plans de {n} agents. Organise leur collaboration en sous-tâches.
+_ZEUS_UNIFIED_PROMPT = """\
+Tu reçois une demande et les capacités de {n} agents disponibles.
+Organise directement leur collaboration en sous-tâches adaptées.
 
 ## Demande
 {instruction}
 
-## Plans des agents
-{plans}
+## Agents disponibles
+{agent_capabilities}
 
 Patterns disponibles :
-- "solo"     : un agent seul
-- "parallel" : agents indépendants, en parallèle
-- "cascade"  : séquence — chaque agent reçoit les résultats du précédent
-- "arena"    : compétition — agents sur la même question, un juge tranche (exige "judge")
+- "solo"        : un agent seul
+- "parallel"    : agents indépendants, en parallèle
+- "cascade"     : séquence — chaque agent reçoit les résultats du précédent
+- "arena"       : compétition — agents sur la même question, un juge tranche (exige "judge")
 - "exploration" : pipeline créatif — Dionysos (options latérales) → Prométhée (critique) → Apollon (vérification)
 
 Réponds en JSON strict (aucun texte en dehors) :
@@ -140,7 +142,7 @@ Règles :
 - Au moins une sous-tâche
 - "arena" exige "judge" (apollon pour faits/normes, zeus pour arbitrage stratégique)
 - "depends_on" = IDs des sous-tâches prérequises ([] = démarre immédiatement)
-- Promethée systématiquement pour C4+
+- Prométhée systématiquement pour C4+
 - Chronos si impact planning
 - Agents disponibles : hermes, argos, athena, hephaistos, promethee, apollon, dionysos,
   themis, chronos, ares, hestia, mnemosyne, iris, aphrodite, dedale
@@ -210,8 +212,11 @@ class OrchestraState(TypedDict):
     user_id: Optional[str]
     initial_agents: list[str]
 
-    # Phase 1
-    agent_plans: dict           # {agent_name: {plan, needs, difficulties, expected_output}}
+    # Phase 1 (legacy — plus écrit par le graphe, conservé pour la compatibilité DB)
+    agent_plans: dict           # toujours {} depuis la suppression du nœud plan_agents
+
+    # Résumés statiques des agents (depuis SOUL.md, 0 appel LLM)
+    agent_summaries: dict       # {agent_name: "titre — description courte"}
 
     # Phase 2 — Zeus plan
     zeus_reasoning: str
@@ -337,23 +342,51 @@ async def _llm_call(system: str, user: str) -> str:
         raise
 
 
-async def _get_agent_plan(agent_name: str, instruction: str) -> dict:
-    """Demande à un agent son plan sans l'exécuter (pas de boucle ReAct)."""
-    system = _build_system_prompt(agent_name)
-    plan_request = (
-        f"Pour la demande suivante, décris ton plan d'action SANS l'exécuter.\n\n"
-        f"Demande : {instruction}\n\n"
-        f"Réponds en JSON strict :\n"
-        f'{{"plan": "...", "needs": ["..."], "difficulties": ["..."], "expected_output": "..."}}'
-    )
-    content = await _llm_call(system, plan_request)
-    parsed = _parse_json_response(content)
-    return {
-        "plan": parsed.get("plan", content[:300]),
-        "needs": parsed.get("needs", []),
-        "difficulties": parsed.get("difficulties", []),
-        "expected_output": parsed.get("expected_output", ""),
-    }
+@functools.lru_cache(maxsize=32)
+def _get_agent_summary(agent_name: str) -> str:
+    """Extrait une description statique de l'agent depuis son SOUL.md.
+
+    Retourne le titre + le premier paragraphe du rôle, tronqué à 300 chars.
+    Mis en cache pour la durée du process — aucun appel LLM.
+    """
+    name = agent_name.lower()
+    soul_path = AGENTS_DIR / name / "SOUL.md"
+    if not soul_path.exists():
+        return f"{name} — agent spécialisé ARCEUS"
+
+    text = soul_path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+
+    # Titre : première ligne commençant par "# "
+    title = name
+    for line in lines:
+        if line.startswith("# "):
+            title = line[2:].strip()
+            break
+
+    # Premier paragraphe sous "## Rôle" (ou "## Role")
+    role_text = ""
+    in_role = False
+    for line in lines:
+        if re.match(r"^##\s+R[ôo]le\b", line, re.IGNORECASE):
+            in_role = True
+            continue
+        if in_role:
+            stripped = line.strip()
+            if stripped.startswith("##"):
+                break  # section suivante
+            if stripped and not stripped.startswith("#"):
+                role_text += " " + stripped
+                if len(role_text) > 280:
+                    break
+
+    role_text = role_text.strip()
+    # Tronquer à la dernière phrase complète
+    if len(role_text) > 280:
+        truncated = role_text[:280].rsplit(".", 1)
+        role_text = truncated[0] + "." if len(truncated) > 1 else role_text[:280]
+
+    return f"{title} — {role_text}" if role_text else title
 
 
 async def _run_agent_isolated(agent: str, instruction: str, affaire_id: UUID, user_id: UUID | None):
@@ -490,7 +523,7 @@ def _make_nodes(affaire_uuid: UUID, user_uuid: UUID | None):
     """Crée les nœuds du graphe en clôturant affaire_id et user_id."""
 
     async def preprocess(state: OrchestraState) -> dict:
-        """M1 — Hermès++ : normalise la demande avant plan_agents.
+        """M1 — Hermès++ : normalise la demande avant zeus_distribute.
 
         Produit PreprocessedInput (cleaned, reformulated, intent, missing_info,
         confidence, suggested_criticite). Si la confiance ≥ 0.5 et qu'une
@@ -629,31 +662,23 @@ def _make_nodes(affaire_uuid: UUID, user_uuid: UUID | None):
         )
         return updates
 
-    async def plan_agents(state: OrchestraState) -> dict:
-        """Phase 1 — chaque agent déclare son plan."""
-        log.info("orchestra.plan", agents=state["initial_agents"])
-        plans_list = await asyncio.gather(*[
-            _get_agent_plan(a, state["instruction"])
-            for a in state["initial_agents"]
-        ])
-        plans = dict(zip(state["initial_agents"], plans_list))
-        log.info("orchestra.plans_collected", count=len(plans))
-        return {"agent_plans": plans}
-
     async def zeus_distribute(state: OrchestraState) -> dict:
-        """Phase 2 — Zeus analyse les plans et organise les sous-tâches avec patterns."""
-        plans_text = "\n\n".join(
-            f"### {agent}\n"
-            f"Plan : {p['plan']}\n"
-            f"Besoins : {', '.join(p['needs']) or 'aucun'}\n"
-            f"Difficultés : {', '.join(p['difficulties']) or 'aucune'}\n"
-            f"Résultat attendu : {p['expected_output']}"
-            for agent, p in state["agent_plans"].items()
+        """Phase 1 — Zeus organise les sous-tâches depuis les capacités statiques des agents.
+
+        Remplace l'ancien pipeline plan_agents (N appels LLM) + zeus_distribute :
+        les capacités sont extraites de SOUL.md (LRU cache, 0 appel LLM) et
+        transmises directement à Zeus pour la planification en une seule étape.
+        """
+        agents = state["initial_agents"]
+        agent_summaries = {a: _get_agent_summary(a) for a in agents}
+        capabilities_text = "\n\n".join(
+            f"### {agent}\n{summary}"
+            for agent, summary in agent_summaries.items()
         )
-        prompt = _ZEUS_PLAN_PROMPT.format(
-            n=len(state["agent_plans"]),
+        prompt = _ZEUS_UNIFIED_PROMPT.format(
+            n=len(agents),
             instruction=state["instruction"],
-            plans=plans_text,
+            agent_capabilities=capabilities_text,
         )
         content = await _llm_call(_zeus_system(), prompt)
         parsed = _parse_json_response(content)
@@ -734,6 +759,7 @@ def _make_nodes(affaire_uuid: UUID, user_uuid: UUID | None):
             "assignments": assignments,
             "synthesis_agent": parsed.get("synthesis_agent", "mnemosyne"),
             "hitl_approval": approval,
+            "agent_summaries": agent_summaries,  # pour SSE plans_ready
         }
 
     async def dispatch_subtasks(state: OrchestraState) -> dict:
@@ -1150,7 +1176,7 @@ def _make_nodes(affaire_uuid: UUID, user_uuid: UUID | None):
         log.info("orchestra.memories_written", count=memories_count, wiki=bool(wiki_page_id))
         return {"memories_written": memories_count, "wiki_page_id": wiki_page_id}
 
-    return (preprocess, workflow_precheck, plan_agents, zeus_distribute,
+    return (preprocess, workflow_precheck, zeus_distribute,
             dispatch_subtasks, zeus_judge, execute_complements, synthesize,
             veto_check, score_decision, write_memories)
 
@@ -1181,13 +1207,12 @@ def build_graph(affaire_id: UUID, user_id: UUID | None, checkpointer=None):
         checkpointer: si fourni, le graphe est compilé avec persistence
                       (requis pour HITL pause/resume).
     """
-    (preprocess, workflow_precheck, plan_agents, zeus_distribute,
+    (preprocess, workflow_precheck, zeus_distribute,
      dispatch_subtasks, zeus_judge, execute_complements, synthesize,
      veto_check, score_decision, write_memories) = _make_nodes(affaire_id, user_id)
 
     builder = StateGraph(OrchestraState)
     builder.add_node("preprocess", preprocess)
-    builder.add_node("plan_agents", plan_agents)
     builder.add_node("zeus_distribute", zeus_distribute)
     builder.add_node("workflow_precheck", workflow_precheck)
     builder.add_node("dispatch_subtasks", dispatch_subtasks)
@@ -1199,8 +1224,7 @@ def build_graph(affaire_id: UUID, user_id: UUID | None, checkpointer=None):
     builder.add_node("write_memories", write_memories)
 
     builder.set_entry_point("preprocess")
-    builder.add_edge("preprocess", "plan_agents")
-    builder.add_edge("plan_agents", "zeus_distribute")
+    builder.add_edge("preprocess", "zeus_distribute")
     builder.add_edge("zeus_distribute", "workflow_precheck")
     builder.add_conditional_edges("workflow_precheck", _route_after_precheck, {
         "dispatch_subtasks": "dispatch_subtasks",
@@ -1237,7 +1261,8 @@ def _build_initial_state(
         "affaire_id": str(affaire_id),
         "user_id": str(user_id) if user_id else None,
         "initial_agents": initial_agents,
-        "agent_plans": {},
+        "agent_plans": {},        # legacy — toujours vide
+        "agent_summaries": {},
         "zeus_reasoning": "",
         "subtasks": [],
         "subtask_results": {},
@@ -1585,7 +1610,6 @@ async def resume_orchestra(
 # Mapping nœud LangGraph → label SSE lisible
 _NODE_LABELS = {
     "preprocess":           ("preprocess", "Normalisation Hermès..."),
-    "plan_agents":          ("planning",   "Collecte des plans agents..."),
     "zeus_distribute":      ("zeus",       "Zeus organise les sous-tâches..."),
     "workflow_precheck":    ("precheck",   "Gate Precheck — dimensionnement du plan..."),
     "dispatch_subtasks":    ("executing",  "Exécution des agents (cascade / arène / parallèle)..."),
@@ -1616,7 +1640,7 @@ async def stream_orchestra(
     Événements émis :
       phase_start       — début d'un nœud {phase, message}
       preprocess_ready  — fin preprocess {intent, confidence, suggested_criticite, missing}
-      plans_ready       — fin plan_agents {plans}
+      plans_ready       — fin zeus_distribute {plans} (résumés statiques SOUL.md)
       zeus_decision     — fin zeus_distribute {reasoning, assignments, synthesis_agent}
       precheck_verdict  — fin workflow_precheck {verdict, reasoning, criticite}
       agents_done       — fin execute_agents {results}
@@ -1677,18 +1701,14 @@ async def stream_orchestra(
                         "reformulated_question": pp.get("reformulated_question", ""),
                     })
 
-                elif node_name == "plan_agents":
+                elif node_name == "zeus_distribute":
+                    # plans_ready : résumés statiques SOUL.md (remplace l'ancien plan_agents LLM)
                     yield _sse("plans_ready", {
                         "plans": {
-                            agent: {
-                                "plan": p.get("plan", ""),
-                                "expected_output": p.get("expected_output", ""),
-                            }
-                            for agent, p in updates.get("agent_plans", {}).items()
+                            agent: {"plan": summary, "expected_output": ""}
+                            for agent, summary in updates.get("agent_summaries", {}).items()
                         }
                     })
-
-                elif node_name == "zeus_distribute":
                     yield _sse("zeus_decision", {
                         "reasoning": updates.get("zeus_reasoning", ""),
                         "subtasks": updates.get("subtasks", []),
