@@ -262,6 +262,9 @@ class OrchestraState(TypedDict):
     precheck_verdict: str       # approved | trim | upgrade | clarification | blocked
     precheck_reasoning: str
 
+    # Mémoire fonctionnelle (M3) — Redis TTL, session
+    thread_id: str              # clé de session (checkpoint_thread_id ou externe)
+
 
 # ── Helpers LLM ────────────────────────────────────────────────────
 
@@ -493,13 +496,35 @@ def _make_nodes(affaire_uuid: UUID, user_uuid: UUID | None):
         confidence, suggested_criticite). Si la confiance ≥ 0.5 et qu'une
         reformulation existe, l'instruction du graphe est remplacée par la
         version reformulée (plus précise pour les agents).
+
+        M3 — lit la mémoire fonctionnelle (Redis TTL) pour enrichir l'hint
+        affaire si un thread de session précédent existe.
         """
         from modules.preprocessing.service import PreprocessingService
+        from modules.memory.service import FunctionalMemoryService
 
         affaire_hint = state.get("affaire_id") or None
+        phase_hint: str | None = None
+        domaine_hint: str | None = None
+
+        thread_id = state.get("thread_id") or ""
+        if thread_id:
+            fn_ctx = await FunctionalMemoryService.get_context(thread_id)
+            if fn_ctx:
+                affaire_hint = affaire_hint or fn_ctx.get("affaire_id")
+                phase_hint = fn_ctx.get("phase_projet")
+                domaine_hint = fn_ctx.get("domaine")
+                log.debug(
+                    "orchestra.preprocess_fn_context",
+                    thread_id=thread_id,
+                    keys=list(fn_ctx.keys()),
+                )
+
         result = await PreprocessingService.preprocess(
             state["instruction"],
-            affaire_hint=affaire_hint,
+            affaire_hint=str(affaire_hint) if affaire_hint else None,
+            phase_hint=phase_hint,
+            domaine_hint=domaine_hint,
         )
         updates: dict = {"preprocessed_input": result.model_dump()}
 
@@ -507,6 +532,22 @@ def _make_nodes(affaire_uuid: UUID, user_uuid: UUID | None):
             reformulated = result.reformulated_question.strip()
             if reformulated and reformulated != state["instruction"]:
                 updates["instruction"] = reformulated
+
+        # M3 — persiste le preprocessed dans la fonctionnelle pour le run suivant
+        if thread_id:
+            await FunctionalMemoryService.set_context(
+                thread_id,
+                "last_preprocessed",
+                result.model_dump(),
+                ttl=3600,
+            )
+            if state.get("affaire_id"):
+                await FunctionalMemoryService.set_context(
+                    thread_id,
+                    "affaire_id",
+                    state["affaire_id"],
+                    ttl=3600,
+                )
 
         log.info(
             "orchestra.preprocess_done",
@@ -1077,6 +1118,33 @@ def _make_nodes(affaire_uuid: UUID, user_uuid: UUID | None):
             except Exception as exc:
                 log.error("orchestra.wiki_promote_failed", error=str(exc))
 
+        # ── 3. Mémoire fonctionnelle (M3) ─────────────────────────────
+        # Persiste le dernier verdict + final_answer résumé pour le run
+        # suivant sur le même thread_id (continuité conversationnelle).
+        thread_id = state.get("thread_id") or ""
+        if thread_id:
+            try:
+                from modules.memory.service import FunctionalMemoryService
+                await FunctionalMemoryService.set_context(
+                    thread_id,
+                    "last_verdict",
+                    {
+                        "criticite": criticite,
+                        "score_verdict": state.get("score_verdict", ""),
+                        "score_total": state.get("score_total"),
+                        "veto_severity": state.get("veto_severity", ""),
+                    },
+                    ttl=3600,
+                )
+                await FunctionalMemoryService.set_context(
+                    thread_id,
+                    "last_answer_excerpt",
+                    final_answer[:400],
+                    ttl=3600,
+                )
+            except Exception as exc:
+                log.debug("orchestra.functional_memory_skipped", error=str(exc))
+
         log.info("orchestra.memories_written", count=memories_count, wiki=bool(wiki_page_id))
         return {"memories_written": memories_count, "wiki_page_id": wiki_page_id}
 
@@ -1159,6 +1227,7 @@ def _build_initial_state(
     initial_agents: list[str],
     criticite: str = "C2",
     hitl_enabled: bool = False,
+    thread_id: str = "",
 ) -> OrchestraState:
     """Construit l'état initial du graphe Zeus. Factorisé entre les 3 entry points."""
     return {
@@ -1192,6 +1261,7 @@ def _build_initial_state(
         "preprocessed_input": {},
         "precheck_verdict": "",
         "precheck_reasoning": "",
+        "thread_id": thread_id,
     }
 
 
@@ -1403,7 +1473,7 @@ async def run_orchestra_hitl(
     structlog.contextvars.bind_contextvars(run_id=str(run.id), run_type="orchestra.hitl")
     initial_state = _build_initial_state(
         instruction, affaire_id, user_id, initial_agents,
-        effective_criticite, hitl_enabled=True,
+        effective_criticite, hitl_enabled=True, thread_id=thread_id,
     )
     config = {"configurable": {"thread_id": thread_id}}
 
@@ -1578,6 +1648,7 @@ async def stream_orchestra(
     graph = build_graph(affaire_id, user_id)
     initial_state = _build_initial_state(
         instruction, affaire_id, user_id, initial_agents, effective_criticite,
+        thread_id=str(run_id),
     )
 
     final_state: OrchestraState = initial_state.copy()

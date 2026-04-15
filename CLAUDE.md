@@ -107,7 +107,7 @@ ARCEUS/
 |---|---|---|---|
 | **Agence** | `scope='agence'`, `affaire_id=NULL` | Mnémosyne | Permanente |
 | **Projet** | `scope='projet'`, `affaire_id=<uuid>` | Hestia | Durée affaire |
-| **Fonctionnelle** | LangGraph state / Redis | Hermès + Chronos | Session |
+| **Fonctionnelle** | Redis TTL (`memory:fn:{thread_id}:*`) / module `memory` | Hermès + Chronos | Session (TTL 1h) |
 
 ---
 
