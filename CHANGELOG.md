@@ -24,6 +24,9 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 ## [Unreleased]
 
 ### Added
+- **RAG — RRF SQL natif** : `search_hybrid` remplace les 2 requêtes parallèles (`asyncio.gather` semantic + FTS) + fusion Python (`_rrf_fusion`) par une seule requête CTE PostgreSQL. Structure : `sem_raw` (distance cosine pgvector, 1 calcul/row) → `semantic` (ROW_NUMBER) · `fts_raw` (ts_rank_cd, 1 calcul/row) → `fts` (ROW_NUMBER) · `rrf` (FULL OUTER JOIN + `COALESCE(1/(k+rank), 0)`) → SELECT final trié limité. Fallback sémantique si la CTE échoue. Suppression de `_rrf_score` et `_rrf_fusion` (code mort). `import re` monté au niveau module.
+
+### Added
 - **Orchestra — suppression du nœud `plan_agents`** : le nœud intermédiaire qui demandait à chaque agent sélectionné son plan d'action via un appel LLM individuel est supprimé. Remplacé par `_get_agent_summary(agent_name)` — extraction statique et LRU-cachée du titre + premier paragraphe de rôle de chaque `SOUL.md`, 0 appel LLM. `zeus_distribute` reçoit directement ces `agent_summaries` et planifie les sous-tâches en une seule étape Zeus. Gain estimé : -3 à -5 appels LLM par orchestration C3+, -25 % de latence sur le chemin C4/C5. Nouveau prompt `_ZEUS_UNIFIED_PROMPT` (remplace `_ZEUS_PLAN_PROMPT`). Le champ `agent_plans` dans `OrchestraState` / DB est conservé (legacy, toujours `{}`). L'événement SSE `plans_ready` est maintenu mais émis depuis `zeus_distribute` avec les résumés statiques.
 
 ### Added

@@ -15,11 +15,13 @@ Chunking :
 
 Hybrid search :
   - Sémantique : cosine similarity pgvector (HNSW index)
-  - Full-text   : ts_rank PostgreSQL, to_tsvector('french', contenu)
-  - Fusion      : Reciprocal Rank Fusion (RRF, k=60)
+  - Full-text   : ts_rank_cd PostgreSQL, colonne tsv pré-calculée (GIN)
+  - Fusion      : Reciprocal Rank Fusion (RRF, k=60) — SQL natif via CTE
+                  FULL OUTER JOIN (1 round-trip DB au lieu de 2)
 """
 import asyncio
 import json
+import re
 import tempfile
 import time
 from pathlib import Path
@@ -61,45 +63,6 @@ def _db_params() -> dict:
         "password": parsed.password or "",
         "database": (parsed.path or "/arceus").lstrip("/"),
     }
-
-
-def _rrf_score(rank: int, k: int = _RRF_K) -> float:
-    """Reciprocal Rank Fusion score pour un document au rang `rank` (1-indexed)."""
-    return 1.0 / (k + rank)
-
-
-def _rrf_fusion(
-    semantic_hits: list[dict],
-    fts_hits: list[dict],
-    top_k: int,
-) -> list[dict]:
-    """
-    Fusionne deux listes de résultats via RRF.
-    Chaque hit : {chunk_id, document_id, contenu, meta, score}
-    Retourne top_k résultats triés par score RRF décroissant.
-    """
-    scores: dict[str, float] = {}
-    by_id: dict[str, dict] = {}
-
-    for rank, hit in enumerate(semantic_hits, start=1):
-        cid = hit["chunk_id"]
-        scores[cid] = scores.get(cid, 0.0) + _rrf_score(rank)
-        by_id[cid] = hit
-
-    for rank, hit in enumerate(fts_hits, start=1):
-        cid = hit["chunk_id"]
-        scores[cid] = scores.get(cid, 0.0) + _rrf_score(rank)
-        if cid not in by_id:
-            by_id[cid] = hit
-
-    ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
-    results = []
-    for cid, rrf in ranked:
-        hit = dict(by_id[cid])
-        hit["score"] = rrf
-        hit["score_type"] = "rrf"
-        results.append(hit)
-    return results
 
 
 def _rerank(query: str, hits: list[dict], top_k: int) -> list[dict]:
@@ -361,40 +324,116 @@ class RagService:
         source_type: Optional[str] = None,
     ) -> list[dict]:
         """
-        Recherche hybride : cosine pgvector + FTS PostgreSQL fusionnés via RRF.
-        Améliore la précision sur les entités spécifiques (noms d'articles,
-        références DTU, numéros de permis, termes techniques exacts).
+        Recherche hybride via une seule requête CTE + RRF SQL natif.
+
+        Remplace les 2 requêtes parallèles + fusion Python par un unique
+        aller-retour DB : les CTEs `sem_raw` et `fts_raw` calculent les
+        candidats de chaque branche, `rrf` les fusionne via FULL OUTER JOIN
+        avec le scoring 1/(k+rank), et la requête externe trie et limite.
+
+        Fallback : si la CTE échoue (pgvector absent, query invalide, etc.),
+        bascule silencieusement sur la recherche sémantique seule.
         """
         t0 = time.monotonic()
-        fetch_k = top_k * 3  # Récupérer plus pour la fusion
 
-        results_or_errors = await asyncio.gather(
-            cls.search_semantic(db, query, affaire_id, fetch_k, source_type),
-            cls._search_fts(db, query, affaire_id, fetch_k, source_type),
-            return_exceptions=True,
-        )
-        semantic_hits = results_or_errors[0] if not isinstance(results_or_errors[0], Exception) else []
-        fts_hits = results_or_errors[1] if not isinstance(results_or_errors[1], Exception) else []
+        # Sanitize FTS (identique à l'ancienne _search_fts)
+        sanitized_fts = re.sub(r'[^\w\s\-àâäéèêëïîôùûüÿçœæ]', ' ', query)
+        sanitized_fts = ' '.join(sanitized_fts.split())
 
-        if isinstance(results_or_errors[0], Exception):
-            log.warning("rag.semantic_failed", error=str(results_or_errors[0]))
-        if isinstance(results_or_errors[1], Exception):
-            log.warning("rag.fts_failed_gather", error=str(results_or_errors[1]))
+        # Si la query FTS est vide après nettoyage → sémantique seule
+        if not sanitized_fts:
+            return await cls.search_semantic(db, query, affaire_id, top_k, source_type)
 
-        # RRF : récupérer plus de candidats pour le reranking
-        rrf_k = top_k * 2 if getattr(settings, "RERANK_ENABLED", False) else top_k
-        results = _rrf_fusion(semantic_hits, fts_hits, rrf_k)
+        query_emb = await cls.embed(query)
+        fetch_k = top_k * 3
+        rrf_candidates = top_k * 2 if getattr(settings, "RERANK_ENABLED", False) else top_k
 
-        # Cross-encoder reranking (si activé via RERANK_ENABLED=true)
+        extra_filter = ""
+        params: dict = {
+            "qvec": str(query_emb),
+            "fts_query": sanitized_fts,
+            "affaire_id": str(affaire_id),
+            "fetch_k": fetch_k,
+            "top_k": rrf_candidates,
+            "rrf_k": float(_RRF_K),
+        }
+        if source_type:
+            extra_filter = "AND meta->>'source_type' = :source_type"
+            params["source_type"] = source_type
+
+        try:
+            rows = await db.execute(
+                text(f"""
+                    WITH
+                    sem_raw AS (
+                        SELECT id, document_id, contenu, meta,
+                               embedding <=> :qvec::vector AS sem_dist
+                        FROM   chunks
+                        WHERE  affaire_id = :affaire_id
+                               {extra_filter}
+                        ORDER  BY embedding <=> :qvec::vector
+                        LIMIT  :fetch_k
+                    ),
+                    semantic AS (
+                        SELECT id, document_id, contenu, meta,
+                               row_number() OVER (ORDER BY sem_dist) AS rank
+                        FROM   sem_raw
+                    ),
+                    fts_raw AS (
+                        SELECT id, document_id, contenu, meta,
+                               ts_rank_cd(tsv, plainto_tsquery('french', :fts_query)) AS fts_score
+                        FROM   chunks
+                        WHERE  affaire_id = :affaire_id
+                               AND tsv @@ plainto_tsquery('french', :fts_query)
+                               {extra_filter}
+                        ORDER  BY fts_score DESC
+                        LIMIT  :fetch_k
+                    ),
+                    fts AS (
+                        SELECT id, document_id, contenu, meta,
+                               row_number() OVER (ORDER BY fts_score DESC) AS rank
+                        FROM   fts_raw
+                    ),
+                    rrf AS (
+                        SELECT
+                            COALESCE(s.id,          f.id)          AS id,
+                            COALESCE(s.document_id, f.document_id) AS document_id,
+                            COALESCE(s.contenu,     f.contenu)     AS contenu,
+                            COALESCE(s.meta,        f.meta)        AS meta,
+                            COALESCE(1.0 / (:rrf_k + s.rank), 0.0)
+                          + COALESCE(1.0 / (:rrf_k + f.rank), 0.0) AS rrf_score
+                        FROM      semantic s
+                        FULL OUTER JOIN fts f ON s.id = f.id
+                    )
+                    SELECT id, document_id, contenu, meta, rrf_score
+                    FROM   rrf
+                    ORDER  BY rrf_score DESC
+                    LIMIT  :top_k
+                """),
+                params,
+            )
+            results = [
+                {
+                    "chunk_id": str(row.id),
+                    "document_id": str(row.document_id),
+                    "contenu": row.contenu,
+                    "meta": row.meta,
+                    "score": float(row.rrf_score),
+                    "score_type": "rrf",
+                }
+                for row in rows
+            ]
+        except Exception as exc:
+            log.warning("rag.hybrid_sql_failed", error=str(exc), fallback="semantic")
+            results = await cls.search_semantic(db, query, affaire_id, top_k, source_type)
+
         results = _rerank(query, results, top_k)
 
         log.info(
             "rag.search_hybrid",
             affaire_id=str(affaire_id),
             query=query[:60],
-            semantic_hits=len(semantic_hits),
-            fts_hits=len(fts_hits),
-            fused=len(results),
+            results=len(results),
             duration_ms=int((time.monotonic() - t0) * 1000),
         )
         return results
@@ -472,7 +511,6 @@ class RagService:
 
         try:
             # Sanitiser la query FTS : supprimer les caractères spéciaux qui cassent plainto_tsquery
-            import re
             sanitized_query = re.sub(r'[^\w\s\-àâäéèêëïîôùûüÿçœæ]', ' ', query)
             sanitized_query = ' '.join(sanitized_query.split())  # normaliser les espaces
             if not sanitized_query.strip():
