@@ -61,7 +61,7 @@ modules:
     enabled: false
 
   - name: planning
-    enabled: false
+    enabled: true
 
   - name: budget
     enabled: false
