@@ -6,6 +6,12 @@ from pydantic import BaseModel, field_validator
 
 PHASES_VALIDES = {"ESQ", "APS", "APD", "PRO", "ACT", "VISA", "DET", "AOR"}
 
+ERP_TYPES = {
+    "J", "L", "M", "N", "O", "P", "R", "S", "T", "U", "V", "W", "X", "Y",
+    "PA", "CTS", "SG", "OA", "GA", "EF", "REF",
+}
+ERP_CATEGORIES = {"1", "2", "3", "4", "5"}
+
 
 class AffaireCreate(BaseModel):
     code: str
@@ -23,6 +29,10 @@ class AffaireCreate(BaseModel):
     phase_courante: str | None = None
     abf: bool = False
     zone_risque: dict[str, Any] | None = None
+
+    # Classification ERP (migration 0020)
+    erp_type: str | None = None
+    erp_categorie: str | None = None
 
     @field_validator("statut")
     @classmethod
@@ -50,6 +60,20 @@ class AffaireCreate(BaseModel):
             raise ValueError("Le montant doit être positif")
         return v
 
+    @field_validator("erp_type")
+    @classmethod
+    def erp_type_valid(cls, v: str | None) -> str | None:
+        if v is not None and v.upper() not in ERP_TYPES:
+            raise ValueError(f"Type ERP invalide. Valeurs : {sorted(ERP_TYPES)}")
+        return v.upper() if v is not None else None
+
+    @field_validator("erp_categorie")
+    @classmethod
+    def erp_categorie_valid(cls, v: str | None) -> str | None:
+        if v is not None and v not in ERP_CATEGORIES:
+            raise ValueError(f"Catégorie ERP invalide. Valeurs : {sorted(ERP_CATEGORIES)}")
+        return v
+
 
 class AffaireUpdate(BaseModel):
     nom: str | None = None
@@ -66,6 +90,10 @@ class AffaireUpdate(BaseModel):
     phase_courante: str | None = None
     abf: bool | None = None
     zone_risque: dict[str, Any] | None = None
+
+    # Classification ERP (migration 0020)
+    erp_type: str | None = None
+    erp_categorie: str | None = None
 
     @field_validator("statut")
     @classmethod
@@ -86,6 +114,20 @@ class AffaireUpdate(BaseModel):
     def montant_positif(cls, v: float | None) -> float | None:
         if v is not None and v < 0:
             raise ValueError("Le montant doit être positif")
+        return v
+
+    @field_validator("erp_type")
+    @classmethod
+    def erp_type_valid(cls, v: str | None) -> str | None:
+        if v is not None and v.upper() not in ERP_TYPES:
+            raise ValueError(f"Type ERP invalide. Valeurs : {sorted(ERP_TYPES)}")
+        return v.upper() if v is not None else None
+
+    @field_validator("erp_categorie")
+    @classmethod
+    def erp_categorie_valid(cls, v: str | None) -> str | None:
+        if v is not None and v not in ERP_CATEGORIES:
+            raise ValueError(f"Catégorie ERP invalide. Valeurs : {sorted(ERP_CATEGORIES)}")
         return v
 
 
@@ -109,5 +151,9 @@ class AffaireResponse(BaseModel):
     phase_courante: str | None = None
     abf: bool = False
     zone_risque: dict[str, Any] | None = None
+
+    # Classification ERP (migration 0020)
+    erp_type: str | None = None
+    erp_categorie: str | None = None
 
     model_config = {"from_attributes": True}
