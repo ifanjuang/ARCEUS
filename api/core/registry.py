@@ -86,6 +86,19 @@ class ModuleRegistry:
     def get_manifest(self, name: str) -> dict:
         return self._modules.get(name, {}).get("manifest", {})
 
+    def get_all_behaviors(self) -> str:
+        """Retourne les behaviors de tous les modules chargés, concaténés.
+
+        Utilisé par Zeus pour injecter les contraintes métier actives dans son
+        contexte de planification sans modifier les SOUL.md des agents.
+        """
+        parts = []
+        for name, data in self._modules.items():
+            behavior = data["manifest"].get("behavior", "").strip()
+            if behavior:
+                parts.append(f"[{name}]\n{behavior}")
+        return "\n\n".join(parts)
+
     @property
     def loaded_modules(self) -> list[str]:
         return list(self._modules.keys())

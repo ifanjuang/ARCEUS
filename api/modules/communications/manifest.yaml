@@ -7,3 +7,8 @@ depends_on:
   - planning
   - decisions
   - chantier
+behavior: |
+  Courrier recommandé sans réponse > 15 jours → relance automatique via Iris.
+  Mise en demeure détectée → C5 automatique, Thémis en priorité, suspendre toute action unilatérale.
+  Courrier sortant engageant (avenant, réserves, litige) → validation Thémis avant envoi.
+  Archiver chaque échange dans la mémoire projet avec date et référence affaire.

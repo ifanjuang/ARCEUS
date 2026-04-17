@@ -6,3 +6,7 @@ depends_on:
   - auth
 tools: []
 agent: null
+behavior: |
+  Document normatif (DTU, CCTP, RE2020) → Héphaïstos pour vérification, chunking window activé.
+  Plan ou photo chantier → Argos pour constat, puis archivage structuré dans la mémoire projet.
+  Document contractuel (marché, avenant signé) → Thémis incluse pour C3+.

@@ -5,3 +5,7 @@ prefix: /decisions
 depends_on:
   - affaires
   - scoring
+behavior: |
+  Toute décision C4+ tracée avec niveau de dette D0-D3 et condition de levée explicite.
+  Décision irréversible en zone réglementaire (ABF, ERP, zone inondable) → Thémis en co-validation.
+  Dette D3 (bloquante) non levée après 30 jours → escalader à Zeus pour arbitrage.

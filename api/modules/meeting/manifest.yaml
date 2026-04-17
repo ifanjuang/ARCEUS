@@ -6,3 +6,7 @@ depends_on:
   - affaires
   - documents
   - agent
+behavior: |
+  Chaque action extraite d'un CR doit avoir responsable + délai + priorité.
+  Action sans responsable identifiable → demander clarification avant de clore l'analyse.
+  Action C3+ non résolue à l'échéance → relance via Chronos et Iris.

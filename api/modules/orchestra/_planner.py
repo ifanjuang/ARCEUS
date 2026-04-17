@@ -25,6 +25,9 @@ Organise directement leur collaboration en sous-tâches adaptées.
 ## Demande
 {instruction}
 
+## Contraintes métier actives
+{module_behaviors}
+
 ## Agents disponibles
 {agent_capabilities}
 
@@ -228,10 +231,23 @@ async def zeus_distribute(state: OrchestraState) -> dict:
         f"### {agent}\n{summary}"
         for agent, summary in agent_summaries.items()
     )
+
+    # Behaviors des modules actifs — contraintes métier injectées dynamiquement
+    module_behaviors = "(aucune contrainte spécifique)"
+    try:
+        from core.registry import registry as _reg
+        if _reg is not None:
+            behaviors = _reg.get_all_behaviors()
+            if behaviors:
+                module_behaviors = behaviors
+    except Exception:
+        pass  # Ne pas bloquer l'orchestration si le registry est inaccessible
+
     prompt = _ZEUS_UNIFIED_PROMPT.format(
         n=len(agents),
         instruction=state["instruction"],
         agent_capabilities=capabilities_text,
+        module_behaviors=module_behaviors,
     )
     content = await _llm_call(_zeus_system(), prompt)
     parsed = _parse_json_response(content)

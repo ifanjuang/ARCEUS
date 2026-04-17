@@ -1,0 +1,212 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ── Qualité du code ────────────────────────────────────────────────
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install linters
+        run: pip install ruff==0.8.0 black==24.10.0
+
+      - name: ruff check
+        run: ruff check api/ tests/
+
+      - name: black --check
+        run: black --check api/ tests/
+
+  # ── Tests ──────────────────────────────────────────────────────────
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: arceus_test
+          POSTGRES_USER: arceus
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arceus"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://arceus:testpassword@localhost:5432/arceus_test
+      DATABASE_URL_SYNC: postgresql://arceus:testpassword@localhost:5432/arceus_test
+      ASYNCPG_URL: postgresql://arceus:testpassword@localhost:5432/arceus_test
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET_KEY: test-secret-key-minimum-32-characters-long
+      ADMIN_EMAIL: admin@test.fr
+      ADMIN_PASSWORD: TestPassword123!
+      LLM_PROVIDER: ollama
+      OLLAMA_BASE_URL: http://localhost:11434
+      OLLAMA_MODEL: mistral:7b
+      EMBEDDING_PROVIDER: ollama
+      OLLAMA_EMBEDDING_MODEL: nomic-embed-text
+      EMBEDDING_DIM: 768
+      MINIO_ENDPOINT: localhost:9000
+      MINIO_ROOT_USER: arceus
+      MINIO_ROOT_PASSWORD: testpassword123
+      MINIO_BUCKET: arceus-test
+      DEBUG: "true"
+      AGENTS_DIR: /home/runner/work/ARCEUS/ARCEUS/agents
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: api
+        run: pip install -r requirements.txt pytest-cov==6.0.0
+
+      - name: Run tests
+        working-directory: api
+        run: |
+          pytest tests/ -q \
+            --cov=. \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under=60 \
+            -x
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: api/coverage.xml
+
+  # ── Sécurité dépendances ───────────────────────────────────────────
+  security:
+    name: Security audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install pip-audit
+        run: pip install pip-audit==2.7.3
+
+      - name: Audit dependencies
+        working-directory: api
+        # --fail-on severity high : bloque la PR si CVE haute/critique
+        run: pip-audit -r requirements.txt --fail-on severity high
+
+  # ── Évaluation agents (OpenClaw) ───────────────────────────────────
+  # Activé uniquement sur main/develop pour éviter la surconsommation LLM
+  eval:
+    name: OpenClaw regression
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
+    needs: [test]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: arceus_test
+          POSTGRES_USER: arceus
+          POSTGRES_PASSWORD: testpassword
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U arceus"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://arceus:testpassword@localhost:5432/arceus_test
+      DATABASE_URL_SYNC: postgresql://arceus:testpassword@localhost:5432/arceus_test
+      ASYNCPG_URL: postgresql://arceus:testpassword@localhost:5432/arceus_test
+      REDIS_URL: redis://localhost:6379/0
+      JWT_SECRET_KEY: test-secret-key-minimum-32-characters-long
+      ADMIN_EMAIL: admin@test.fr
+      ADMIN_PASSWORD: TestPassword123!
+      LLM_PROVIDER: ollama
+      OLLAMA_BASE_URL: http://localhost:11434
+      OLLAMA_MODEL: mistral:7b
+      EMBEDDING_PROVIDER: ollama
+      EMBEDDING_DIM: 768
+      MINIO_ENDPOINT: localhost:9000
+      MINIO_ROOT_USER: arceus
+      MINIO_ROOT_PASSWORD: testpassword123
+      MINIO_BUCKET: arceus-test
+      DEBUG: "true"
+      AGENTS_DIR: /home/runner/work/ARCEUS/ARCEUS/agents
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        working-directory: api
+        run: pip install -r requirements.txt
+
+      - name: OpenClaw — dry-run (validation datasets)
+        working-directory: api
+        run: |
+          python -m modules.evaluation.cli run openclaw-chantier --dry-run
+          python -m modules.evaluation.cli run openclaw-litige --dry-run
+          python -m modules.evaluation.cli run openclaw-devis --dry-run
+          python -m modules.evaluation.cli run openclaw-courrier --dry-run
+          python -m modules.evaluation.cli run openclaw-photo --dry-run
+
+      - name: OpenClaw — rapport JSON
+        working-directory: api
+        run: |
+          python -m modules.evaluation.cli run openclaw-chantier --json > /tmp/eval-chantier.json
+          python -m modules.evaluation.cli run openclaw-litige --json > /tmp/eval-litige.json
+        continue-on-error: true  # Ne bloque pas tant que le LLM est mocké en CI
+
+      - name: Upload eval reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: openclaw-reports
+          path: /tmp/eval-*.json
