@@ -6,3 +6,8 @@ depends_on:
   - affaires
   - planning
   - decisions
+behavior: |
+  Non-conformité structurelle (ferraillage, porteur, stabilité) → C4 minimum, Héphaïstos obligatoire.
+  Photo chantier → Argos pour constat objectif, puis Héphaïstos pour qualification technique.
+  Sécurité des personnes menacée → arrêt de chantier C5, HITL obligatoire.
+  Tracer chaque observation dans la mémoire projet (Hestia) avec référence lot et localisation.

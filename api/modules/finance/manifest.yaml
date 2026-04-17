@@ -6,3 +6,8 @@ depends_on:
   - affaires
   - planning
   - decisions
+behavior: |
+  Alerter si dépassement honoraires > 10 % du montant contractuel — escalader à Chronos.
+  Signaler tout avenant urgent (délai signature < 7 jours) à Iris et Chronos.
+  Toujours référencer le marché MOE de l'affaire dans toute analyse financière.
+  Délai de paiement MOE > 30 jours → alerte Iris pour relance formelle.

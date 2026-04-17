@@ -6,3 +6,7 @@ depends_on:
   - auth
 tools: []
 agent: null
+behavior: |
+  Affaire en zone ABF ou ERP → inclure Thémis systématiquement pour tout C2+.
+  Phase ACT/DET/VISA active → Chronos surveille les délais légaux d'instruction.
+  Budget affaire non renseigné → demander avant toute analyse financière engageante.

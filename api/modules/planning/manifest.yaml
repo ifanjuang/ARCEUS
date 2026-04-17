@@ -4,3 +4,8 @@ description: "Moteur de planification — lots, tâches, jalons, liens de dépen
 prefix: /planning
 depends_on:
   - affaires
+behavior: |
+  Retard sur jalon légal (PC, instruction, visa) → alerte C4 immédiate, Chronos en chef de file.
+  Retard > 5 jours sur chemin critique → propagation automatique en cascade.
+  Phase DET/VISA : délai réponse < 8 jours → signaler C3 minimum.
+  Conséquences financières d'un retard → croiser systématiquement avec le module finance.
