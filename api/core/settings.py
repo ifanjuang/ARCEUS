@@ -1,5 +1,8 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+
+_WEAK_SECRETS = {"changeme", "devpassword", "secret", "password", "admin", "test", "1234"}
 
 
 class Settings(BaseSettings):
@@ -90,6 +93,26 @@ class Settings(BaseSettings):
     WA_TOKEN: Optional[str] = None
     WA_TEMPLATE_NAME: str = "os_projet_alerte"
     EVOLUTION_API_KEY: str = "changeme-evolution"
+
+    @model_validator(mode="after")
+    def reject_weak_secrets_in_production(self) -> "Settings":
+        if self.DEBUG:
+            return self
+        errors = []
+        if self.JWT_SECRET_KEY.lower().strip() in _WEAK_SECRETS or "changeme" in self.JWT_SECRET_KEY.lower():
+            errors.append("JWT_SECRET_KEY")
+        if self.ADMIN_PASSWORD.lower().strip() in _WEAK_SECRETS or "changeme" in self.ADMIN_PASSWORD.lower():
+            errors.append("ADMIN_PASSWORD")
+        if self.MINIO_ROOT_PASSWORD.lower().strip() in _WEAK_SECRETS or "changeme" in self.MINIO_ROOT_PASSWORD.lower():
+            errors.append("MINIO_ROOT_PASSWORD")
+        if errors:
+            raise ValueError(
+                f"Secrets trop faibles pour la production : {', '.join(errors)}. "
+                "Définissez des valeurs fortes dans votre .env avant de lancer en mode DEBUG=false."
+            )
+        if len(self.JWT_SECRET_KEY) < 32:
+            raise ValueError("JWT_SECRET_KEY doit faire au moins 32 caractères.")
+        return self
 
     @property
     def effective_llm_model(self) -> str:
