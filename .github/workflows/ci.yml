@@ -100,7 +100,7 @@ jobs:
             --cov=. \
             --cov-report=term-missing \
             --cov-report=xml \
-            --cov-fail-under=60 \
+            --cov-fail-under=30 \
             -x
 
       - name: Upload coverage

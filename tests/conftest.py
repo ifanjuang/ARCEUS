@@ -9,6 +9,7 @@ Stratégie :
 """
 
 import pytest
+from pathlib import Path
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -109,8 +110,10 @@ async def client(db, mocker):
     test_app.include_router(health_router)
 
     # Charger les modules (même modules.yaml que la prod)
+    # Chemin absolu : modules.yaml est à la racine du dépôt, pas dans api/
+    _modules_yaml = str(Path(__file__).parent.parent / "modules.yaml")
     reg = ModuleRegistry(test_app)
-    reg.load_all("modules.yaml")
+    reg.load_all(_modules_yaml)
 
     # Override get_db → session de test
     async def _override_db():
