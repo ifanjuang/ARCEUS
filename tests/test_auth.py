@@ -64,7 +64,7 @@ class TestRegister:
             "/auth/register",
             json={"email": "x@test.fr", "password": "pass123"},
         )
-        assert r.status_code == 403
+        assert r.status_code == 401
 
 
 class TestMe:
@@ -77,7 +77,7 @@ class TestMe:
 
     async def test_me_without_token(self, client):
         r = await client.get("/auth/me")
-        assert r.status_code == 403
+        assert r.status_code == 401
 
 
 class TestListUsers:

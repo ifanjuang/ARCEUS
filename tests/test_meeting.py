@@ -132,7 +132,7 @@ class TestCRCreate:
             "/meeting/cr/",
             json={"affaire_id": str(affaire.id), "titre": "Test", "contenu_brut": "x" * 30},
         )
-        assert r.status_code == 403
+        assert r.status_code == 401
 
     async def test_create_cr_content_too_short(self, client, moe_token, affaire):
         r = await client.post(

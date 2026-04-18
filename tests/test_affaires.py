@@ -9,7 +9,7 @@ from tests.conftest import auth_headers
 class TestListAffaires:
     async def test_list_requires_auth(self, client):
         r = await client.get("/affaires/")
-        assert r.status_code == 403
+        assert r.status_code == 401
 
     async def test_list_empty(self, client, lecteur_token):
         r = await client.get("/affaires/", headers=auth_headers(lecteur_token))

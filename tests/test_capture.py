@@ -50,7 +50,7 @@ class TestCaptureUpload:
             data={"affaire_id": str(affaire.id)},
             files=[_audio_file()],
         )
-        assert r.status_code == 403
+        assert r.status_code == 401
 
     async def test_upload_success_with_transcription(
         self, client, moe_token, affaire, mock_storage, mock_transcribe_ok, mocker
@@ -123,7 +123,7 @@ class TestCaptureList:
 
     async def test_list_requires_auth(self, client, affaire):
         r = await client.get(f"/capture/sessions/{affaire.id}")
-        assert r.status_code == 403
+        assert r.status_code == 401
 
 
 class TestCaptureDetail:
@@ -136,7 +136,7 @@ class TestCaptureDetail:
 
     async def test_detail_requires_auth(self, client):
         r = await client.get(f"/capture/sessions/detail/{uuid.uuid4()}")
-        assert r.status_code == 403
+        assert r.status_code == 401
 
 
 class TestProcessCapture:

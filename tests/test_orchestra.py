@@ -81,7 +81,7 @@ class TestOrchestraRun:
                 "affaire_id": str(affaire.id),
             },
         )
-        assert r.status_code == 403
+        assert r.status_code == 401
 
     async def test_run_enqueued(self, client, moe_token, affaire, mock_queue):
         """POST /orchestra/run retourne 202 (queued) quand Redis est disponible."""
@@ -201,4 +201,4 @@ class TestOrchestraHistory:
 
     async def test_list_requires_auth(self, client, affaire):
         r = await client.get(f"/orchestra/runs/{affaire.id}")
-        assert r.status_code == 403
+        assert r.status_code == 401

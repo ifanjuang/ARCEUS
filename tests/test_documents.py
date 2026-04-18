@@ -21,7 +21,7 @@ class TestUpload:
             data={"affaire_id": str(affaire.id)},
             files={"file": ("test.pdf", pdf_bytes, "application/pdf")},
         )
-        assert r.status_code == 403
+        assert r.status_code == 401
 
     async def test_upload_success(self, client, moe_token, affaire, pdf_bytes, mocker):
         mocker.patch(
@@ -102,7 +102,7 @@ class TestSearch:
             "/documents/search",
             json={"query": "test", "affaire_id": str(affaire.id)},
         )
-        assert r.status_code == 403
+        assert r.status_code == 401
 
 
 class TestListDocuments:
