@@ -40,6 +40,7 @@ AGENTS_DIR = (
     else Path(__file__).parent.parent.parent.parent / "agents"
 )
 DEFAULT_AGENTS = ["themis", "athena", "chronos"]
+DEFAULT_SYNTHESIS_AGENT = "kairos"  # synthèse finale — remplace mnemosyne dans ce rôle
 
 # ── Limites cognitives par criticité (amélioration 6 — Demeter) ──────
 # Empêche la sur-complexité : plus la criticité est faible, moins d'agents.
@@ -55,13 +56,22 @@ COGNITIVE_LIMITS: dict[str, dict] = {
 # Clé absente = toujours activable. Valeur vide = jamais automatique.
 # Valeur = liste des criticités (ou patterns) déclenchant cet agent.
 AGENT_TRIGGERS: dict[str, list[str]] = {
+    # Agents existants
     "promethee": ["C4", "C5"],               # contre-analyse : C4/C5 seulement
     "dionysos":  ["C4", "C5", "exploration"], # créativité : C4/C5 ou pattern exploration
+    "themis":    ["C4", "C5"],               # validation finale/critique uniquement (table)
     "hestia":    ["C3", "C4", "C5"],         # mémoire projet : pas C1/C2
     "mnemosyne": ["C4", "C5"],               # capitalisation agence : C4/C5 seulement
     "aphrodite": [],                         # communication externe — jamais décisionnel auto
     "iris":      ["C4", "C5"],               # correspondance formelle : C4/C5
     "dedale":    ["C4", "C5"],               # production dossiers complets : C4/C5
+    # Nouveaux agents Pantheon OS
+    "hera":      ["C3", "C4", "C5"],         # supervision : post-synthèse C3+
+    "artemis":   ["C1", "C2", "C3", "C4", "C5"],  # filtrage : sur demande Zeus (trim)
+    "hades":     ["C4", "C5"],               # risques : uniquement criticité haute
+    "demeter":   ["C3", "C4", "C5"],         # ressources : planification C3+
+    "poseidon":  ["C4", "C5"],               # cascade : systèmes complexes uniquement
+    "kairos":    ["C1", "C2", "C3", "C4", "C5"],  # synthèse : toujours activable
 }
 
 # Routing automatique selon criticité
@@ -73,7 +83,7 @@ CRITICITE_ROUTING = {
     "C5": {"hitl": True, "zeus": True, "veto_check": True},
 }
 VALID_AGENTS = {
-    # Perception
+    # Perception / Interface
     "hermes",
     "argos",
     # Analyse
@@ -94,6 +104,13 @@ VALID_AGENTS = {
     "aphrodite",
     # Production
     "dedale",
+    # Pantheon OS — nouveaux agents
+    "hera",       # Supervision cohérence globale
+    "artemis",    # Filtrage & recentrage
+    "hades",      # Risques & scénarios négatifs
+    "demeter",    # Optimisation ressources
+    "poseidon",   # Flux & effets cascade
+    "kairos",     # Synthèse finale
 }
 
 

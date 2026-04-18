@@ -44,6 +44,7 @@ from ._shared import (
     CRITICITE_ROUTING,
     VALID_AGENTS,
     DEFAULT_AGENTS,
+    DEFAULT_SYNTHESIS_AGENT,
     log,
 )
 
@@ -155,7 +156,7 @@ def _build_initial_state(
         "subtasks": [],
         "subtask_results": {},
         "assignments": [],
-        "synthesis_agent": "mnemosyne",
+        "synthesis_agent": DEFAULT_SYNTHESIS_AGENT,
         "agent_results": {},
         "agent_run_ids": [],
         "complement_done": False,
