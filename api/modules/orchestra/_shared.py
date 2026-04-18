@@ -41,6 +41,29 @@ AGENTS_DIR = (
 )
 DEFAULT_AGENTS = ["themis", "athena", "chronos"]
 
+# ── Limites cognitives par criticité (amélioration 6 — Demeter) ──────
+# Empêche la sur-complexité : plus la criticité est faible, moins d'agents.
+COGNITIVE_LIMITS: dict[str, dict] = {
+    "C1": {"max_agents": 1, "max_subtasks": 1, "max_depth": 1},
+    "C2": {"max_agents": 2, "max_subtasks": 2, "max_depth": 1},
+    "C3": {"max_agents": 4, "max_subtasks": 3, "max_depth": 2},
+    "C4": {"max_agents": 6, "max_subtasks": 5, "max_depth": 3},
+    "C5": {"max_agents": 8, "max_subtasks": 6, "max_depth": 3},
+}
+
+# ── Activation conditionnelle des agents (amélioration 3) ────────────
+# Clé absente = toujours activable. Valeur vide = jamais automatique.
+# Valeur = liste des criticités (ou patterns) déclenchant cet agent.
+AGENT_TRIGGERS: dict[str, list[str]] = {
+    "promethee": ["C4", "C5"],               # contre-analyse : C4/C5 seulement
+    "dionysos":  ["C4", "C5", "exploration"], # créativité : C4/C5 ou pattern exploration
+    "hestia":    ["C3", "C4", "C5"],         # mémoire projet : pas C1/C2
+    "mnemosyne": ["C4", "C5"],               # capitalisation agence : C4/C5 seulement
+    "aphrodite": [],                         # communication externe — jamais décisionnel auto
+    "iris":      ["C4", "C5"],               # correspondance formelle : C4/C5
+    "dedale":    ["C4", "C5"],               # production dossiers complets : C4/C5
+}
+
 # Routing automatique selon criticité
 CRITICITE_ROUTING = {
     "C1": {"hitl": False, "zeus": False, "veto_check": False},
@@ -143,6 +166,18 @@ class OrchestraState(TypedDict):
 
     # Identifiant de l'OrchestraRun en cours (disponible dès le début, passé depuis service.py)
     orchestra_run_id: str  # UUID de l'OrchestraRun — utilisé par write_memories pour lier les décisions
+
+    # ── Améliorations architecturales ───────────────────────────────────
+
+    # Score multi-critères global (amélioration 1 — tous les runs)
+    run_score: dict  # {quality: 0-100, coherence: 0-100, confidence: 0-100, risk: 0-100}
+
+    # Supervision HERA (amélioration 4 — séparation exécution/supervision)
+    hera_verdict: str  # "aligned" | "misaligned" | "degraded"
+    hera_feedback: str
+
+    # Fallback (amélioration 2 — 0=none | 1=simplified | 2=strategy_changed | 3=degraded)
+    fallback_level: int
 
 
 # ── Helpers LLM ────────────────────────────────────────────────────
