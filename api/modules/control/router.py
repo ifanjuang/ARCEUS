@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.auth import require_role
+from core.settings import settings
 from database import get_db
 from .schemas import ControlSnapshot, ModuleStatus, RunSummary, ErrorEntry, TraceEvent
 from .service import ControlService
@@ -54,6 +55,24 @@ def get_router(config: dict) -> APIRouter:
         _=Depends(require_role("admin", "moe")),
     ):
         return await ControlService.get_errors(db, limit=limit)
+
+    @router.get("/jobs/failed")
+    async def failed_jobs(
+        limit: int = Query(20, ge=1, le=100),
+        _=Depends(require_role("admin", "moe")),
+    ):
+        """Retourne les jobs ARQ échoués depuis la Dead-Letter Queue Redis."""
+        try:
+            import json
+            import redis.asyncio as aioredis
+            r = await aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+            raw = await r.lrange("arq:dlq", 0, limit - 1)
+            await r.aclose()
+            return [json.loads(entry) for entry in raw]
+        except Exception as exc:
+            from core.logging import get_logger
+            get_logger("control.router").warning("dlq.read_failed", error=str(exc))
+            return []
 
     @router.get("/snapshot", response_model=ControlSnapshot)
     async def snapshot(
