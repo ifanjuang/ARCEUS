@@ -8,43 +8,31 @@ _WEAK_SECRETS = {"changeme", "devpassword", "secret", "password", "admin", "test
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    # ── Base de données ──────────────────────────────────────────
-    DATABASE_URL: str = "postgresql+asyncpg://arceus:changeme@db:5432/arceus"
-    DATABASE_URL_SYNC: str = "postgresql://arceus:changeme@db:5432/arceus"
-    ASYNCPG_URL: str = "postgresql://arceus:changeme@db:5432/arceus"
+    # ── Database ─────────────────────────────────────────────────
+    DATABASE_URL: str = "postgresql+asyncpg://pantheon:changeme@db:5432/pantheon"
+    DATABASE_URL_SYNC: str = "postgresql://pantheon:changeme@db:5432/pantheon"
+    ASYNCPG_URL: str = "postgresql://pantheon:changeme@db:5432/pantheon"
 
     # ── Auth JWT ─────────────────────────────────────────────────
     JWT_SECRET_KEY: str = "changeme-secret-min-32-chars-please"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 1440
-    ADMIN_EMAIL: str = "admin@agence.fr"
+    ADMIN_EMAIL: str = "admin@pantheon.ai"
     ADMIN_PASSWORD: str = "changeme"
 
     # ── LLM ──────────────────────────────────────────────────────
     LLM_PROVIDER: str = "ollama"  # "ollama" | "openai"
     OLLAMA_BASE_URL: str = "http://ollama:11434"
     OLLAMA_MODEL: str = "mistral:7b"
-    LLM_MODEL: Optional[str] = None  # override si openai
+    LLM_MODEL: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_API_BASE_URL: str = "https://api.openai.com/v1"
 
     # ── Embeddings ───────────────────────────────────────────────
     EMBEDDING_PROVIDER: str = "ollama"
     OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"
-    EMBEDDING_MODEL: Optional[str] = None  # override si openai
+    EMBEDDING_MODEL: Optional[str] = None
     EMBEDDING_DIM: int = 768
-
-    # ── MinIO ────────────────────────────────────────────────────
-    MINIO_ENDPOINT: str = "minio:9000"
-    MINIO_ROOT_USER: str = "arceus"
-    MINIO_ROOT_PASSWORD: str = "changeme-minio"
-    MINIO_BUCKET: str = "arceus-files"
-    MINIO_SECURE: bool = False
-
-    # ── Notion ───────────────────────────────────────────────────
-    NOTION_TOKEN: Optional[str] = None
-    NOTION_DATABASE_AFFAIRES: Optional[str] = None
-    NOTION_DATABASE_ACTIONS: Optional[str] = None
 
     # ── API ──────────────────────────────────────────────────────
     API_PORT: int = 8000
@@ -52,59 +40,38 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # ── Rate limiting ────────────────────────────────────────────
-    RATE_LIMIT_LLM: str = "10/minute"
-    RATE_LIMIT_STANDARD: str = "100/minute"
+    RATE_LIMIT_LLM: str = "20/minute"
+    RATE_LIMIT_STANDARD: str = "200/minute"
     RATE_LIMIT_READ: str = "1000/minute"
 
-    # ── SMTP ─────────────────────────────────────────────────────
+    # ── Runtime ──────────────────────────────────────────────────
+    RUNTIME_DIR: str = "/runtime"
+    CONFIG_DIR: str = "/config"
+
+    # ── Domain ───────────────────────────────────────────────────
+    DOMAIN: str = "architecture"
+    DOMAIN_LABEL: str = "Architecture & Maîtrise d'Œuvre"
+
+    # ── RAG ──────────────────────────────────────────────────────
+    RAG_TOP_K: int = 10
+    RAG_MIN_SCORE: float = 0.65
+    RAG_HYBRID: bool = True
+    CONTEXTUAL_RETRIEVAL: bool = False
+
+    # ── SMTP (optional) ──────────────────────────────────────────
     SMTP_HOST: Optional[str] = None
     SMTP_PORT: int = 587
     SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
-    SMTP_FROM: str = "ARCEUS <notifications@agence.fr>"
+    SMTP_FROM: str = "Pantheon OS <notifications@pantheon.ai>"
 
-    # ── Webhooks / Paperclip ─────────────────────────────────────
-    WEBHOOK_SECRET: Optional[str] = None  # Si None → JWT_SECRET_KEY utilisé
-
-    # ── Redis / ARQ ──────────────────────────────────────────────
+    # ── V2 — disabled for MVP (kept for forward compatibility) ───
     REDIS_URL: str = "redis://redis:6379/0"
-
-    # ── Agents ───────────────────────────────────────────────────
-    AGENTS_DIR: str = "/agents"
-
-    # ── Domaine métier (Pantheon OS — multi-domaine) ─────────────
-    # Détermine le contexte injecté dans tous les SOUL.md + les veto patterns chargés
-    # Valeurs supportées : btp | droit | audit | conseil | medecine | it
-    DOMAIN: str = "btp"
-    DOMAIN_LABEL: str = "Architecture & Maîtrise d'Œuvre"
-
-    # ── RAG avancé ────────────────────────────────────────────────
-    CONTEXTUAL_RETRIEVAL: bool = True  # enrichissement LLM par chunk à l'ingestion
-    RERANK_ENABLED: bool = False  # cross-encoder reranking post-RRF
-    RERANK_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
-
-    # ── Capture / Whisper ────────────────────────────────────────
-    WHISPER_ENDPOINT: Optional[str] = None  # ex: http://whisper:9000/v1/audio/transcriptions
-
-    # ── OCR / GLM-4V ─────────────────────────────────────────────
-    GLM_OCR_ENDPOINT: Optional[str] = None  # ex: https://open.bigmodel.cn/api/paas/v4
-    GLM_OCR_API_KEY: Optional[str] = None  # Zhipu API key (cloud) ou vide si self-hosted
-    GLM_OCR_MODEL: str = "glm-4v"
-    GLM_OCR_MIN_CHARS: int = 100  # déclenche l'OCR si texte extrait < seuil
-
-    # ── Telegram ─────────────────────────────────────────────────
-    TELEGRAM_TOKEN: Optional[str] = None
-    TELEGRAM_DEFAULT_CHAT_ID: Optional[str] = None
-    # Chat IDs autorisés, séparés par virgule. Vide = tous autorisés.
-    TELEGRAM_ALLOWED_CHAT_IDS: Optional[str] = None
-
-    # ── WhatsApp ─────────────────────────────────────────────────
-    WHATSAPP_ENABLED: bool = False
-    WHATSAPP_MODE: str = "meta"
-    WA_PHONE_ID: Optional[str] = None
-    WA_TOKEN: Optional[str] = None
-    WA_TEMPLATE_NAME: str = "os_projet_alerte"
-    EVOLUTION_API_KEY: str = "changeme-evolution"
+    MINIO_ENDPOINT: str = "minio:9000"
+    MINIO_ROOT_USER: str = "pantheon"
+    MINIO_ROOT_PASSWORD: str = "changeme-minio"
+    MINIO_BUCKET: str = "pantheon-files"
+    MINIO_SECURE: bool = False
 
     @model_validator(mode="after")
     def reject_weak_secrets_in_production(self) -> "Settings":
@@ -115,28 +82,22 @@ class Settings(BaseSettings):
             errors.append("JWT_SECRET_KEY")
         if self.ADMIN_PASSWORD.lower().strip() in _WEAK_SECRETS or "changeme" in self.ADMIN_PASSWORD.lower():
             errors.append("ADMIN_PASSWORD")
-        if self.MINIO_ROOT_PASSWORD.lower().strip() in _WEAK_SECRETS or "changeme" in self.MINIO_ROOT_PASSWORD.lower():
-            errors.append("MINIO_ROOT_PASSWORD")
         if errors:
             raise ValueError(
-                f"Secrets trop faibles pour la production : {', '.join(errors)}. "
-                "Définissez des valeurs fortes dans votre .env avant de lancer en mode DEBUG=false."
+                f"Weak secrets in production: {', '.join(errors)}. "
+                "Set strong values in .env before running with DEBUG=false."
             )
         if len(self.JWT_SECRET_KEY) < 32:
-            raise ValueError("JWT_SECRET_KEY doit faire au moins 32 caractères.")
+            raise ValueError("JWT_SECRET_KEY must be at least 32 characters.")
         return self
 
     @property
     def effective_llm_model(self) -> str:
-        if self.LLM_MODEL:
-            return self.LLM_MODEL
-        return self.OLLAMA_MODEL
+        return self.LLM_MODEL or self.OLLAMA_MODEL
 
     @property
     def effective_embedding_model(self) -> str:
-        if self.EMBEDDING_MODEL:
-            return self.EMBEDDING_MODEL
-        return self.OLLAMA_EMBEDDING_MODEL
+        return self.EMBEDDING_MODEL or self.OLLAMA_EMBEDDING_MODEL
 
 
 settings = Settings()

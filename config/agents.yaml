@@ -1,0 +1,164 @@
+# config/agents.yaml — Agent registry
+# enabled: true|false controls whether the agent is loaded at startup
+# Core MVP agents are enabled by default; extended agents are disabled.
+
+agents:
+  # ── Meta layer ────────────────────────────────────────────────────
+  ZEUS:
+    layer: meta
+    role: orchestrator
+    class: runtime.hermes.agents.meta.Zeus
+    enabled: true
+    description: "Global orchestration — execution order, merge/fork/child workflows, fallbacks"
+
+  ATHENA:
+    layer: meta
+    role: planner
+    class: runtime.hermes.agents.meta.Athena
+    enabled: true
+    description: "Planning and decomposition — task analysis, sub-task breakdown, agent selection"
+
+  THEMIS:
+    layer: meta
+    role: process_guardian
+    class: runtime.hermes.agents.meta.Themis
+    enabled: false
+    veto: true
+    description: "Process integrity — workflow rule enforcement, output conformance checks"
+
+  HERA:
+    layer: meta
+    role: supervisor
+    class: runtime.hermes.agents.meta.Hera
+    enabled: false
+    description: "Global coherence — final alignment check, contradiction detection"
+
+  APOLLO:
+    layer: meta
+    role: validator
+    class: runtime.hermes.agents.meta.Apollo
+    enabled: true
+    description: "Final validation — reliability scoring, confidence score, release decision"
+
+  # ── Analysis layer ────────────────────────────────────────────────
+  HERMES:
+    layer: analysis
+    role: router
+    class: runtime.hermes.agents.analysis.Hermes
+    enabled: true
+    description: "Research router — source selection, skill activation, multi-source coordination"
+
+  DEMETER:
+    layer: analysis
+    role: collector
+    class: runtime.hermes.agents.analysis.Demeter
+    enabled: false
+    description: "Collection and ingestion — PDF/file/web fetch, corpus preparation, normalization"
+
+  ARGOS:
+    layer: analysis
+    role: extractor
+    class: runtime.hermes.agents.analysis.Argos
+    enabled: true
+    description: "Factual extraction — facts, figures, citations, verifiable evidence"
+
+  PROMETHEUS:
+    layer: analysis
+    role: challenger
+    class: runtime.hermes.agents.analysis.Prometheus
+    enabled: true
+    description: "Contradiction and cross-referencing — source comparison, inconsistency detection"
+
+  ARTEMIS:
+    layer: analysis
+    role: filter
+    class: runtime.hermes.agents.analysis.Artemis
+    enabled: false
+    description: "Filtering and focus — noise reduction, relevance prioritization"
+
+  HECATE:
+    layer: analysis
+    role: uncertainty_resolver
+    class: runtime.hermes.agents.analysis.Hecate
+    enabled: true
+    description: "Uncertainty detection — ambiguity, missing info, clarification questions"
+
+  METIS:
+    layer: analysis
+    role: optimizer
+    class: runtime.hermes.agents.analysis.Metis
+    enabled: false
+    description: "Tactical optimization — plan improvement, intelligent shortcuts"
+
+  # ── Memory layer ──────────────────────────────────────────────────
+  HESTIA:
+    layer: memory
+    role: session_memory
+    class: runtime.hermes.agents.memory.Hestia
+    enabled: true
+    description: "Session memory — immediate context, user clarifications, run continuity"
+
+  MNEMOSYNE:
+    layer: memory
+    role: knowledge_library
+    class: runtime.hermes.agents.memory.Mnemosyne
+    enabled: false
+    description: "Structured library — internal references, reusable patterns, organizational memory"
+
+  HADES:
+    layer: memory
+    role: vector_retrieval
+    class: runtime.hermes.agents.memory.Hades
+    enabled: true
+    description: "Deep memory — semantic retrieval, pgvector chunks, long-term search"
+
+  # ── Output layer ──────────────────────────────────────────────────
+  KAIROS:
+    layer: output
+    role: synthesizer
+    class: runtime.hermes.agents.output.Kairos
+    enabled: true
+    description: "Contextual synthesis — essential selection, information hierarchization"
+
+  DAEDALUS:
+    layer: output
+    role: builder
+    class: runtime.hermes.agents.output.Daedalus
+    enabled: true
+    description: "Deliverable construction — dossiers, briefs, reports with citations and annexes"
+
+  IRIS:
+    layer: output
+    role: communicator
+    class: runtime.hermes.agents.output.Iris
+    enabled: true
+    description: "Communication and tone — context reformulation, recipient adaptation"
+
+  APHRODITE:
+    layer: output
+    role: stylist
+    class: runtime.hermes.agents.output.Aphrodite
+    enabled: false
+    description: "Polish and impact — presentation improvement, form enhancement"
+
+  HEPHAESTUS:
+    layer: output
+    role: diagram_builder
+    class: runtime.hermes.agents.output.Hephaestus
+    enabled: false
+    description: "Technical production — schemas, Mermaid diagrams, figures"
+
+  # ── System layer ──────────────────────────────────────────────────
+  ARES:
+    layer: system
+    role: fast_executor
+    class: runtime.hermes.agents.system.Ares
+    enabled: false
+    description: "Fast execution — simple tasks, degraded mode fallback"
+
+  POSEIDON:
+    layer: system
+    role: distributor
+    class: runtime.hermes.agents.system.Poseidon
+    enabled: false
+    description: "Load management — parallelism regulation, flow control"

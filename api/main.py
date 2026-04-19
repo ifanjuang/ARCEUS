@@ -1,6 +1,7 @@
 """
-Point d'entrée de l'API OS Projet.
-Ne connaît aucun module — tout passe par ModuleRegistry.load_all().
+Pantheon OS — FastAPI entry point.
+Loads modules dynamically via ModuleRegistry.
+MVP: no LangGraph checkpointer, no Redis/ARQ queue.
 """
 
 from contextlib import asynccontextmanager
@@ -14,7 +15,6 @@ from core.logging import configure_logging, get_logger
 from database import AsyncSessionLocal
 from core.settings import settings
 from core.rate_limit import limiter
-import core.events as events
 from database import engine, Base
 
 configure_logging()
@@ -22,7 +22,7 @@ log = get_logger("main")
 
 
 def _check_migrations() -> None:
-    """Vérifie que toutes les migrations Alembic sont appliquées (§23.4). Crash explicite sinon."""
+    """Crash explicitly if Alembic migrations are not up to date."""
     try:
         from alembic.runtime.migration import MigrationContext
         from alembic.script import ScriptDirectory
@@ -41,16 +41,16 @@ def _check_migrations() -> None:
 
         if current != head:
             raise RuntimeError(
-                f"\n\n  ❌ Base de données non à jour.\n"
-                f"  Lancer : alembic upgrade head\n"
-                f"  Actuelle : {current}\n"
-                f"  Attendue : {head}\n"
+                f"\n\n  ❌ Database not up to date.\n"
+                f"  Run: alembic upgrade head\n"
+                f"  Current: {current}\n"
+                f"  Expected: {head}\n"
             )
         log.info("migrations.ok", revision=current)
     except ImportError:
-        log.warning("migrations.alembic_not_found", detail="Vérification ignorée")
+        log.warning("migrations.alembic_not_found")
     except Exception as e:
-        if "non à jour" in str(e):
+        if "not up to date" in str(e) or "non à jour" in str(e):
             raise
         log.warning("migrations.check_failed", error=str(e))
 
@@ -58,39 +58,31 @@ def _check_migrations() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────────────────────────────
-    log.info("startup.begin", version="0.1.0", debug=settings.DEBUG)
+    log.info("startup.begin", version="1.0.0", debug=settings.DEBUG)
 
-    # 1. Vérifier les migrations (§23.4)
+    # 1. Check migrations (prod only)
     if not settings.DEBUG:
-        # En dev, on tolère une base non migrée (alembic upgrade head à la main)
         _check_migrations()
 
-    # 2. Créer les tables si nécessaire (dev uniquement — prod = alembic)
+    # 2. Create tables in dev (prod = alembic upgrade head)
     if settings.DEBUG:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-    # 3. Initialiser le bus d'événements PostgreSQL
-    await events.init_pool(settings.ASYNCPG_URL)
+    # 3. Load Hermes Runtime registries
+    from runtime.hermes.registries import AgentRegistry, SkillRegistry, WorkflowRegistry
+    AgentRegistry.load()
+    SkillRegistry.load()
+    WorkflowRegistry.load()
+    log.info("hermes.registries_loaded")
 
-    # 4. Créer les tables LangGraph (checkpointer HITL)
-    from core.checkpointer import setup_checkpointer
-
-    try:
-        await setup_checkpointer()
-        log.info("checkpointer.ready")
-    except Exception as e:
-        log.warning("checkpointer.setup_failed", error=str(e))
-
-    # 5. Seed utilisateur admin par défaut
+    # 4. Seed default admin user
     from modules.auth.service import seed_admin
-
     async with AsyncSessionLocal() as db:
         await seed_admin(db)
 
-    # 6. Charger les modules
+    # 5. Load API modules
     from core.registry import ModuleRegistry
-
     reg = ModuleRegistry(app)
     reg.load_all("modules.yaml")
 
@@ -98,21 +90,20 @@ async def lifespan(app: FastAPI):
     yield
 
     # ── Shutdown ─────────────────────────────────────────────────
-    await events.close_pool()
     await engine.dispose()
     log.info("shutdown.complete")
 
 
 app = FastAPI(
-    title="OS Projet API",
-    description="Intelligence opérationnelle pour agence MOE",
-    version="0.1.0",
+    title="Pantheon OS API",
+    description="Hermes Runtime — multi-agent intelligence platform",
+    version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
 )
 
-# ── Middleware ───────────────────────────────────────────────────
+# ── Middleware ──────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://openwebui:8080"],
@@ -124,7 +115,7 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# ── Routes core (non-modulaires) ─────────────────────────────────
+# ── Core routes (non-module) ────────────────────────────────────────
 from core.health import router as health_router  # noqa: E402
 
 app.include_router(health_router)
