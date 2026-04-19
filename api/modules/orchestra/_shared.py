@@ -39,6 +39,39 @@ AGENTS_DIR = (
     if hasattr(settings, "AGENTS_DIR")
     else Path(__file__).parent.parent.parent.parent / "agents"
 )
+_REGISTRY_PATH = Path(__file__).parent.parent.parent.parent / "config" / "agent_registry.yaml"
+
+
+@functools.lru_cache(maxsize=1)
+def _load_registry() -> dict:
+    """Charge config/agent_registry.yaml (LRU cached — source unique de vérité)."""
+    try:
+        import yaml  # type: ignore[import]
+        if _REGISTRY_PATH.exists():
+            data = yaml.safe_load(_REGISTRY_PATH.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        pass
+    return {}
+
+
+def get_agent_role(agent_name: str) -> str:
+    """Retourne le rôle fonctionnel stable d'un agent depuis le registre."""
+    registry = _load_registry()
+    entry = registry.get(agent_name.upper(), {})
+    return entry.get("role", agent_name.lower())
+
+
+def get_agent_meta(agent_name: str) -> dict:
+    """Retourne {agent, role, layer, class} pour un agent — clé JSON standard."""
+    registry = _load_registry()
+    entry = registry.get(agent_name.upper(), {})
+    return {
+        "agent": agent_name.upper(),
+        "role": entry.get("role", agent_name.lower()),
+        "layer": entry.get("layer", ""),
+        "class": entry.get("class", ""),
+    }
 DEFAULT_AGENTS = ["themis", "athena", "chronos"]
 DEFAULT_SYNTHESIS_AGENT = "kairos"  # synthèse finale — remplace mnemosyne dans ce rôle
 
