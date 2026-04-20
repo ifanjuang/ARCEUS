@@ -1,7 +1,3 @@
-Here’s a clean, aligned README.md based on the actual runtime architecture (not the legacy one). It removes ambiguities, matches what is implemented, and positions the system correctly for OpenWebUI + Hermes runtime.
-
-⸻
-
 Pantheon OS
 
 Multi-agent operational intelligence platform for high-expertise environments
