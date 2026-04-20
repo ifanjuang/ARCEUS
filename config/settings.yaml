@@ -1,56 +1,30 @@
-# config/settings.yaml — Global runtime settings
-# These are operational settings for the Hermes Runtime.
-# Secrets and infrastructure config remain in .env.
-
-runtime:
-  # Execution mode: fast | balanced | expert
-  # fast: prefer ARES + single agent, minimal pipeline
-  # balanced: standard MVP pipeline (default)
-  # expert: full Zeus-orchestrated pipeline with Hera supervision
-  mode: balanced
-
-  # Maximum agents per run (safety limit)
-  max_agents_per_run: 8
-
-  # Maximum sub-tasks per workflow
-  max_subtasks: 6
-
-  # Default language for agent outputs
-  language: fr
-
-  # Uncertainty threshold — HECATE blocks if score >= this value
-  uncertainty_threshold: 0.7
-
-  # Confidence threshold — APOLLO requires score >= this value to release
-  confidence_threshold: 0.6
+# config/settings.yaml — LLM, RAG, and API runtime parameters
+# Override via .env for secrets. This file contains non-secret defaults only.
 
 llm:
-  # Default provider: ollama | openai
-  provider: ollama
+  provider: ollama          # ollama | openai
+  model: mistral:7b
+  temperature: 0.2
+  max_tokens: 4096
+  timeout_s: 120
 
-  # Temperature for different agent types
-  temperature:
-    meta: 0.2        # Zeus, Athena — precise planning
-    analysis: 0.3    # research, extraction
-    output: 0.5      # synthesis, communication
-    default: 0.4
+embeddings:
+  provider: ollama
+  model: nomic-embed-text
+  dim: 768
+  batch_size: 32
 
 rag:
-  # Number of chunks to retrieve per query
-  top_k: 10
+  chunk_size: 512
+  chunk_overlap: 64
+  top_k: 8
+  score_threshold: 0.6
+  rerank: false
 
-  # Minimum similarity score to include a chunk
-  min_score: 0.65
-
-  # Enable hybrid search (semantic + full-text + RRF)
-  hybrid: true
-
-  # Enable contextual retrieval (LLM-enriched chunks at ingest time)
-  contextual_retrieval: false
-
-logging:
-  # Log level: debug | info | warning | error
-  level: info
-
-  # Structured JSON logging
-  structured: true
+api:
+  port: 8000
+  workers: 1
+  debug: true
+  rate_limit_llm: "20/minute"
+  rate_limit_standard: "200/minute"
+  rate_limit_read: "1000/minute"

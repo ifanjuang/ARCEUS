@@ -13,82 +13,72 @@
 ```
 pantheon-os/
 │
-├── ui/
-│   ├── openwebui/              # OpenWebUI config and customizations
-│   └── hermes-console/         # Next.js admin console (agents/skills/workflows/logs)
+├── core/                          # Pure runtime framework (no domain logic)
+│   ├── contracts/                 # AgentBase, SkillBase, ToolBase, WorkflowBase, manifests
+│   ├── engine/                    # WorkflowEngine — async step executor
+│   ├── routing/                   # HermesRouter — intent → workflow mapping
+│   ├── state/                     # SessionState — per-run context
+│   ├── registries/                # ManifestLoader — auto-discovery via manifest.yaml
+│   ├── validation/                # CompletenessChecker, CoherenceChecker
+│   ├── policies/                  # VetoEngine — veto pattern matching
+│   ├── observability/             # HermesLogger — structured run logging
+│   └── utils/                     # Shared helpers (truncate, Timer)
 │
-├── runtime/
-│   └── hermes/                 # Hermes Runtime — agent engine
-│       ├── agents/
-│       │   ├── _base.py        # AgentBase — common contract
-│       │   ├── meta/           # ZEUS, ATHENA, THEMIS, HERA, APOLLO
-│       │   ├── analysis/       # HERMES, DEMETER, ARGOS, PROMETHEUS, ARTEMIS, HECATE, METIS
-│       │   ├── memory/         # HESTIA, MNEMOSYNE, HADES
-│       │   ├── output/         # KAIROS, DAEDALUS, IRIS, APHRODITE, HEPHAESTUS
-│       │   └── system/         # ARES, POSEIDON
-│       ├── skills/             # Research, document, synthesis, validation, communication
-│       ├── workflows/          # Base, dynamic, template workflow definitions
-│       ├── routing/            # Intent → workflow/agent routing (HermesRouter)
-│       ├── state/              # Session state (SessionState)
-│       ├── registries/         # AgentRegistry, SkillRegistry, WorkflowRegistry (YAML-backed)
-│       ├── validation/         # Completeness and coherence checks
-│       ├── prompts/            # Agent system prompts (SOUL.md override helpers)
-│       └── adapters/           # Connectors: OpenWebUI, NAS, Notion, pgvector, web
+├── modules/                       # Self-contained, discoverable components
+│   ├── agents/
+│   │   ├── meta/                  # zeus_orchestrator, athena_planner, themis_guardian, hera_supervisor, apollo_validator
+│   │   ├── analysis/              # hermes_router, demeter_collector, argos_extractor, prometheus_challenger, artemis_filter, hecate_uncertainty, metis_optimizer
+│   │   ├── memory/                # hestia_session, mnemosyne_library, hades_vector
+│   │   ├── output/                # kairos_synthesizer, daedalus_builder, iris_communicator, aphrodite_stylist, hephaestus_diagrams
+│   │   └── system/                # ares_executor, poseidon_distributor
+│   ├── skills/                    # research/, extraction/, validation/, synthesis/, communication/, document/
+│   ├── tools/                     # file/, pdf/, web/, database/, storage/, diagrams/
+│   └── workflows/                 # base/, dynamic/, templates/
 │
-├── api/                        # FastAPI server
-│   ├── main.py                 # Entry point (lifespan, CORS, module registry)
-│   ├── database.py             # SQLAlchemy async engine + Base
-│   ├── core/
-│   │   ├── settings.py         # Pydantic Settings (.env)
-│   │   ├── auth.py             # JWT, RBAC (admin/moe/collaborateur/lecteur)
-│   │   ├── registry.py         # Dynamic module loader
-│   │   └── services/
-│   │       ├── llm_service.py  # Ollama / OpenAI abstraction
-│   │       ├── rag_service.py  # Chunking + embedding + pgvector search
-│   │       └── storage_service.py  # Local file storage (V2: MinIO)
-│   └── modules/
-│       ├── auth/               # Login, register, seed admin
-│       ├── admin/              # Config YAML, setup wizard, healthcheck
-│       ├── affaires/           # Case/project CRUD + enriched context + domain
-│       ├── documents/          # Upload, RAG ingest
-│       ├── agent/              # ReAct loop, memory, RAG tools
-│       ├── openai_compat/      # OpenAI API v1 compatibility layer (for OpenWebUI)
-│       └── hermes_console/     # Console API: agents/skills/workflows/logs/settings
+├── platform/
+│   ├── api/                       # FastAPI server (moved from api/)
+│   │   ├── apps/                  # FastAPI app modules (renamed from modules/)
+│   │   │   ├── auth/              # JWT login, register, seed admin
+│   │   │   ├── admin/             # Config YAML, setup wizard, healthcheck
+│   │   │   ├── affaires/          # Case/project CRUD
+│   │   │   ├── documents/         # Upload, RAG ingest
+│   │   │   ├── agent/             # ReAct loop, memory, RAG tools
+│   │   │   ├── openai_compat/     # OpenAI API v1 compatibility (for OpenWebUI)
+│   │   │   └── hermes_console/    # Console API: agents/skills/workflows/logs
+│   │   ├── core/                  # API-specific: settings, auth, registry, logging, rate_limit
+│   │   ├── main.py                # Entry point (lifespan, CORS, module registry)
+│   │   └── database.py            # SQLAlchemy async engine + Base
+│   ├── ui/
+│   │   ├── openwebui/             # OpenWebUI config
+│   │   └── hermes-console/        # Next.js admin console
+│   ├── data/
+│   │   ├── db/                    # PostgreSQL init SQL
+│   │   ├── vector/                # pgvector data
+│   │   ├── runtime-state/         # Workflow state snapshots
+│   │   └── logs/                  # Application logs
+│   ├── storage/                   # nas/, drive-sync/, notion-sync/, exports/
+│   └── infra/
+│       ├── docker/api/            # Dockerfile for API container
+│       ├── compose/               # docker-compose.v2.yml (V2 full stack)
+│       ├── migrations/            # Alembic migration copies
+│       └── deploy/                # Deployment scripts
 │
-├── shared/
-│   ├── tools/                  # Reusable tools: pdf_reader, web_search, db_query
-│   ├── schemas/                # Shared Pydantic schemas
-│   └── templates/              # Document templates
+├── config/                        # 5 canonical files (non-secret defaults)
+│   ├── runtime.yaml               # Hermes mode, thresholds, MVP agent list
+│   ├── settings.yaml              # LLM, RAG, API parameters
+│   ├── sources.yaml               # Data source adapters (db, NAS, web, Notion)
+│   ├── ui.yaml                    # Console and OpenWebUI settings
+│   └── domains.yaml               # Domain overlay mapping (active_domain, overlays)
 │
 ├── domains/
-│   ├── architecture/           # BTP/MOE domain overlays (prompts, skills, workflows, policies)
-│   ├── legal/                  # Legal domain
-│   └── medical/                # Medical domain
+│   ├── architecture/              # BTP/MOE overlays (prompts, skills, workflows, policies)
+│   ├── legal/                     # Legal domain
+│   └── medical/                   # Medical domain
 │
-├── config/
-│   ├── agents.yaml             # Agent registry (enabled/disabled + metadata)
-│   ├── skills.yaml             # Skill registry
-│   ├── workflows.yaml          # Workflow definitions (steps, fallbacks)
-│   ├── settings.yaml           # Runtime settings (mode, thresholds, RAG params)
-│   └── policies.yaml           # Veto patterns, safety rules, domain constraints
-│
-├── data/
-│   ├── db/                     # PostgreSQL init SQL
-│   ├── vector/                 # pgvector data (managed by DB)
-│   ├── runtime-state/          # Workflow state snapshots
-│   └── logs/                   # Application logs
-│
-├── storage/
-│   ├── nas/                    # Canonical project documents
-│   ├── drive-sync/             # Google Drive sync
-│   ├── notion-sync/            # Notion sync
-│   └── exports/                # Generated exports
-│
-├── infra/
-│   ├── docker/api/             # Dockerfile for API container
-│   ├── compose/                # docker-compose.v2.yml (V2 full stack)
-│   ├── migrations/             # Alembic migration copies
-│   └── deploy/                 # Deployment scripts
+├── shared/
+│   ├── tools/                     # Reusable tools (pdf_reader, web_search, db_query)
+│   ├── schemas/                   # Shared Pydantic schemas
+│   └── templates/                 # Document templates
 │
 ├── tests/
 │   ├── unit/
@@ -103,10 +93,11 @@ pantheon-os/
 │   ├── workflows/
 │   └── runbooks/
 │
-├── docker-compose.yml          # MVP stack (OpenWebUI + API + Postgres + Ollama)
-├── modules.yaml                # API module registry (enabled/disabled)
-├── alembic.ini                 # Alembic config
-└── .env.example                # Environment template
+├── alembic/                       # Alembic migrations
+├── docker-compose.yml             # MVP stack
+├── modules.yaml                   # FastAPI app module registry (enabled/disabled)
+├── alembic.ini                    # Alembic config
+└── .env.example                   # Environment template
 ```
 
 ---
@@ -133,43 +124,47 @@ pantheon-os/
 
 ```python
 class Zeus(AgentBase):
-    agent = "ZEUS"          # stable identity (branding)
+    agent = "@ZEUS"         # @AGENT = meta authority (ALL CAPS)
     role  = "orchestrator"  # stable responsibility (system logic)
+
+class Hermes(AgentBase):
+    agent = "@Hermes"       # @Agent = operational agent (PascalCase)
+    role  = "router"
 ```
 
 ### MVP agents (enabled at startup)
 
 | Agent | Layer | Role | Description |
 |---|---|---|---|
-| **ZEUS** | meta | orchestrator | Global orchestration — execution order, merge/fork/child workflows |
-| **ATHENA** | meta | planner | Planning and decomposition — task analysis, agent selection |
-| **APOLLO** | meta | validator | Final validation — reliability scoring, release decision |
-| **HERMES** | analysis | router | Research router — source selection, skill activation |
-| **ARGOS** | analysis | extractor | Factual extraction — facts, figures, citations |
-| **PROMETHEUS** | analysis | challenger | Contradiction detection — source comparison, inconsistency flags |
-| **HECATE** | analysis | uncertainty_resolver | Uncertainty detection — missing info, clarification questions |
-| **HESTIA** | memory | session_memory | Session memory — immediate context, run continuity |
-| **HADES** | memory | vector_retrieval | Deep memory — pgvector semantic retrieval |
-| **KAIROS** | output | synthesizer | Contextual synthesis — information hierarchization |
-| **DAEDALUS** | output | builder | Deliverable construction — dossiers, briefs, reports |
-| **IRIS** | output | communicator | Communication — context reformulation, tone adaptation |
+| **@ZEUS** | meta | orchestrator | Global orchestration — execution order, merge/fork/child workflows |
+| **@ATHENA** | meta | planner | Planning and decomposition — task analysis, agent selection |
+| **@APOLLO** | meta | validator | Final validation — reliability scoring, release decision |
+| **@Hermes** | analysis | router | Research router — source selection, skill activation |
+| **@Argos** | analysis | extractor | Factual extraction — facts, figures, citations |
+| **@Prometheus** | analysis | challenger | Contradiction detection — source comparison, inconsistency flags |
+| **@Hecate** | analysis | uncertainty_resolver | Uncertainty detection — missing info, clarification questions |
+| **@Hestia** | memory | session_memory | Session memory — immediate context, run continuity |
+| **@Hades** | memory | vector_retrieval | Deep memory — pgvector semantic retrieval |
+| **@Kairos** | output | synthesizer | Contextual synthesis — information hierarchization |
+| **@Daedalus** | output | builder | Deliverable construction — dossiers, briefs, reports |
+| **@Iris** | output | communicator | Communication — context reformulation, tone adaptation |
 
 ### Extended agents (V2, disabled by default)
 
 | Agent | Layer | Role |
 |---|---|---|
-| **THEMIS** | meta | Process integrity guardian (veto) |
-| **HERA** | meta | Global coherence supervisor |
-| **DEMETER** | analysis | Data collection and ingestion |
-| **ARTEMIS** | analysis | Filtering and focus (signal/noise) |
-| **METIS** | analysis | Tactical optimization |
-| **MNEMOSYNE** | memory | Structured knowledge library |
-| **APHRODITE** | output | Polish and presentation |
-| **HEPHAESTUS** | output | Diagrams and technical production |
-| **ARES** | system | Fast execution / fallback mode |
-| **POSEIDON** | system | Load management and flow control |
+| **@THEMIS** | meta | Process integrity guardian (veto) |
+| **@HERA** | meta | Global coherence supervisor |
+| **@Demeter** | analysis | Data collection and ingestion |
+| **@Artemis** | analysis | Filtering and focus (signal/noise) |
+| **@Metis** | analysis | Tactical optimization |
+| **@Mnemosyne** | memory | Structured knowledge library |
+| **@Aphrodite** | output | Polish and presentation |
+| **@Hephaestus** | output | Diagrams and technical production |
+| **@Ares** | system | Fast execution / fallback mode |
+| **@Poseidon** | system | Load management and flow control |
 
-Source of truth: `config/agents.yaml`
+Source of truth: `modules/agents/{layer}/{myth}_{role}/manifest.yaml`
 
 ---
 
@@ -187,41 +182,43 @@ Source of truth: `config/agents.yaml`
 
 ---
 
-## Config files (source of truth)
+## Module structure
 
-### config/agents.yaml
-```yaml
-agents:
-  ZEUS: { layer: meta, role: orchestrator, enabled: true }
-  ATHENA: { layer: meta, role: planner, enabled: true }
+### Agent module (`modules/agents/{layer}/{myth}_{role}/`)
+
+```
+zeus_orchestrator/
+├── agent.py          # AgentBase subclass
+├── manifest.yaml     # id, name, layer, role, enabled, veto, description
+├── config.yaml       # max_tokens, temperature, timeout_s
+├── SOUL.md           # System prompt (brand identity)
+└── tests/
+    └── test_agent.py
 ```
 
-### config/skills.yaml
-```yaml
-skills:
-  - id: hybrid_research
-    name: "Recherche hybride"
-    enabled: true
-    agents: [HERMES, HADES]
+```python
+from pathlib import Path
+from core.contracts.agent import AgentBase
+
+
+class Zeus(AgentBase):
+    agent = "@ZEUS"
+    role = "orchestrator"
+    layer = "meta"
+    veto = False
+    _soul_dir = Path(__file__).parent
 ```
 
-### config/workflows.yaml
-```yaml
-workflows:
-  - id: research
-    name: "Recherche documentaire"
-    enabled: true
-    steps: [HECATE, HERMES, ARGOS, PROMETHEUS, KAIROS, IRIS]
-    fallback: simple_answer
-```
+### FastAPI app module (`platform/api/apps/{name}/`)
 
-### config/settings.yaml
-```yaml
-runtime:
-  mode: balanced    # fast | balanced | expert
-  max_agents_per_run: 8
-  uncertainty_threshold: 0.7
-  confidence_threshold: 0.6
+```
+auth/
+├── __init__.py
+├── manifest.yaml     # name, version, prefix, depends_on
+├── models.py         # SQLAlchemy models (inherit database.Base)
+├── schemas.py        # Pydantic request/response schemas
+├── service.py        # Business logic
+└── router.py         # def get_router(config: dict) -> APIRouter
 ```
 
 ---
@@ -243,42 +240,22 @@ runtime:
 
 ---
 
-## Creating a new agent
+## Config files (5 canonical, source of truth)
 
-```
-runtime/hermes/agents/{layer}/{name}.py
-runtime/hermes/agents/{layer}/{name}/SOUL.md
-```
+| File | Purpose |
+|---|---|
+| `config/runtime.yaml` | Hermes mode, max_agents, thresholds, MVP agent list |
+| `config/settings.yaml` | LLM, embeddings, RAG, API parameters |
+| `config/sources.yaml` | Data source adapters (pgvector, NAS, web, Notion) |
+| `config/ui.yaml` | Console and OpenWebUI settings |
+| `config/domains.yaml` | Active domain, overlay paths, trusted sources |
 
-```python
-from pathlib import Path
-from runtime.hermes.agents._base import AgentBase
-
-class MyAgent(AgentBase):
-    agent = "MYAGENT"
-    role = "my_role"
-    layer = "analysis"   # meta | analysis | memory | output | system
-    veto = False
-    _soul_dir = Path(__file__).parent / "myagent"
-```
-
-Then add to `config/agents.yaml` and the layer's `__init__.py`.
+Agent/skill/workflow enable state lives in each `modules/{type}/{name}/config.yaml`.
 
 ---
 
-## Creating a new API module
+## Important rules
 
-```
-api/modules/{name}/
-├── __init__.py
-├── manifest.yaml       # name, version, description, prefix, depends_on
-├── models.py           # SQLAlchemy models (inherit database.Base)
-├── schemas.py          # Pydantic request/response schemas
-├── service.py          # Business logic
-└── router.py           # def get_router(config: dict) -> APIRouter
-```
-
-### Important rules
 - Always inherit `database.Base` for SQLAlchemy models
 - Always declare new tables in `alembic/env.py`
 - Always create an Alembic migration for schema changes
@@ -287,6 +264,7 @@ api/modules/{name}/
 - Auth: `Depends(get_current_user)`, `Depends(require_role("admin", "moe"))`
 - **No LangGraph in MVP** — use simple async pipelines
 - **No Redis/ARQ in MVP** — use FastAPI `BackgroundTasks` if needed
+- Agent source of truth: `modules/agents/{layer}/{myth}_{role}/` — not YAML registries
 
 ---
 
@@ -322,7 +300,7 @@ docker compose exec api alembic upgrade head
 
 ### V2 stack
 ```bash
-docker compose -f docker-compose.yml -f infra/compose/docker-compose.v2.yml up -d
+docker compose -f docker-compose.yml -f platform/infra/compose/docker-compose.v2.yml up -d
 ```
 
 ---
@@ -384,6 +362,3 @@ SemVer:
 - **MAJOR**: breaking API or non-retrocompatible DB schema change
 - **MINOR**: new feature, module, or pattern
 - **PATCH**: bug fix, optimization, internal refactoring
-
-# currentDate
-Today's date is 2026-04-19.

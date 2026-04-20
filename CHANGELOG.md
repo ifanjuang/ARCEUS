@@ -23,6 +23,19 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Unreleased]
 
+### Changed — Modular plugin architecture (2026-04-20)
+- **Structure entièrement modulaire** : `runtime/hermes/` remplacé par `core/` (framework pur) + `modules/` (composants auto-découverts).
+- **`core/`** : contrats (`AgentBase`, `SkillBase`, `ToolBase`, `WorkflowBase`), `WorkflowEngine`, `HermesRouter`, `SessionState`, `ManifestLoader` (auto-discovery), `CompletenessChecker`, `CoherenceChecker`, `VetoEngine`, `HermesLogger`, helpers.
+- **`modules/agents/{layer}/{myth}_{role}/`** : 22 agents restructurés en modules auto-contenus avec `agent.py`, `manifest.yaml`, `config.yaml`, `SOUL.md`, `tests/test_agent.py`.
+- **`modules/skills/`**, **`modules/tools/`**, **`modules/workflows/`** : skills, tools et workflows restructurés en modules indépendants avec `manifest.yaml`.
+- **`platform/`** : `api/`, `ui/`, `data/`, `storage/`, `infra/` centralisés sous `platform/`.
+- **`platform/api/modules/` → `platform/api/apps/`** : renommage pour éviter la collision avec `modules/` racine.
+- **`config/`** simplifié à 5 fichiers** : `runtime.yaml`, `settings.yaml`, `sources.yaml`, `ui.yaml`, `domains.yaml`. Anciens `agents.yaml`, `skills.yaml`, `workflows.yaml`, `agent_registry.yaml` supprimés (remplacés par `manifest.yaml` par module).
+- **Auto-discovery** : `ManifestLoader` scanne `modules/*/manifest.yaml` — plus de registres YAML centralisés.
+- **Dockerfile et docker-compose** mis à jour : montages `core/`, `modules/`, `config/`, `domains/`.
+- **`platform/api/main.py`** : utilise `ManifestLoader` pour les registres Hermes, importe `apps.auth.service`.
+- **`platform/api/core/registry.py`** : charge depuis `apps/{name}` (était `modules/{name}`).
+
 ### Changed — Refactoring MVP (2026-04-19)
 - **Architecture MVP** : refonte complète de l'arborescence vers `runtime/hermes/agents/` (5 couches : meta, analysis, memory, output, system). Anciens `core/` et `agents/` racine supprimés.
 - **Convention de nommage `@`** : les identifiants agents adoptent le préfixe `@`. Méta-agents majeurs : `@ZEUS`, `@ATHENA`, `@THEMIS`, `@HERA`, `@APOLLO` (ALL CAPS = autorité d'orchestration). Agents opérationnels : `@Hermes`, `@Argos`, `@Prometheus`, `@Hecate`, `@Hestia`, `@Hades`, `@Kairos`, `@Daedalus`, `@Iris`, `@Aphrodite`, `@Hephaestus`, `@Ares`, `@Poseidon`, `@Demeter`, `@Artemis`, `@Metis`, `@Mnemosyne` (PascalCase = agents opérationnels).
