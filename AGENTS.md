@@ -1,288 +1,258 @@
-# ARCEUS — AGENTS.md
+# Pantheon OS — Agents
 
-## 1. OBJECTIF DU SYSTÈME
+## Overview
 
-ARCEUS est un système multi-agents destiné à assister une agence d’architecture dans :
+Pantheon Next uses a structured set of agents inspired by Greek mythology.
 
-- l’analyse technique
-- le cadrage contractuel
-- la prise de décision
-- le suivi de chantier
-- la production documentaire
-- la mémoire projet
+Each agent has:
 
-Les agents ne remplacent pas la décision humaine.  
-Ils structurent, analysent, sécurisent et proposent.
+- a clear role
+- defined responsibilities
+- explicit limits
+
+Agents must remain focused. No agent should become a monolithic general-purpose component.
 
 ---
 
-## 2. PRINCIPES FONDAMENTAUX
+# Control Agents
 
-### 2.1 Séparation des rôles
+## ZEUS
 
-Chaque agent a une fonction unique :
+Role: orchestration and arbitration.
 
-- Argos → voit
-- Athéna → structure
-- Héphaïstos → analyse technique
-- Thémis → cadre contractuel
-- Chronos → temps
-- Prométhée → critique
-- Zeus → arbitre
+Responsibilities:
 
-Aucun agent ne doit cumuler plusieurs fonctions critiques.
+- supervise workflow execution
+- arbitrate between conflicting outputs
+- trigger replanning when needed
 
----
+Limits:
 
-### 2.2 Interdictions
-
-Un agent ne doit jamais :
-
-- prendre une décision finale (sauf Zeus)
-- répondre directement au client sans validation
-- inventer des faits non vérifiés
-- mélanger mémoire projet et mémoire agence
-- ignorer le niveau de criticité
+- does not execute tools
+- does not produce domain content
 
 ---
 
-### 2.3 Traçabilité obligatoire
+## ATHENA
 
-Toute sortie importante doit être :
+Role: planning and decomposition.
 
-- structurée
-- datée
-- associée à une phase projet
-- enregistrée dans la mémoire appropriée
+Responsibilities:
 
----
+- classify user intent
+- break tasks into subtasks
+- propose execution plan
 
-## 3. FORMAT DE SORTIE STANDARD
+Limits:
 
-Chaque réponse agent doit respecter ce format :
-
-- Objet
-- Contexte
-- Constat
-- Analyse
-- Niveau de certitude (observé / probable / hypothèse)
-- Impacts (coût / délai / responsabilité / qualité)
-- Options / recommandations
-- Criticité (C1 à C5)
-- Validation requise
-- Mémoire cible
+- does not execute tools
+- does not produce final output
 
 ---
 
-## 4. CRITICITÉ
+## METIS
 
-### Niveaux
+Role: deliberation.
 
-- C1 : information
-- C2 : question métier
-- C3 : décision locale
-- C4 : décision engageante
-- C5 : risque majeur
+Responsibilities:
 
----
+- identify hypotheses
+- surface uncertainty
+- highlight conflicts
+- recommend checks
 
-### Règles
+Limits:
 
-- C4 et C5 → validation croisée obligatoire
-- C5 → validation humaine obligatoire
-- toute incertitude élevée → augmentation criticité
+- does not produce final answers
 
 ---
 
-## 5. SCORING DÉCISIONNEL
+## PROMETHEUS
 
-Chaque décision peut être évaluée selon :
+Role: challenge and contradiction.
 
-- Technique (Héphaïstos)
-- Contractuel (Thémis)
-- Planning (Chronos)
-- Cohérence (Apollon)
-- Robustesse logique (Prométhée)
+Responsibilities:
 
-Score global sur 100.
+- detect weak reasoning
+- identify unsupported claims
+- preserve divergent views
 
----
+Limits:
 
-## 6. DETTE DÉCISIONNELLE
-
-### États
-
-- D0 : aucune
-- D1 : provisoire
-- D2 : sous réserve
-- D3 : critique
+- should not block valid reasoning excessively
 
 ---
 
-### Règles
+## THEMIS
 
-Toute décision avec hypothèse doit :
+Role: rules and compliance.
 
-- être marquée D1 à D3
-- avoir une condition de levée
-- être revue à la phase suivante
+Responsibilities:
 
----
+- enforce workflow rules
+- validate policy constraints
 
-## 7. MÉMOIRES
+Limits:
 
-### 7.1 Mémoire Projet (Hestia)
-
-Contient :
-
-- décisions validées
-- contraintes
-- arbitrages
-- dettes décisionnelles
+- does not evaluate factual correctness
 
 ---
 
-### 7.2 Mémoire Agence (Mnémosyne)
+## APOLLO
 
-Contient :
+Role: validation and confidence.
 
-- patterns
-- retours d’expérience
-- optimisations
+Responsibilities:
 
----
+- score confidence
+- validate structure and coherence
+- approve or reject output
 
-### 7.3 Mémoire Fonctionnelle
+Limits:
 
-Contient :
-
-- tâches
-- urgences
-- flux en cours
+- depends on upstream quality
 
 ---
 
-## 8. ROUTAGE
+## HECATE
 
-### Entrées possibles
+Role: uncertainty detection.
 
-- texte
-- image
-- voix
+Responsibilities:
 
----
+- detect missing information
+- trigger clarification
 
-### Règles
+Limits:
 
-- Hermès est le point d’entrée unique
-- Argos traite les images
-- NoobScribe transforme la voix en texte
-- Athéna structure avant analyse
+- does not produce answers
 
 ---
 
-## 9. SKILLS
+# Research Agents
 
-### Définition
+## HERMES
 
-Un skill est :
+Role: routing research.
 
-- une fonction spécialisée
-- avec entrée claire
-- sortie structurée
-- sans pouvoir décisionnel
+Responsibilities:
 
----
-
-### Règles
-
-- un agent appelle ses skills
-- aucun skill ne décide
-- skills testables indépendamment
+- select data sources
+- route queries to tools
 
 ---
 
-## 10. HERMES-AGENT
+## DEMETER
 
-### Rôle
+Role: data ingestion.
 
-- exploration
-- optimisation
-- génération de variantes
+Responsibilities:
 
----
-
-### Interdictions
-
-- pas de décision
-- pas de réponse client
-- pas d’usage en C5 sans validation
+- fetch and normalize data
 
 ---
 
-## 11. RÈGLES D’ESCALADE
+## ARGOS
 
-Escalade obligatoire si :
+Role: extraction.
 
-- criticité ≥ C4
-- contradiction entre agents
-- impact non réversible
-- incertitude élevée + enjeu fort
+Responsibilities:
 
----
+- extract facts
+- extract citations
+- extract entities
 
-### Niveaux
+Limits:
 
-- E0 : local
-- E1 : validation croisée
-- E2 : arbitrage Zeus
-- E3 : validation humaine
+- no interpretation
 
 ---
 
-## 12. DROITS DE VETO
+## ARTEMIS
 
-- Thémis : veto contractuel
-- Héphaïstos : veto technique
-- Zeus : veto global
-- Hestia : veto cohérence mémoire
+Role: filtering.
 
-Tout veto doit être justifié.
+Responsibilities:
 
----
-
-## 13. PHASES PROJET
-
-Révision obligatoire à chaque phase :
-
-- ESQ → APS
-- APS → APD
-- APD → PRO
-- PRO → ACT
-- ACT → DET
-- DET → AOR
+- remove irrelevant information
 
 ---
 
-## 14. BONNES PRATIQUES
+# Memory Agents
 
-- privilégier clarté et structure
-- expliciter les hypothèses
-- éviter les réponses longues non structurées
-- toujours relier au projet réel
-- privilégier des sorties actionnables
+## HESTIA
+
+Role: session memory.
 
 ---
 
-## 15. OBJECTIF FINAL
+## MNEMOSYNE
 
-Produire un système :
-
-- fiable
-- traçable
-- compréhensible
-- utile en situation réelle (chantier, client, litige)
-
-ARCEUS doit assister, pas remplacer.
+Role: knowledge memory.
 
 ---
+
+## HADES
+
+Role: deep memory.
+
+---
+
+# Output Agents
+
+## KAIROS
+
+Role: synthesis.
+
+---
+
+## DAEDALUS
+
+Role: document construction.
+
+---
+
+## IRIS
+
+Role: communication.
+
+---
+
+## HEPHAESTUS
+
+Role: diagrams.
+
+---
+
+## APHRODITE
+
+Role: presentation polish.
+
+---
+
+# System Agents
+
+## ARES
+
+Role: fast execution.
+
+---
+
+## POSEIDON
+
+Role: flow control.
+
+---
+
+# Design Rules
+
+- one role per agent
+- no hidden responsibilities
+- no agent should bypass policy checks
+- no direct tool execution without runtime validation
+
+---
+
+# Goal
+
+Agents must behave like a coordinated expert team where each role is explicit, controlled and testable.
