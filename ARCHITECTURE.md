@@ -1,6 +1,4 @@
-Here is the full updated roadmap, with the memory-consolidation additions folded in.
-
-# ROADMAP — Pantheon Next
+# ROADMAP — Pantheon OS
 > Consolidated roadmap for evolving Pantheon OS into a modular, governed, portable-by-design multi-agent execution system.
 >
 > Product thesis:
