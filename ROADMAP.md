@@ -198,38 +198,17 @@ execute_agents
 
 ## 7.1 Memory layers
 
-Pantheon doit formaliser :
-
-- session memory ;
-- project memory ;
-- agency/global memory ;
-- functional memory ;
-- raw history ;
-- candidate facts ;
-- active facts ;
-- summaries ;
-- compact cards ;
-- traces.
+Pantheon doit formaliser : session memory, project memory, agency/global memory, functional memory, raw history, candidate facts, active facts, summaries, compact cards, traces.
 
 ## 7.2 Memory routing
 
-Après chaque run :
-
-- temporary context → session memory ;
-- validated project decision → HESTIA ;
-- reusable pattern → MNEMOSYNE proposal ;
-- contradiction → decision debt ou escalation ;
-- noise → ignored.
+Après chaque run : temporary context → session memory ; validated project decision → HESTIA ; reusable pattern → MNEMOSYNE proposal ; contradiction → decision debt ou escalation ; noise → ignored.
 
 ## 7.3 Auditable context injection
 
 Le système doit exposer le contexte injecté avant ou après exécution : facts, cards, summaries, chunks, documents, decisions, exclusions importantes.
 
-Objectif : un opérateur doit pouvoir comprendre pourquoi un agent a vu telle information.
-
 ## 7.4 Candidate fact lifecycle
-
-Cycle cible :
 
 ```text
 raw source
@@ -241,19 +220,13 @@ raw source
 → context injection
 ```
 
-Les candidate facts doivent inclure source, confidence, scope, subject, observer ou affaire, justification et statut.
-
 ## 7.5 Consolidation and dry-run
 
-La consolidation doit être prudente et inspectable.
-
-Opérations sensibles avec dry-run obligatoire : promotion, rétractation, supersession, fusion, condensation, card replacement.
+La consolidation doit être prudente et inspectable. Opérations sensibles avec dry-run obligatoire : promotion, rétractation, supersession, fusion, condensation, card replacement.
 
 ## 7.6 Cards and summaries
 
-Les cards sont des vues compactes, pas des sources de vérité. Elles ne doivent pas grossir automatiquement avec chaque active fact.
-
-Les summaries sont des couches dérivées. Ils doivent rester rattachés à des fenêtres, sources ou scopes vérifiables.
+Les cards sont des vues compactes, pas des sources de vérité. Les summaries sont des couches dérivées rattachées à des fenêtres, sources ou scopes vérifiables.
 
 ## 7.7 External inspiration decision
 
@@ -267,11 +240,7 @@ Les idées de `hermes-local-memory` sont retenues pour la doctrine mémoire : ra
 
 Le système doit minimiser le contexte de démarrage.
 
-Auto-loaded nucleus :
-
-- `AGENTS.md`
-- `ARCHITECTURE.md`
-- éventuellement un fichier opérationnel léger.
+Auto-loaded nucleus : `AGENTS.md`, `ARCHITECTURE.md`, éventuellement un fichier opérationnel léger.
 
 Non auto-loaded par défaut : archives, learnings détaillés, runs, sessions, anciens historiques.
 
@@ -291,7 +260,7 @@ Succès : API boot, manifests validés, workflow E2E, streaming, ingestion + cit
 
 Objectif : séparer décision et exécution.
 
-Tâches : DecisionContext, DecisionAction, DecisionPlan, DecisionEngine, control/data split, DAG workflow, criticity, HITL, veto nodes, conflict resolution.
+Tâches : DecisionContext, DecisionAction, DecisionPlan, DecisionEngine, control/data split, DAG workflow, criticity, HITL checkpoints, veto nodes, conflict resolution.
 
 Succès : plan avant exécution, criticity modifie le runtime, pause/resume, veto visibles.
 
@@ -303,13 +272,29 @@ Tâches : formaliser memory layers, externaliser raw outputs, retrieve relevant 
 
 Succès : moins de raw context injecté, continuité robuste, reads moins coûteux, métriques visibles, candidate promotion sélective, hot memory compacte.
 
-## Phase D — Policy, Security, and Governance
+## Phase D — Policy, Security, Approval, and Governance
 
-Objectif : rendre les actions risquées gouvernables et auditables.
+Objectif : rendre les actions risquées gouvernables, auditables et stoppables.
 
-Tâches : PolicyEngine, ActionGate, approval API, secret isolation, lineage source → tool → agent → output, veto severity, escalation, decision debt.
+Tâches :
 
-Succès : aucune action risquée silencieuse, approvals traçables, outputs reliés aux sources.
+- PolicyEngine ;
+- ActionGate ;
+- modèle `ApprovalRequest` ;
+- statuts `pending / approved / rejected / expired / escalated / cancelled` ;
+- assignee personne / équipe ;
+- decision note ;
+- approval API ;
+- pause/resume workflow ;
+- expiration automatique ;
+- escalation ;
+- audit log ;
+- secret isolation ;
+- lineage source → tool → agent → output ;
+- veto severity ;
+- explicit decision debt.
+
+Succès : aucune action risquée ne s’exécute silencieusement, chaque approval est traçable, un workflow peut être suspendu puis repris, une action expirée ne s’exécute pas.
 
 ## Phase E — Evaluation and Deliberation
 
@@ -347,11 +332,30 @@ Succès : overlay activable sans toucher core, skills métier visibles, flux cha
 
 Objectif : rendre Pantheon inspectable et contrôlable.
 
-Tâches : prompt traces, decision traces, tool traces, scores, feedback, blocked actions, workflow UI, run state, metrics, toggles, logs, replay.
+Tâches : prompt traces, decision traces, tool traces, scores, feedback, blocked actions, approvals view, workflow UI, run state, metrics, toggles, logs, replay, browser action traces.
 
-Succès : opérateurs comprennent pourquoi un run a produit un résultat et avec quel contexte.
+Succès : opérateurs comprennent pourquoi un run a produit un résultat, avec quel contexte, quelles approvals et quelles preuves d’action.
 
-## Phase J — Controlled Learning
+## Phase J — Governed Browser Tool
+
+Objectif : ajouter une capacité navigateur gouvernée pour consultation, extraction, test et interaction web contrôlée.
+
+Tâches :
+
+- tool browser minimal ;
+- sandbox ou remote browser ;
+- screenshot before/after ;
+- action trace ;
+- policy gate ;
+- approval gate pour effets de bord ;
+- HTTP direct fallback ;
+- domain browser skills ;
+- tests de non-régression sur sites simples ;
+- blocage login / paiement / publication sans approval.
+
+Succès : extraction web reproductible, actions traçables, aucun effet de bord sans validation, preuves visuelles disponibles dans la console.
+
+## Phase K — Controlled Learning
 
 Objectif : améliorer sans mutation silencieuse.
 
@@ -359,13 +363,13 @@ Tâches : FeedbackEvent, LearningEngine, GapAnalyzer, candidate workflow generat
 
 Succès : feedback négatif produit des améliorations candidates, pas des mutations automatiques.
 
-## Phase K — Software / Code Branch
+## Phase L — Software / Code Branch
 
 Objectif : spécialisation software isolée.
 
 Tâches : minimal_code_context, change_impact_analysis, architecture_map, review workflows, debug workflows, repo onboarding, pre-merge checks.
 
-## Phase L — Durable Execution and Portability
+## Phase M — Durable Execution and Portability
 
 Objectif : longs runs, reprise et migration.
 
@@ -382,6 +386,8 @@ Tâches : checkpoints, retries, replay runner, memory export/import, workflow bu
 - mnfst/manifest : manifests déclaratifs.
 - nadimtuhin/claude-token-optimizer : contexte de démarrage minimal.
 - hermes-local-memory : doctrine mémoire auditable, context preview, candidate facts, cards compactes, dry-runs.
+- suryamr2002/langgraph-approval-hub : modèle Approval Gate, statuts d’approbation, audit log, pending queue, expiration, escalation.
+- browser-use/browser-harness : screenshots before/after, browser action traces, domain browser skills, HTTP direct fallback.
 
 ## À intégrer plus tard
 
@@ -389,11 +395,13 @@ Tâches : checkpoints, retries, replay runner, memory export/import, workflow bu
 - ooples/token-optimizer-mcp : smart reads et cache.
 - JuliusBrussee/cavekit : spec-first execution.
 - nexus9888/hermes-memory-skills : consolidation mémoire et hygiene.
+- remote browser sandboxing si le besoin d’automatisation web devient réel.
 
 ## Intéressant mais non prioritaire
 
 - Honcho import patterns.
 - SQLite local-first memory, uniquement comme référence de simplicité locale.
+- Browser domain skills publics, à adapter uniquement après stabilisation du Browser Tool.
 
 ## À rejeter pour Pantheon OS
 
@@ -401,7 +409,11 @@ Tâches : checkpoints, retries, replay runner, memory export/import, workflow bu
 - suppression de FastAPI comme runtime ;
 - worker mémoire opaque ;
 - promotion automatique massive de mémoire importée ;
-- copie mécanique d’une architecture externe.
+- copie mécanique d’une architecture externe ;
+- dépendance directe à un dashboard Vercel/Supabase pour les approvals ;
+- agent libre sur le Chrome personnel par défaut ;
+- auto-modification de helpers pendant un run ;
+- actions web sans Approval Gate.
 
 ---
 
@@ -426,18 +438,20 @@ Règles :
 
 # 12. Immediate Priorities
 
-1. Aligner `STATUS.md`, `ARCHITECTURE.md`, `MODULES.md`, `AGENTS.md`, `ROADMAP.md`, `README.md`.
-2. Auditer le code contre ces Markdown.
-3. Finaliser le module `decisions`.
+1. Auditer le code contre `README.md`, `ARCHITECTURE.md`, `MODULES.md`, `AGENTS.md`, `ROADMAP.md`, `STATUS.md`.
+2. Vérifier l’état réel de la mémoire : raw history, candidate facts, active facts, cards, summaries, traces.
+3. Finaliser ou cadrer le module `decisions`.
 4. Compléter la refonte mémoire : scopes, candidate facts, active facts, context preview, dry-run consolidation.
-5. Compléter tests mémoire, orchestration et workflows C1-C5.
-6. Renforcer observability et console.
-7. Préparer webhooks.
-8. Préparer retrieval multimodal.
-9. Instrumenter pour DSPy plus tard.
+5. Ajouter ou vérifier Approval Gate / HITL pour actions sensibles.
+6. Compléter tests mémoire, approvals, orchestration et workflows C1-C5.
+7. Renforcer observability et console : approvals, contexte injecté, traces d’action.
+8. Préparer webhooks.
+9. Préparer retrieval multimodal.
+10. Reporter le Browser Tool après PolicyEngine, Approval Gate et Observability.
+11. Instrumenter pour DSPy plus tard.
 
 ---
 
 # 13. Final Target
 
-Pantheon OS doit devenir un environnement d’exécution où agents restent remplaçables, workflows versionnés, skills réutilisables, tools gouvernés, mémoire structurée, évaluation active, validation humaine présente quand le risque l’exige, overlays porteurs de valeur métier et core mince, portable, générique.
+Pantheon OS doit devenir un environnement d’exécution où agents restent remplaçables, workflows versionnés, skills réutilisables, tools gouvernés, mémoire structurée, approvals traçables, évaluation active, validation humaine présente quand le risque l’exige, overlays porteurs de valeur métier et core mince, portable, générique.
