@@ -1,20 +1,26 @@
 # Pantheon OS — Architecture
-> Reference architecture document.
-> This file describes the target structure and stable architectural principles of Pantheon Next.
->
-> It is not a changelog.
-> It is not a roadmap.
-> It is not a snapshot of legacy implementation details.
+
+> Document de référence.
+> Ce fichier décrit la structure cible stable de Pantheon OS.
+> Il ne sert pas de changelog et ne doit pas contenir de détails d’implémentation obsolètes.
+
 ---
-# 1. Overview
-Pantheon Next is a modular multi-agent execution system built around a strict separation between:
-- control plane
-- data plane
-The system is designed for complex professional work where reasoning, execution, validation, memory, and governance must remain explicit, inspectable, and controlled.
-Pantheon Next is not a chatbot.
-It is a governed execution environment in which agents, skills, tools, workflows, policies, and memory cooperate as a structured expert system.
+
+# 1. Vue d’ensemble
+
+Pantheon OS est un système d’exécution multi-agent modulaire pour des environnements professionnels complexes : architecture, conduite de projet, audit, juridique, conseil, IT et documentation technique.
+
+Pantheon OS n’est pas un chatbot. C’est un environnement gouverné où agents, skills, tools, workflows, politiques, mémoire et documents coopèrent dans un runtime contrôlé.
+
+Le système repose sur une séparation stricte entre :
+
+- le control plane, qui décide, planifie, arbitre, valide et gouverne ;
+- le data plane, qui exécute les actions autorisées, appelle les outils, persiste les résultats et produit les artefacts.
+
 ---
-# 2. High-Level Architecture
+
+# 2. Architecture générale
+
 ```text
 User / External Channel
         ↓
@@ -28,101 +34,63 @@ Manifest Loader / Registries
         ↓
 Workflow Engine
         ↓
-Decision Engine (Control Plane)
+Decision Engine / Control Plane
         ↓
-Execution Engine (Data Plane)
+Execution Engine / Data Plane
         ↓
 Agents / Skills / Tools
         ↓
 Memory / Documents / Knowledge
         ↓
 Artifacts / Outputs
+```
 
-⸻
+---
 
-3. Architectural Principles
+# 3. Principes structurants
 
-3.1 Domain-agnostic core
+## 3.1 Core générique
 
-The core/ layer must remain generic.
+Le dossier `core/` reste indépendant des métiers. Il fournit les contrats, registres, états, moteurs d’exécution, politiques, évaluation, observabilité, mémoire abstraite, documents et fournisseurs LLM.
 
-It provides:
+Aucune logique métier architecture, juridique, chantier, finance ou software ne doit vivre dans le core.
 
-* contracts
-* registries
-* state management
-* workflow coordination
-* decision engine
-* execution engine
-* policy enforcement
-* evaluation
-* learning
-* observability
-* memory abstractions
-* document services
-* provider abstractions
+## 3.2 Modularité filesystem-first
 
-No business-specific logic should live in the core.
+Les agents, skills, tools, workflows, prompts et templates sont découverts depuis le filesystem par manifests. Le runtime ne doit pas nécessiter d’enregistrement codé en dur pour chaque nouveau bloc.
 
-3.2 Filesystem-driven modularity
+## 3.3 Domain overlays hors core
 
-Pantheon loads runtime building blocks dynamically from the filesystem.
+Les comportements métier vivent dans `domains/{domain}/`.
 
-This applies to:
+Exemples :
 
-* agents
-* skills
-* tools
-* workflows
-* prompts
-* templates
+- `domains/architecture/`
+- `domains/legal/`
+- `domains/software/`
+- `domains/consulting/`
 
-Each runtime block is defined by a manifest and validated at startup.
+Un overlay peut fournir prompts, skills, workflows, policies, trusted sources, templates, evaluation cases et agents spécifiques si nécessaire.
 
-3.3 Domain overlays stay outside the core
+## 3.4 Gouvernance runtime
 
-Domain-specific behavior lives in domains/{domain}/.
+La criticité, la réversibilité, le draft-first, les veto, les approbations, les escalades et la traçabilité appartiennent au runtime. Ces règles ne doivent pas exister seulement comme instructions de prompt.
 
-An overlay may define:
+## 3.5 Pas de mutation silencieuse
 
-* prompts
-* skills
-* workflows
-* policies
-* trusted sources
-* templates
-* evaluation cases
-* domain-specific agents if needed
+Aucun agent, workflow, outil, skill, mémoire ou politique active ne doit être modifié silencieusement. Les évolutions doivent passer par proposition, validation, versioning ou migration explicite.
 
-Examples:
+---
 
-* domains/architecture/
-* domains/legal/
-* domains/software/
+# 4. Structure du dépôt
 
-3.4 Control plane and data plane remain separate
-
-The system must preserve a strict split between:
-
-* the layer that decides what should happen
-* the layer that executes validated decisions
-
-This prevents hidden side effects, unclear reasoning boundaries, and prompt-driven execution drift.
-
-3.5 Governance is a runtime concern
-
-Criticity, reversibility, policy, vetoes, approvals, escalation, and traceability belong to runtime governance.
-They must not exist only as prompt instructions.
-
-⸻
-
-4. Repository Structure
-
+```text
 platform/
   api/              FastAPI apps
   ui/               OpenWebUI integration + admin console
   data/             persistence and runtime state
   infra/            Docker, deployment, scripts
+
 core/
   contracts/        base types and interfaces
   registry/         agent, skill, tool, workflow registries
@@ -137,6 +105,7 @@ core/
   documents/        ingestion, indexing, retrieval, citation
   packaging/        context and artifact bundles
   llm/              provider abstraction, budget, routing
+
 modules/
   agents/           modular agents
   skills/           reusable reasoning skills
@@ -144,571 +113,313 @@ modules/
   workflows/        workflow packs
   prompts/          prompt libraries
   templates/        output templates
+
 domains/
   architecture/
   legal/
   software/
   consulting/
+```
 
-⸻
+---
 
-5. Core Layers
+# 5. Core layers
 
-5.1 Core
+## 5.1 Core
 
-The core/ layer contains the runtime engine and generic system logic.
+Le core contient le moteur générique : contrats, registries, state management, workflow engine, decision engine, execution engine, policy engine, evaluation, learning, observability, memory routing, document intelligence et abstraction LLM.
 
-Responsibilities:
+## 5.2 Modules
 
-* contracts and interfaces
-* registries and manifest loading
-* state management
-* workflow engine
-* decision engine
-* execution engine
-* policy engine
-* evaluation
-* learning
-* observability
-* memory routing
-* document intelligence services
-* LLM abstraction
+Les modules contiennent les blocs réutilisables : agents, skills, tools, workflows, prompts, templates. Ils sont portables et ne doivent pas embarquer de logique métier spécifique sauf si le module est explicitement rattaché à un overlay.
 
-The core must remain portable across domains.
+## 5.3 Domains
 
-5.2 Modules
+Les domains portent la valeur métier. Ils peuvent définir des règles de décision, des workflows de dossier, des politiques de sources, des templates et des skills spécialisés.
 
-The modules/ layer contains reusable runtime building blocks.
+## 5.4 Platform
 
-Components:
+La plateforme porte l’API, l’UI, la persistance, les jobs background, le déploiement, le streaming et la console d’administration.
 
-* agents
-* skills
-* tools
-* workflows
-* prompts
-* templates
+---
 
-These are reusable execution blocks, not the place for business-specific value.
+# 6. Control plane
 
-5.3 Domains
+Le control plane décide ce qui doit être fait avant exécution.
 
-The domains/ layer contains business overlays.
+Responsabilités :
 
-This is where domain-specific behavior lives.
+- classification de tâche ;
+- décomposition ;
+- planification ;
+- détection d’incertitude ;
+- détection de contradiction ;
+- choix de workflow ;
+- criticité ;
+- routage politique ;
+- escalade ;
+- arbitrage final.
 
-Examples:
+Objets principaux :
 
-* architecture decision scoring
-* legal citation policies
-* software review workflows
-* trusted source lists
-* métier-specific templates
+- `DecisionContext`
+- `DecisionAction`
+- `DecisionPlan`
 
-5.4 Platform
+Agents typiques : ZEUS, ATHENA, METIS, PROMETHEUS, THEMIS, APOLLO, HECATE, HERMES.
 
-The platform/ layer handles delivery and infrastructure.
+---
 
-Components:
+# 7. Data plane
 
-* FastAPI services
-* OpenWebUI integration
-* persistence
-* background jobs
-* deployment
-* streaming adapters
-* admin console
+Le data plane exécute les décisions validées.
 
-⸻
+Responsabilités :
 
-6. Control Plane
+- exécuter les agents ;
+- injecter skills et tools ;
+- gérer exécution séquentielle ou parallèle ;
+- produire artefacts ;
+- persister résultats ;
+- journaliser traces et erreurs.
 
-The control plane is responsible for reasoning, planning, and governance before execution.
+Le data plane ne doit jamais contourner policy, criticité, veto ou validation.
 
-Main responsibilities:
+---
 
-* task classification
-* decomposition
-* deliberation
-* contradiction detection
-* uncertainty detection
-* clarification decisions
-* policy-aware routing
-* escalation decisions
-* final orchestration judgment
+# 8. Workflow engine
 
-Main objects:
+Un workflow est une structure d’exécution explicite, pas une chaîne de prompts implicite.
 
-* DecisionContext
-* DecisionAction
-* DecisionPlan
+Patterns cibles :
 
-Typical control-plane agents:
+- solo ;
+- parallel ;
+- cascade ;
+- arena ;
+- conditional routing ;
+- clarification checkpoint ;
+- pause / resume ;
+- merge / fork ;
+- child workflows plus tard.
 
-* ZEUS
-* ATHENA
-* METIS
-* PROMETHEUS
-* THEMIS
-* APOLLO
-* HECATE
-* HERMES as precheck and source strategy
+Extensions possibles : LangGraph adapter, checkpoints persistants, exécution graph-based pour workflows complexes.
 
-The control plane decides what should happen before the data plane executes it.
+---
 
-⸻
+# 9. Manifest loader et registries
 
-7. Data Plane
+Les manifests et registries sont le mécanisme de découverte runtime.
 
-The data plane executes validated decisions.
+Responsabilités :
 
-Main responsibilities:
+- découvrir agents, skills, tools, workflows ;
+- valider les manifests au démarrage ;
+- exposer état enabled / disabled ;
+- maintenir des registries séparées ;
+- préparer le versioning futur.
 
-* run agents
-* inject tools and skills
-* execute tasks
-* manage sequential and parallel execution
-* produce artifacts
-* persist results
-* log execution traces
+Champs manifest recommandés : `id`, `name`, `type`, `version`, `enabled`, `domain`, `inputs`, `outputs`, `dependencies`, `constraints`, `policy`, `activation`, `tags`.
 
-Main objects:
+---
 
-* ExecutionState
-* ExecutionResult
+# 10. Governance layer
 
-The data plane must never bypass the governance and policy layers.
+## 10.1 Criticité
 
-⸻
+Les niveaux C1-C5 contrôlent profondeur d’exécution, nombre d’agents, approbations, veto, clarification et traçabilité.
 
-8. Workflow Engine
+## 10.2 Réversibilité
 
-The Workflow Engine coordinates the execution of a workflow pack.
+Toute action significative est classée : note interne, écriture mémoire, communication externe, action critique ou irréversible.
 
-A workflow is an explicit execution structure, not an implicit prompt chain.
+## 10.3 Draft-first
 
-Capabilities:
+Les sorties sérieuses suivent : générer, valider, exécuter ou livrer.
 
-* solo
-* parallel
-* cascade
-* arena
-* conditional routing
-* clarification checkpoints
-* pause and resume
-* merge and fork flows
-* child workflows later
+## 10.4 Decision debt
 
-The Workflow Engine orchestrates both the control plane and the data plane.
+Les décisions provisoires, conditionnelles ou bloquées sont suivies par états explicites D0-D3.
 
-Future extensions may include:
+## 10.5 Escalade
 
-* LangGraph adapter
-* checkpoint-backed resume
-* graph-based execution for complex workflows
+Les contradictions, incertitudes fortes, actions C4/C5 ou impacts irréversibles déclenchent escalation ou validation humaine.
 
-⸻
+---
 
-9. Manifest Loader and Registries
+# 11. Policy layer
 
-Pantheon relies on manifests and registries as the runtime source of truth.
+Tout appel d’outil ou action à effet de bord passe par un policy gate.
 
-Responsibilities:
+Décisions possibles :
 
-* discover agents, skills, tools, and workflows from disk
-* validate manifests at startup
-* register identities and metadata
-* expose enabled and disabled state
-* support version-aware loading later
+- allow ;
+- block ;
+- require_approval.
 
-Typical registries:
+Actions à risque : envoi d’email, modification de données persistantes, action externe, suppression de fichier, mutation de workflow, écriture mémoire forte.
 
-* AgentRegistry
-* SkillRegistry
-* ToolRegistry
-* WorkflowRegistry
+---
 
-Typical manifest fields include:
+# 12. Veto chain
 
-* id
-* name
-* type
-* version
-* enabled
-* domain
-* inputs
-* outputs
-* dependencies
-* constraints
-* policy
-* activation
-* tags
+Un veto est une décision structurée : verdict, justification, severity, lift condition.
 
-⸻
+Chaîne cible :
 
-10. Governance Layer
-
-Pantheon governs execution through explicit runtime controls.
-
-10.1 Criticity
-
-Criticity levels C1-C5 control:
-
-* execution depth
-* number of agents
-* approval requirements
-* veto activation
-* clarification thresholds
-* traceability requirements
-
-10.2 Reversibility
-
-Actions are classified by reversibility, for example:
-
-* internal note
-* memory write
-* external communication
-* critical or irreversible action
-
-10.3 Draft-first
-
-Serious outputs must follow:
-
-* generate
-* validate
-* execute
-
-10.4 Decision debt
-
-Pantheon tracks provisional or blocked decisions through explicit decision debt states.
-
-10.5 Escalation
-
-High-risk or unresolved cases trigger escalation rather than silent continuation.
-
-⸻
-
-11. Policy Layer
-
-All tool calls and side-effectful actions pass through a policy gate.
-
-Policy decisions:
-
-* allow
-* block
-* require_approval
-
-The policy layer ensures:
-
-* safety
-* auditability
-* compliance
-* bounded execution
-
-Risky actions must never be silently executed.
-
-Examples include:
-
-* sending emails
-* modifying persistent records
-* external API actions with side effects
-* destructive file operations
-* irreversible workflow mutations
-
-⸻
-
-12. Veto Chain
-
-Pantheon uses a structured veto chain.
-
-A veto is not a raw boolean.
-It is a structured runtime decision containing:
-
-* verdict
-* justification
-* severity
-* lift condition
-
-Typical flow:
-
+```text
 execute_agents
 → veto_check
 → veto_themis
 → veto_zeus
 → zeus_judge
+```
 
-Veto levels:
+Niveaux : warning ou blocking.
 
-* warning
-* blocking
+---
 
-This allows the system to stop unsafe or procedurally invalid runs in a traceable way.
+# 13. Memory system
 
-⸻
+Pantheon OS utilise une mémoire multi-couches, sélective et auditable. La mémoire ne doit jamais devenir un dump de contexte.
 
-13. Memory System
+## 13.1 Typologie mémoire
 
-Pantheon uses multiple memory layers.
+La mémoire distingue au minimum :
 
-13.1 Session Memory
+- `raw_history` : messages bruts, événements, tool outputs, actions, documents, traces ;
+- `candidate_facts` : faits proposés par extraction, réflexion ou import, non encore validés ;
+- `active_facts` : faits durables validés et sourcés ;
+- `summaries` : résumés de session, workflow, document, affaire ou fenêtre temporelle ;
+- `cards` : vues compactes synthétiques utilisées pour l’injection rapide ;
+- `traces` : décisions d’orchestration, veto, validations, erreurs, jobs, statuts ;
+- `knowledge` : corpus documentaire, markdown indexé, templates, sources de référence.
 
-Short-term runtime continuity.
+## 13.2 Source de vérité
 
-Contents:
+Les sources brutes restent prioritaires. Les facts, summaries et cards sont des couches dérivées et reconstruisibles.
 
-* current run context
-* recent clarifications
-* intermediate artifacts
-* current workflow state
+Une carte compacte n’est pas une source de vérité. Elle est une vue synthétique destinée à réduire le coût de contexte.
 
-13.2 Project Memory
+## 13.3 Exigence d’auditabilité
 
-Project-specific continuity.
+Toute mémoire injectée dans un prompt doit être :
 
-Contents:
+- inspectable ;
+- sourcée ;
+- reliée à une affaire, session, agent, document, message ou action ;
+- révisable ;
+- rétractable ou supersédable ;
+- visible dans les traces d’exécution.
 
-* decisions
-* constraints
-* assumptions
-* decision debt
-* validated project history
+## 13.4 Cycle mémoire cible
 
-Primary owner:
+```text
+raw input / event / document / message
+→ extraction ou réflexion
+→ candidate fact
+→ validation agent ou règle déterministe
+→ active fact
+→ consolidation prudente
+→ card / summary / context injection
+```
 
-* HESTIA
+## 13.5 Dry-run obligatoire
 
-13.3 Agency / Global Memory
+Toute opération qui promeut, fusionne, rétracte, supersède ou condense la mémoire doit supporter un mode dry-run ou preview avant application, sauf écriture triviale de trace brute.
 
-Reusable long-term knowledge.
+## 13.6 Propriétaires agents
 
-Contents:
+- HESTIA : mémoire projet et continuité d’affaire ;
+- MNEMOSYNE : mémoire agence, patterns, templates, capitalisation ;
+- HADES : retrieval profond et archives ;
+- ARGOS : extraction objective de faits et preuves ;
+- THEMIS : légitimité procédurale des promotions sensibles ;
+- ZEUS : arbitrage des conflits mémoire importants.
 
-* reusable patterns
-* templates
-* reference cases
-* internal know-how
-* validated cross-project lessons
+## 13.7 Stockage cible
 
-Primary owner:
+Pantheon conserve PostgreSQL + pgvector comme socle principal. Les idées issues de systèmes local-first type Hermes Local Memory sont retenues au niveau doctrine : inspectabilité, raw history, facts candidats, cards compactes, dry-runs, consolidation explicite. Elles ne justifient pas de remplacer PostgreSQL/pgvector par SQLite.
 
-* MNEMOSYNE
+---
 
-13.4 Functional Memory
+# 14. Post-run memory routing
 
-Temporary execution state.
+Après synthèse, le runtime route explicitement :
 
-Contents:
+- contexte temporaire → session memory ;
+- décision projet validée → HESTIA ;
+- pattern réutilisable → proposition MNEMOSYNE ;
+- contradiction → debt ou escalation ;
+- bruit → ignoré.
 
-* in-flight task state
-* ephemeral task progress
-* short-lived runtime continuity
+Aucun output complet ne doit être automatiquement promu comme mémoire durable sans extraction, filtrage et validation.
 
-This should not be confused with durable project or agency memory.
+---
 
-13.5 Graph Memory (later)
+# 15. Knowledge layer
 
-Future structured relational memory.
+La knowledge layer est distincte de la mémoire runtime. Elle contient prompts, templates, markdown indexé, documentation, exemples, trusted sources et corpus de référence.
 
-Possible contents:
+Elle supporte retrieval et génération, mais ne remplace pas la mémoire de continuité.
 
-* entities
-* relations
-* contradictions
-* dependency links
+---
 
-Memory must remain selective.
-Not everything should be stored.
+# 16. Document intelligence layer
 
-⸻
+Responsabilités : ingestion, parsing, chunking, indexation, retrieval hybride, citations, cache de synthèse, support multilingue et extension multimodale.
 
-14. Post-Run Memory Routing
+Métadonnées cibles : fichier, page, section, langue, source id, affaire, version, date d’ingestion, statut de fiabilité.
 
-Pantheon should explicitly route results after synthesis.
+---
 
-Examples:
+# 17. Evaluation and learning
 
-* validated project decision → project memory
-* reusable pattern → agency/global memory proposal
-* temporary context → session only
-* noise → ignored
+Pantheon évalue structure, confiance, qualité des citations, latence, clarification, workflow, supervision et feedback.
 
-This keeps memory useful and avoids uncontrolled accumulation.
+Le learning reste contrôlé : feedback, gap analysis, propositions candidates, promotion validée. Pas de self-mutation silencieuse.
 
-A mature implementation should also support:
+---
 
-* candidate memory scoring
-* memory hygiene checks
-* stale-memory trimming
-* condensation of verbose memory into pointers
-* governed proposals for wiki pages, templates, or skills
+# 18. Observability
 
-⸻
+Le système trace agents, tools, prompts, décisions, workflows, scores, feedback, actions bloquées, approvals, vetoes, coûts, latences, mémoire injectée et changements de mémoire.
 
-15. Knowledge Layer
+La console doit permettre d’inspecter pourquoi un résultat a été produit et quel contexte a été injecté.
 
-The knowledge layer is distinct from runtime memory.
+---
 
-It may contain:
+# 19. External interfaces
 
-* prompts
-* templates
-* indexed markdown
-* documentation
-* examples
-* trusted source corpora
+OpenWebUI est l’interface principale, pas le runtime. Les canaux futurs Telegram, WhatsApp, voix ou API externe passent par le même runtime gouverné.
 
-This layer supports retrieval, not just continuity.
+---
 
-⸻
+# 20. Contraintes de conception
 
-16. Document Intelligence Layer
+- pas de logique métier dans `core/` ;
+- pas d’exécution d’outil non gouvernée ;
+- pas de workflow caché dans des prompts ;
+- pas de mutation silencieuse ;
+- pas de dépendance runtime à l’UI ;
+- pas de confusion agent / skill / tool / workflow ;
+- pas de croissance mémoire incontrôlée ;
+- pas de mémoire injectée non inspectable.
 
-This layer handles document processing and retrieval.
+---
 
-Responsibilities:
+# 21. Relation avec ROADMAP.md
 
-* ingestion
-* parsing
-* chunking
-* indexing
-* hybrid retrieval
-* citation tracking
-* synthesis cache
-* multilingual support
+`ARCHITECTURE.md` décrit les principes stables. `ROADMAP.md` définit le séquençage d’implémentation.
 
-Target metadata:
+---
 
-* file
-* page
-* section
-* language
-* source id
+# 22. Relation avec STATUS.md
 
-Later multimodal extension:
+`STATUS.md` dit ce qui est réellement livré, partiel, à faire ou en exploration. En cas d’écart entre ce document et le code, le statut doit clarifier la situation.
 
-* images
-* plans
-* sections
-* site photos
-* visual descriptions
-* technical qualification
+---
 
-⸻
+# 23. Résultat cible
 
-17. Evaluation and Learning
-
-17.1 Evaluation
-
-Pantheon evaluates:
-
-* structure
-* confidence
-* citation quality
-* latency
-* clarification count
-* workflow quality
-* supervision quality
-
-Core mechanisms:
-
-* scorecards
-* regression tests
-* workflow comparison
-* Hera scoring
-* Apollo validation
-
-17.2 Learning
-
-Pantheon improves through controlled learning.
-
-Mechanisms:
-
-* feedback collection
-* gap analysis
-* candidate workflow generation
-* reusable pattern proposals
-* controlled promotion
-
-Learning must remain reviewed and explicit.
-No silent self-mutation.
-
-⸻
-
-18. Observability
-
-Pantheon tracks:
-
-* agent execution
-* tool calls
-* prompts
-* decisions
-* workflow versions
-* scores
-* feedback
-* blocked actions
-* approvals
-* vetoes
-* cost
-* latency
-
-The system must remain inspectable in production.
-
-⸻
-
-19. External Interfaces
-
-OpenWebUI is the main user-facing interface, not the runtime engine.
-
-Other interfaces may be added later:
-
-* Telegram
-* WhatsApp
-* voice input/output
-* external API triggers
-
-All external channels should route through the same governed runtime.
-
-⸻
-
-20. Design Constraints
-
-* no business logic in core/
-* no uncontrolled tool execution
-* no hidden workflow mutation
-* no silent risky actions
-* no runtime dependency on the UI layer
-* no collapse of agent / skill / tool / workflow roles
-* no uncontrolled memory growth
-
-⸻
-
-21. Relationship to the Roadmap
-
-This document describes the target structure and stable architectural principles.
-
-Implementation sequencing is defined in ROADMAP.md.
-
-The roadmap controls:
-
-* MVP order
-* orchestration phases
-* context and memory upgrades
-* policy and governance rollout
-* evaluation and learning phases
-* domain overlay delivery
-* durable execution and scaling
-
-⸻
-
-22. Relationship to Legacy ARCEUS
-
-Legacy ARCEUS implementation details, current stack snapshots, old endpoint maps, and historical orchestration graphs should be preserved separately as legacy implementation references.
-
-This document defines Pantheon Next architecture.
-It should not be overloaded with old implementation snapshots.
-
-⸻
-
-23. Key Outcome
-
-Pantheon Next becomes a controlled multi-agent system where reasoning, execution, validation, memory, and governance are explicit, modular, portable, and testable.
+Pantheon OS doit rester un système multi-agent contrôlé où raisonnement, exécution, validation, mémoire et gouvernance sont explicites, modulaires, portables, testables et inspectables.
