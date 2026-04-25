@@ -56,6 +56,7 @@ Pantheon OS dispose d’un socle MVP réel : FastAPI, PostgreSQL + pgvector, Ope
 ## 🔄 Partiellement confirmé
 
 - Auto-discovery agents / skills / workflows : `ManifestLoader` indexe les manifests runtime présents dans `/modules` et utilise le contrat commun `ComponentManifest`.
+- Workflow definitions : `WorkflowDefinitionLoader` peut charger `workflow.yaml` et `tasks.yaml`, mais il n’est pas encore branché à un moteur d’exécution.
 - Mémoire agent : `AgentMemory` et `extract_and_store_memories()` sont utilisés par les tests, avec promotion `promotable` projet → agence. Cette mémoire n’est pas encore alignée avec la doctrine complète `raw_history / candidate_facts / active_facts / summaries / cards / traces`.
 - Hermes Console : activée et manifest présent, mais contenu fonctionnel complet non audité.
 
@@ -133,7 +134,9 @@ Reste à faire :
 Livré :
 
 - `platform/api/core/contracts/tasks.py`
+- `platform/api/core/registries/workflows.py`
 - `tests/test_task_contracts.py`
+- `tests/test_workflow_definition_loader.py`
 
 Rôle :
 
@@ -144,14 +147,15 @@ Rôle :
 - valider les dépendances entre tâches ;
 - détecter les IDs de tâches dupliqués ;
 - identifier les tâches critiques C4/C5 et les besoins d’approbation par défaut ;
-- préparer le futur support `tasks.yaml`.
+- charger `workflow.yaml` ;
+- charger et fusionner `tasks.yaml` ;
+- refuser les définitions invalides sans bloquer les autres workflows.
 
-Statut : 🔄 Partiel. Contrats et tests ajoutés, non exécutés dans cette session.
+Statut : 🔄 Partiel avancé. Contrats, loader et tests ajoutés, non exécutés dans cette session.
 
 Reste à faire :
 
-- ajouter un loader `tasks.yaml` ;
-- connecter `WorkflowDefinition` au `ManifestLoader` ou au futur WorkflowRegistry ;
+- brancher `WorkflowDefinitionLoader` dans le startup ou un futur `WorkflowRegistry` ;
 - produire des traces `task_run` ;
 - ajouter exemples de workflow YAML réels ;
 - exposer les tâches dans Hermes Console.
@@ -193,14 +197,13 @@ Priorité : P1.
 
 ### 🔄 Task Contract / Workflow hardening
 
-Partiel.
+Partiel avancé.
 
-Les contrats `TaskDefinition` et `WorkflowDefinition` existent.
+Les contrats `TaskDefinition` et `WorkflowDefinition` existent. Le loader `WorkflowDefinitionLoader` peut lire `workflow.yaml` et `tasks.yaml`.
 
 Reste à faire :
 
-- exécuter `pytest tests/test_task_contracts.py` ;
-- ajouter un loader `tasks.yaml` ;
+- exécuter `pytest tests/test_task_contracts.py tests/test_workflow_definition_loader.py` ;
 - connecter les définitions au runtime workflow ;
 - ajouter `task_run` dans l’observability ;
 - créer un exemple de workflow réel ;
@@ -310,7 +313,8 @@ Confirmé :
 - `tests/test_guards.py` ;
 - `tests/test_manifest_loader.py` ;
 - `tests/test_manifest_contract.py` ;
-- `tests/test_task_contracts.py`.
+- `tests/test_task_contracts.py` ;
+- `tests/test_workflow_definition_loader.py`.
 
 Reste à faire : tests tools, `orchestra/service.py`, E2E RAG, mémoire complète, approvals, workflows C1-C5, context preview, consolidation dry-run.
 
@@ -498,9 +502,9 @@ Règles :
 
 Ordre recommandé :
 
-1. Exécuter les tests ajoutés : `pytest tests/test_manifest_loader.py tests/test_manifest_contract.py tests/test_task_contracts.py` puis suite existante pertinente.
+1. Exécuter les tests ajoutés : `pytest tests/test_manifest_loader.py tests/test_manifest_contract.py tests/test_task_contracts.py tests/test_workflow_definition_loader.py` puis suite existante pertinente.
 2. Corriger les éventuels échecs liés aux contrats.
-3. Ajouter un loader `tasks.yaml`.
+3. Connecter `WorkflowDefinitionLoader` au futur `WorkflowRegistry` ou à la console.
 4. Finaliser l’audit code/docs avec inspection complète locale ou CI.
 5. Enrichir progressivement les manifests API et runtime.
 6. Ajouter ou vérifier Approval Gate / HITL.
