@@ -1,0 +1,17 @@
+id: approvals
+name: Approval Gate
+type: api_app
+version: "0.1.0"
+description: Human-in-the-loop approval requests for sensitive actions.
+enabled: false
+priority: 40
+prefix: /approvals
+dependencies:
+  - auth
+inputs:
+  - approval_request
+outputs:
+  - approval_decision
+risk_profile: high
+side_effect_profile: internal
+approval_required_if: []
