@@ -1,114 +1,83 @@
 # Pantheon OS — Modules
+
 ## Overview
-Pantheon Next is built from modular runtime blocks.
-The system distinguishes between:
-- core runtime logic
-- reusable runtime modules
-- domain overlays
-- platform and infrastructure
-This document defines how modules are organized, discovered, validated, activated, and composed.
-A module is not just a folder.
-A module is a runtime unit with:
-- an identity
-- a contract
-- a manifest
-- a lifecycle
-- explicit dependencies
-- controlled activation
+
+Pantheon OS est construit à partir de blocs runtime modulaires.
+
+Le système distingue :
+
+- core runtime logic ;
+- reusable runtime modules ;
+- domain overlays ;
+- platform and infrastructure.
+
+Un module n’est pas seulement un dossier. Un module est une unité runtime avec une identité, un contrat, un manifest, un cycle de vie, des dépendances explicites et une activation contrôlée.
+
 ---
+
 # 1. Module Philosophy
+
 ## 1.1 Modular by default
-Everything that may vary, evolve, or be replaced should live outside the core.
-This includes:
-- agents
-- skills
-- tools
-- workflows
-- prompts
-- templates
-The core provides execution, governance, contracts, state, and registries.
-Modules provide behavior.
-## 1.2 Filesystem is the source of truth
-A module must be discoverable from the filesystem.
-Adding or removing a module should primarily mean:
-- adding or removing a folder
-- adding or removing a manifest
-- satisfying runtime contract requirements
-The runtime should not require hardcoded registration for every new block.
-## 1.3 Core and modules must stay separated
-The core must not absorb domain logic.
-Modules must not reimplement core governance.
-The boundary is:
-- core decides how execution works
-- modules define what gets executed
-## 1.4 Modules must be explicit
-Every module must declare:
-- what it is
-- what it depends on
-- what it produces
-- when it should be used
-- when it should not be used
+
+Tout ce qui peut varier, évoluer ou être remplacé doit rester hors du core : agents, skills, tools, workflows, prompts, templates.
+
+Le core fournit exécution, gouvernance, contrats, états et registries. Les modules fournissent le comportement.
+
+## 1.2 Filesystem as source of truth
+
+Un module doit être découvrable depuis le filesystem. Ajouter un module doit principalement signifier ajouter un dossier, un manifest et une implémentation conforme au contrat.
+
+## 1.3 Core and modules separation
+
+Le core ne doit pas absorber de logique métier. Les modules ne doivent pas réimplémenter la gouvernance core.
+
+Limite :
+
+- le core définit comment l’exécution fonctionne ;
+- les modules définissent ce qui est exécuté.
+
+## 1.4 Explicit modules
+
+Chaque module déclare ce qu’il est, ce qu’il dépend, ce qu’il produit, quand il doit être utilisé et quand il ne doit pas l’être.
+
 ---
+
 # 2. Main Module Families
-Pantheon uses six primary module families.
+
 ## 2.1 Agents
-Agents are reasoning units.
-They:
-- interpret tasks
-- produce structured outputs
-- call skills and tools through runtime control
-- participate in workflows
-Agents do not own global orchestration by default unless that is their defined role.
+
+Les agents sont des unités de raisonnement. Ils interprètent, structurent, produisent des sorties, appellent skills et tools via le runtime, et participent aux workflows.
+
 ## 2.2 Skills
-Skills are reusable reasoning capabilities.
-They:
-- encapsulate repeatable cognitive work
-- define narrow scope
-- remain testable independently
-- do not own side-effectful execution
-A skill is not a persona.
-It is a reusable capability block.
+
+Les skills sont des capacités cognitives réutilisables. Elles encapsulent un travail répétable, borné, testable et sans effet de bord direct.
+
 ## 2.3 Tools
-Tools are technical or external action interfaces.
-They:
-- fetch
-- read
-- transform
-- call services
-- write outputs
-- perform bounded actions
-Tools must be narrow, explicit, and governed by policy.
+
+Les tools sont des interfaces techniques ou externes : fetch, read, transform, call service, write output, bounded actions. Ils doivent rester étroits, explicites et gouvernés.
+
 ## 2.4 Workflows
-Workflows structure execution.
-They define:
-- agent sequencing
-- dependencies
-- execution patterns
-- pause points
-- validation points
-- fallback logic
-A workflow is explicit execution structure, not a prompt chain.
+
+Les workflows structurent l’exécution : séquence, dépendances, patterns, checkpoints, validations et fallbacks.
+
 ## 2.5 Prompts
-Prompts define behavioral framing and instructions.
-They may include:
-- system prompts
-- domain overlays
-- skill prompts
-- output constraints
-- style or tone rules where relevant
-Prompts do not replace runtime logic.
+
+Les prompts cadrent les comportements, mais ne remplacent pas la logique runtime.
+
 ## 2.6 Templates
-Templates define output structure.
-They may include:
-- report templates
-- dossier templates
-- structured response skeletons
-- communication formats
-- domain-specific document shells
-Templates should be reusable and independently versionable.
+
+Les templates définissent des structures d’outputs réutilisables et versionnables.
+
+## 2.7 Memory modules
+
+Les modules mémoire gèrent la continuité, la capitalisation, les faits, les résumés, les cartes compactes, les traces et l’inspection du contexte injecté.
+
+Ils ne décident pas seuls de la vérité métier. Ils stockent, exposent, relient, proposent, prévisualisent et appliquent les écritures mémoire validées.
+
 ---
+
 # 3. Repository Structure
-## 3.1 Generic runtime modules
+
 ```text
 modules/
   agents/
@@ -117,22 +86,6 @@ modules/
   workflows/
   prompts/
   templates/
-
-3.2 Domain overlays
-
-domains/
-  architecture/
-    agents/
-    skills/
-    workflows/
-    prompts/
-    templates/
-    policies/
-    trusted_sources/
-  legal/
-  software/
-
-3.3 Core runtime
 
 core/
   contracts/
@@ -148,575 +101,321 @@ core/
   documents/
   llm/
 
-3.4 Platform layer
+domains/
+  architecture/
+  legal/
+  software/
+  consulting/
 
 platform/
   api/
   ui/
   data/
   infra/
+```
 
-⸻
+---
 
-4. Module Discovery
+# 4. Module Discovery
 
-4.1 Discovery model
+Les modules sont découverts par manifests.
 
-Modules are discovered at runtime through manifests.
+Répertoires typiques :
 
-The loader scans known directories such as:
+- `modules/agents/`
+- `modules/skills/`
+- `modules/tools/`
+- `modules/workflows/`
+- `domains/*/agents/`
+- `domains/*/skills/`
+- `domains/*/workflows/`
 
-* modules/agents/
-* modules/skills/
-* modules/tools/
-* modules/workflows/
-* domains/*/agents/
-* domains/*/skills/
-* domains/*/workflows/
+Un module est loadable si le dossier existe, le manifest est valide, les fichiers requis existent et les contrats passent la validation.
 
-4.2 Discovery rules
+Les registries sont des index runtime, pas la source de vérité. La source de vérité reste filesystem + manifest.
 
-A module is considered loadable if:
+---
 
-* the folder exists
-* a valid manifest exists
-* required implementation files exist
-* contract validation succeeds
+# 5. Manifest Model
 
-If manifest validation fails, the module should not load silently.
+Champs recommandés :
 
-4.3 Registries
+- `id`
+- `name`
+- `type`
+- `version`
+- `description`
+- `enabled`
+- `layer`
+- `domain`
+- `inputs`
+- `outputs`
+- `dependencies`
+- `constraints`
+- `policy`
+- `activation`
+- `tags`
 
-The runtime should maintain separate registries for:
+Les manifests doivent rester légers, explicites et lisibles par machine.
 
-* AgentRegistry
-* SkillRegistry
-* ToolRegistry
-* WorkflowRegistry
-* PromptRegistry later if needed
-* TemplateRegistry later if needed
+---
 
-Registries are runtime indexes, not the source of truth.
-The source of truth remains the filesystem + manifest.
+# 6. Module Contracts by Type
 
-⸻
+## 6.1 Agent contract
 
-5. Manifest Model
+Un agent déclare rôle, responsabilités, limites, activation, inputs, outputs, veto éventuel et criticity triggers.
 
-5.1 Manifest purpose
+Structure habituelle :
 
-A manifest is the runtime contract summary for a module.
-
-It should be lightweight, explicit, and machine-readable.
-
-5.2 Recommended manifest fields
-
-Most modules should eventually support fields such as:
-
-* id
-* name
-* type
-* version
-* description
-* enabled
-* layer
-* domain
-* inputs
-* outputs
-* dependencies
-* constraints
-* policy
-* activation
-* tags
-
-Not every field is required in phase one, but the model should evolve in this direction.
-
-5.3 Identity fields
-
-id
-
-Stable runtime identifier.
-
-name
-
-Human-readable name.
-
-type
-
-One of:
-
-* agent
-* skill
-* tool
-* workflow
-* prompt
-* template
-
-version
-
-Module version or revision marker.
-
-5.4 Contract fields
-
-inputs
-
-Expected inputs.
-
-outputs
-
-Expected outputs.
-
-dependencies
-
-Required skills, tools, workflows, models, or runtime features.
-
-constraints
-
-What the module cannot or must not do.
-
-policy
-
-Approval or restriction metadata where relevant.
-
-5.5 Runtime fields
-
-enabled
-
-Whether the module is available for loading.
-
-activation
-
-Optional hints about when the runtime may use the module.
-
-domain
-
-Optional domain association such as:
-
-* core
-* architecture
-* legal
-* software
-
-⸻
-
-6. Module Contracts by Type
-
-6.1 Agent contract
-
-An agent module should define:
-
-* role
-* responsibilities
-* limits
-* activation logic
-* input shape
-* output shape
-* optional veto capability
-* optional criticity triggers
-
-An agent should usually include:
-
+```text
 agent.py
 manifest.yaml
 SOUL.md
 tests/
+```
 
-Optional:
+## 6.2 Skill contract
 
-skills/
-config.yaml
-examples/
+Une skill déclare scope, inputs, outputs, conditions d’usage, conditions d’évitement et failure modes.
 
-6.2 Skill contract
+Structure habituelle :
 
-A skill module should define:
-
-* capability scope
-* clear inputs
-* clear outputs
-* use conditions
-* avoid conditions
-* failure modes
-
-A skill should usually include:
-
+```text
 skill.py
 manifest.yaml
 SKILL.md
 tests/
+```
 
-6.3 Tool contract
+## 6.3 Tool contract
 
-A tool module should define:
+Un tool déclare ce qu’il fait, quand l’utiliser, quand ne pas l’utiliser, son profil d’effet de bord, ses policy requirements et ses failure modes.
 
-* what it does
-* when to use it
-* when not to use it
-* side-effect profile
-* policy requirements
-* expected failure modes
+Structure habituelle :
 
-A tool should usually include:
-
+```text
 tool.py
 manifest.yaml
 README.md
 tests/
+```
 
-6.4 Workflow contract
+## 6.4 Workflow contract
 
-A workflow module should define:
+Un workflow déclare graphe ou séquence, agents, dépendances, pattern d’exécution, checkpoints, validations et fallback rules.
 
-* graph or sequence
-* participating agents
-* dependencies
-* execution pattern
-* checkpoints
-* validation points
-* fallback rules
+Structure habituelle :
 
-A workflow should usually include:
-
+```text
 workflow.py
 manifest.yaml
 workflow.yaml
 tests/
+```
 
-6.5 Prompt contract
+## 6.5 Prompt contract
 
-A prompt module should define:
+Un prompt déclare scope, module cible, domaine applicable, contraintes et profil d’instruction.
 
-* scope
-* target module or role
-* domain applicability
-* constraints
-* expected tone or instruction profile
+## 6.6 Template contract
 
-6.6 Template contract
+Un template déclare type d’artefact, sections attendues, variables, domaine éventuel et contraintes de sortie.
 
-A template module should define:
+## 6.7 Memory contract
 
-* target artifact type
-* expected sections
-* optional domain association
-* variable placeholders
-* output constraints
+Un module mémoire doit déclarer :
 
-⸻
+- le type de mémoire concerné : session, project, agency, functional, raw, knowledge ;
+- les objets manipulés : raw events, messages, facts, candidate facts, summaries, cards, traces ;
+- les sources acceptées ;
+- les règles de promotion ;
+- les règles de rétractation ou supersession ;
+- les modes preview / dry-run ;
+- les outputs injectables dans le contexte ;
+- les agents autorisés à valider ou arbitrer.
 
-7. Standard Folder Patterns
+Un module mémoire ne doit pas promouvoir massivement des données sans scoring, source et validation.
 
-7.1 Agent module
+---
 
-modules/agents/control/zeus_orchestrator/
-  manifest.yaml
-  agent.py
-  SOUL.md
-  tests/
+# 7. Memory Module Responsibilities
 
-7.2 Skill module
+## 7.1 Raw history
 
-modules/skills/research/crosscheck/
-  manifest.yaml
-  skill.py
-  SKILL.md
-  tests/
+Stocke les messages, documents, tool outputs, événements, run traces et actions. Cette couche est la base de vérification.
 
-7.3 Tool module
+Elle ne doit pas être modifiée par consolidation ordinaire.
 
-modules/tools/context/smart_read/
-  manifest.yaml
-  tool.py
-  README.md
-  tests/
+## 7.2 Candidate facts
 
-7.4 Workflow module
+Stocke les faits proposés par extraction, réflexion, import ou analyse. Un candidate fact n’est pas encore une mémoire fiable.
 
-modules/workflows/review/decision_review/
-  manifest.yaml
-  workflow.yaml
-  workflow.py
-  tests/
+Il doit inclure source, confidence, scope, subject, observer ou affaire, et justification minimale.
 
-7.5 Domain overlay skill
+## 7.3 Active facts
 
-domains/architecture/skills/decision_scoring/
-  manifest.yaml
-  skill.py
-  SKILL.md
-  tests/
+Stocke les faits validés, durables, utiles et sourcés.
 
-⸻
+Un active fact doit pouvoir être rétracté, supersédé ou relié à une preuve.
 
-8. Domain Overlay Rules
+## 7.4 Summaries
 
-8.1 Domain behavior must stay in overlays
+Stocke les résumés de session, workflow, affaire, document ou fenêtre temporelle.
 
-If a capability is domain-specific, it should live under domains/{domain}/, not in generic modules/.
+Un summary est une couche dérivée. Il ne remplace pas les sources brutes.
 
-Examples:
+## 7.5 Cards
 
-* architecture decision debt handling
-* legal citation enforcement
-* software blast-radius review
+Stocke les cartes compactes utilisées pour l’injection rapide dans les prompts.
 
-8.2 Generic modules must remain portable
+Une card est une vue synthétique compacte. Elle ne doit pas grossir mécaniquement avec chaque active fact.
 
-A generic module should not assume:
+## 7.6 Context preview
 
-* a specific professional domain
-* a specific project phase model
-* a specific legal framework
-* a specific document taxonomy
+Expose le contexte qui serait injecté dans un agent ou workflow avant exécution.
 
-8.3 Overlay activation
+Un module de preview doit montrer :
 
-The runtime should be able to activate overlays through configuration.
+- les facts utilisés ;
+- les cards utilisées ;
+- les summaries utilisés ;
+- les documents ou chunks cités ;
+- les traces ou décisions pertinentes ;
+- les éléments exclus si utile.
 
-Possible dimensions include:
+---
 
-* active domain
-* multiple enabled overlays
-* overlay priority
-* domain-specific policy injection
+# 8. Memory Module Interfaces
 
-⸻
+Interfaces attendues à terme :
 
-9. Activation and Enablement
+- `memory.search_active_facts`
+- `memory.list_candidate_facts`
+- `memory.propose_candidate_fact`
+- `memory.promote_fact`
+- `memory.retract_fact`
+- `memory.supersede_fact`
+- `memory.generate_card_preview`
+- `memory.replace_card`
+- `memory.context_preview`
+- `memory.consolidation_dry_run`
+- `memory.apply_consolidation`
+- `memory.route_post_run_memory`
 
-9.1 Module enablement
+Ces interfaces peuvent être exposées comme services internes, endpoints API ou tools gouvernés selon le niveau de maturité.
 
-A module may be:
+---
 
-* enabled
-* disabled
-* experimental
-* deprecated later if needed
+# 9. Domain Overlay Rules
 
-Disabled modules remain present on disk but are not active in runtime discovery.
+Le comportement métier appartient aux overlays.
 
-9.2 Runtime activation is separate from presence
+Exemples :
 
-A module can be loadable but not automatically activated.
+- scoring de décision architecture ;
+- politiques de citation juridique ;
+- blast-radius software ;
+- workflows chantier ;
+- templates ACT, DET, AOR.
 
-Examples:
+Les modules génériques ne doivent pas supposer un domaine professionnel particulier.
 
-* APHRODITE may exist but not auto-activate
-* domain workflows may exist but activate only under one overlay
-* some tools may require policy approval before use
+---
 
-9.3 Activation sources
+# 10. Activation and Enablement
 
-Activation may depend on:
+Un module peut être :
 
-* criticity
-* workflow structure
-* domain overlay
-* side-effect risk
-* output type
-* uncertainty level
-* operator setting
+- enabled ;
+- disabled ;
+- experimental ;
+- deprecated plus tard.
 
-⸻
+La présence sur disque est différente de l’activation runtime.
 
-10. Module Testing
+L’activation dépend de criticity, workflow, domaine, risque d’effet de bord, type d’output, incertitude et configuration opérateur.
 
-10.1 Every critical module must be testable
+---
 
-Pantheon should support testing at multiple levels:
+# 11. Module Testing
 
-* unit tests for skills
-* tool tests and mocks
-* agent tests
-* workflow integration tests
-* regression tests
+Tout module critique doit être testable.
 
-10.2 Test focus by module type
+Tests attendus : unit tests de skills, tool tests et mocks, agent tests, workflow integration tests, regression tests.
 
-Agents
+Les modules mémoire doivent être testés sur :
 
-Test:
+- non-promotion du bruit ;
+- conservation des sources brutes ;
+- dry-run avant consolidation ;
+- rétractation et supersession ;
+- preview du contexte injecté ;
+- absence de croissance incontrôlée des cards.
 
-* role boundaries
-* structured outputs
-* activation behavior
-* failure handling
+---
 
-Skills
+# 12. Versioning and Lifecycle
 
-Test:
+Skills, workflows, overlays, prompts, templates et politiques doivent évoluer avec versioning explicite lorsque la stabilité du runtime l’exige.
 
-* repeatability
-* edge cases
-* explicit scope
-* output consistency
+États possibles : draft, candidate, active, archived.
 
-Tools
+Les breaking changes doivent être explicites.
 
-Test:
+---
 
-* API failures
-* timeout handling
-* side-effect boundaries
-* policy integration
+# 13. Governance Constraints for Modules
 
-Workflows
+- aucun effet de bord non gouverné ;
+- aucune logique métier cachée dans core ;
+- aucune mutation silencieuse ;
+- aucune dépendance implicite ;
+- aucune activation décorative dans les runs critiques ;
+- aucune mémoire durable non sourcée ;
+- aucune consolidation mémoire sans dry-run pour les opérations sensibles.
 
-Test:
+---
 
-* execution order
-* dependencies
-* pause/resume
-* fallback behavior
-* criticity handling
+# 14. Hermes Console Expectations
 
-⸻
+La console doit exposer pour chaque module : id, type, domaine, enabled state, version, dépendances, métriques d’usage, échecs récents, contexte d’activation.
 
-11. Versioning and Lifecycle
+Pour la mémoire, la console doit aussi exposer : candidate facts, active facts, cards, summaries, contexte injecté, promotions, rétractions, consolidations et erreurs de routage.
 
-11.1 Modules evolve independently
+---
 
-Skills, workflows, and overlays should eventually support explicit versioning.
+# 15. Naming Rules
 
-Examples:
+Folder names en `snake_case`, IDs stables, machine-friendly, indépendants des expérimentations de nommage.
 
-* workflow versions
-* skill revisions
-* overlay revisions
+L’identité mythologique et le rôle doivent rester séparables.
 
-11.2 Workflow lifecycle
+Exemple : `zeus` comme identité, `orchestrator` comme rôle.
 
-A workflow pack may move through states such as:
+---
 
-* draft
-* candidate
-* active
-* archived
+# 16. Anti-Patterns
 
-11.3 Skills lifecycle
+À éviter :
 
-Skills may later support:
+- un module qui fait tout ;
+- un tool qui juge juridiquement ou politiquement ;
+- une skill vague ;
+- un workflow caché dans un prompt ;
+- de la logique domaine dans core ;
+- des dépendances non déclarées ;
+- des effets de bord hors policy gate ;
+- une activation silencieuse d’agents décoratifs ;
+- des cards mémoire append-only ;
+- une promotion automatique de raw output en mémoire durable.
 
-* versioned release
-* test-backed promotion
-* deactivation without deletion
-* canonical registry identity
+---
 
-11.4 Backward compatibility
+# 17. Final Rule
 
-The system should try to preserve compatibility where reasonable.
-Breaking changes must be explicit.
+Les modules sont le tissu d’exécution de Pantheon OS.
 
-⸻
+Un bon module est explicite, borné, testable, découvrable, remplaçable et gouvernable.
 
-12. Governance Constraints for Modules
-
-12.1 No uncontrolled side effects
-
-No module may perform risky side effects outside runtime policy control.
-
-12.2 No hidden business logic in core
-
-If a module encodes business-specific behavior, it belongs in overlays or explicit modules, not the core runtime.
-
-12.3 No silent module mutation
-
-Learning may suggest improvements, but runtime should not silently rewrite active modules in place.
-
-12.4 No implicit dependencies
-
-A module must not depend on hidden files, hidden prompts, or undocumented sequencing assumptions.
-
-Dependencies must be declared.
-
-⸻
-
-13. Hermes Console Expectations
-
-The Hermes Console should eventually expose module-level visibility.
-
-For each module, the console should be able to show:
-
-* id
-* type
-* domain
-* enabled state
-* version
-* dependencies
-* usage metrics
-* recent failures
-* activation context
-
-This is especially important for:
-
-* skills
-* workflows
-* tools
-* domain overlays
-
-⸻
-
-14. Recommended Naming Rules
-
-14.1 Folder naming
-
-Use stable, descriptive snake_case folder names.
-
-Examples:
-
-* zeus_orchestrator
-* crosscheck
-* smart_read
-* decision_review
-
-14.2 IDs
-
-Module ids should be:
-
-* stable
-* machine-friendly
-* unambiguous
-* independent of temporary naming experiments
-
-14.3 Identity vs role
-
-Identity and role should remain separable.
-
-Example:
-
-* mythic identity: zeus
-* role: orchestrator
-
-This keeps naming expressive without weakening runtime clarity.
-
-⸻
-
-15. Anti-Patterns
-
-Avoid the following:
-
-* one module doing everything
-* tools that make legal or policy judgments
-* skills with vague scope
-* workflows hidden inside prompts
-* domain logic hardcoded into core
-* modules that require undocumented ordering assumptions
-* side effects outside policy gates
-* silent runtime activation of decorative agents in critical runs
-
-⸻
-
-16. Final Rule
-
-Modules are the execution fabric of Pantheon Next.
-
-A good module is:
-
-* explicit
-* bounded
-* testable
-* discoverable
-* replaceable
-* governable
-
-If a module cannot be understood through its manifest, contract, and tests, it is too implicit for production use.
+Si un module ne peut pas être compris par son manifest, son contrat et ses tests, il est trop implicite pour la production.
