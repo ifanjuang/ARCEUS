@@ -245,6 +245,26 @@ The system must therefore support memory preview, source labels, candidate promo
 
 ⸻
 
+Human Approval
+
+Pantheon OS blocks sensitive actions behind an Approval Gate.
+
+Agents may propose an action, but the runtime must require human validation whenever criticity, reversibility or policy requires it. This applies especially to external communications, persistent data changes, strong memory mutations, official documents, browser actions with side effects and irreversible operations.
+
+Each approval must preserve status, assignee, reasoning, decision, note, timestamp and audit trail.
+
+⸻
+
+Governed Browser Automation
+
+Pantheon OS may support browser automation as a governed tool, not as an unrestricted agent capability.
+
+A browser action must be traceable through URL, intention, action, screenshot before, screenshot after and result status. Passive reading and extraction may be allowed under policy. Login, upload, posting, deletion, purchase, form submission or any action on a connected account requires Approval Gate validation.
+
+The default target is an isolated or sandboxed browser. Direct control of a user’s personal browser is not a safe default.
+
+⸻
+
 Configuration
 
 Single source of truth:
@@ -277,6 +297,10 @@ Design Principles
     V2 enables distributed execution
 6. Auditable memory
     Context injection must be inspectable, source-linked and governed.
+7. Approval before sensitive action
+    Human validation gates risky or irreversible execution.
+8. Governed browser automation
+    Browser control is allowed only through policy, tracing and approvals.
 
 ⸻
 
@@ -298,6 +322,8 @@ V2
 * Async execution (Redis / ARQ)
 * Multi-tenant + domain overlays
 * Auditable memory lifecycle: raw history, candidate facts, active facts, summaries, compact cards, dry-run consolidation
+* Approval Gate / HITL lifecycle for sensitive actions
+* Governed Browser Tool with screenshot traces and policy control
 
 ⸻
 
