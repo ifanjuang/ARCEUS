@@ -1,109 +1,83 @@
 # ROADMAP — Pantheon OS
-> Consolidated roadmap for evolving Pantheon OS into a modular, governed, portable-by-design multi-agent execution system.
->
-> Product thesis:
-> Pantheon Next is not a chatbot.
-> It is a controlled execution environment where specialized agents, explicit workflows, reusable skills, governed tools, and risk policies cooperate like a structured expert team.
+
+> Feuille de route consolidée pour faire évoluer Pantheon OS en système d’exécution multi-agent modulaire, gouverné, inspectable et portable.
+
+Thèse produit : Pantheon OS n’est pas un chatbot. C’est un environnement d’exécution contrôlé où agents spécialisés, workflows explicites, skills réutilisables, tools gouvernés, mémoire auditable et politiques de risque coopèrent comme une équipe experte structurée.
+
 ---
+
 # 1. Vision
-Pantheon Next is a multi-agent system for complex professional work.
-It targets environments with high density of rules, documents, coordination, and accountability:
-- architecture
-- project management
-- compliance
-- legal work
-- audit
-- consulting
-- IT
-- research and documentation-heavy work
-The system must remain:
-- modular
-- explainable
-- inspectable
-- governed
-- portable across domains
-The runtime must stay generic.
-Business value must live in domain overlays.
+
+Pantheon OS cible les environnements professionnels à forte densité documentaire, réglementaire, décisionnelle et opérationnelle : architecture, chantier, conduite de projet, conformité, juridique, audit, conseil, IT et recherche.
+
+Le système doit rester :
+
+- modulaire ;
+- explicable ;
+- inspectable ;
+- gouverné ;
+- portable entre domaines ;
+- piloté par documentation.
+
+Le runtime reste générique. La valeur métier vit dans les domain overlays.
+
 ---
+
 # 2. Preservation Rules
-This is the most important section.
-Every refactor, optimization, or new capability must preserve these rules.
-## 2.1 The core remains domain-agnostic
-The core provides:
-- contracts
-- execution
-- routing
-- state
-- registries
-- policies
-- evaluation
-- observability
-- memory
-- document services
-The core must not contain architecture-specific, legal-specific, or business-specific logic.
-## 2.2 Filesystem-driven modularity remains
-Adding an agent, skill, tool, or workflow must remain as simple as:
-- creating a folder
-- declaring a manifest
-- exposing a valid contract
-The runtime discovers modules.
-The core code should not need to change for every new block.
-## 2.3 Agent, skill, tool, and workflow remain distinct
-- an agent reasons
-- a skill applies a reusable capability
-- a tool performs a technical or external action
-- a workflow structures global execution
-These layers must not collapse into each other.
-## 2.4 Workflows remain explicit
-Execution must remain:
-- structured
-- visible
-- traceable
-- testable
-The system must not drift toward an implicit chain of prompts.
-## 2.5 Governance remains explicit
-Pantheon must preserve:
-- criticity
-- reversibility
-- draft-first
-- veto
-- escalation
-- human validation for risky actions
-- decision debt
-## 2.6 Memory remains multi-layered and selective
-Pantheon must preserve:
-- session memory
-- project memory
-- agency/global memory
-Memory must never become a context dump.
-## 2.7 Structured outputs remain mandatory
-For serious runs, outputs must continue to expose:
-- context
-- findings
-- analysis
-- certainty
-- impacts
-- options
-- validation required
-- memory target
-## 2.8 Domain overlays remain outside the core
-Business value must be carried by:
-- `domains/architecture/`
-- `domains/legal/`
-- `domains/software/`
-- future overlays
-Not by the runtime kernel.
+
+Toute évolution doit préserver ces règles.
+
+## 2.1 Core domain-agnostic
+
+Le core fournit contrats, exécution, routing, state, registries, policies, evaluation, observability, memory abstractions et document services. Il ne porte pas de logique métier.
+
+## 2.2 Filesystem-driven modularity
+
+Ajouter un agent, skill, tool ou workflow doit rester une opération de dossier + manifest + contrat valide.
+
+## 2.3 Séparation agent / skill / tool / workflow
+
+- un agent raisonne ;
+- une skill applique une capacité réutilisable ;
+- un tool exécute une action technique ou externe ;
+- un workflow structure l’exécution.
+
+## 2.4 Workflows explicites
+
+L’exécution reste structurée, visible, traçable et testable. Pas de chaîne implicite de prompts.
+
+## 2.5 Gouvernance explicite
+
+Criticité, réversibilité, draft-first, veto, escalation, approval et decision debt restent des objets runtime.
+
+## 2.6 Mémoire multi-couches et sélective
+
+La mémoire doit distinguer session, project, agency, functional, raw history, candidate facts, active facts, summaries, cards et traces.
+
+Elle ne doit jamais devenir un dump de contexte.
+
+## 2.7 Outputs structurés
+
+Les runs sérieux exposent contexte, findings, analysis, certainty, impacts, options, validation required et memory target.
+
+## 2.8 Domain overlays hors core
+
+Les domaines architecture, legal, software, consulting et futurs overlays restent hors du runtime kernel.
+
 ---
+
 # 3. Target Architecture
+
 ```text
 platform/
   api/              FastAPI apps
   ui/               OpenWebUI integration + admin console
   data/             persistence and runtime state
   infra/            Docker, deployment, scripts
+
 core/
   contracts/        base types and interfaces
-  registry/         agent, skill, tool, workflow registries
+  registry/         registries
   decision/         control plane
   execution/        data plane
   state/            session and run state
@@ -111,1107 +85,359 @@ core/
   evaluation/       scorecards and tests
   learning/         controlled improvement loop
   observability/    traces, logs, runs
-  memory/           session, project, agency adapters
+  memory/           memory abstractions and routing
   documents/        ingestion, indexing, retrieval, citation
   packaging/        context and artifact bundles
   llm/              provider abstraction, budget, routing
+
 modules/
-  agents/           modular agents
-  skills/           reusable reasoning skills
-  tools/            external actions and connectors
-  workflows/        workflow packs
-  prompts/          prompt libraries
-  templates/        output templates
+  agents/
+  skills/
+  tools/
+  workflows/
+  prompts/
+  templates/
+
 domains/
   architecture/
   legal/
   software/
   consulting/
+```
 
-⸻
+---
 
-4. Domain Overlay Model
+# 4. Domain Overlay Model
 
-Each domain overlay must be able to provide its own value without modifying the core.
+Chaque overlay métier fournit sa valeur sans modifier le core.
 
-Each overlay may contain:
+Un overlay peut contenir : prompts, skills, workflows, policies, trusted sources, templates, evaluation cases, agents spécifiques si besoin.
 
-* prompts/
-* skills/
-* workflows/
-* policies/
-* trusted_sources/
-* templates/
-* evaluation_cases/
-* domain-specific agents if needed
+Activation par configuration : domaine actif, overlays enabled, priorités, politiques injectées.
 
-Activation should be configuration-driven:
+---
 
-* active domain
-* enabled overlays
-* deterministic runtime injection
+# 5. Agent Pantheon
 
-Example:
+## 5.1 Control agents
 
-domains/
-  architecture/
-    prompts/
-    skills/
-    workflows/
-    policies/
-    templates/
-    trusted_sources/
+- ZEUS : orchestration, arbitrage, coordination finale ;
+- ATHENA : planning, classification, décomposition ;
+- METIS : délibération structurée, hypothèses, conflits ;
+- PROMETHEUS : contradiction, critique, anti-consensus ;
+- THEMIS : procédure, règles, policy, veto ;
+- HERA : supervision post-run ;
+- APOLLO : validation finale et confidence scoring ;
+- HECATE : incertitude et missing information.
 
-⸻
+## 5.2 Research and analysis agents
 
-5. Agent Pantheon
+- HERMES : precheck, routing, source strategy ;
+- DEMETER : ingestion et normalisation ;
+- ARGOS : extraction de faits, citations, entités, relations ;
+- ARTEMIS : filtrage de pertinence.
 
-5.1 Meta / Control Agents
+## 5.3 Memory agents
 
-ZEUS
+- HESTIA : mémoire projet ;
+- MNEMOSYNE : mémoire agence ;
+- HADES : retrieval profond et archives.
 
-Global orchestration, arbitration, and final coordination.
+## 5.4 Output agents
 
-ATHENA
+- KAIROS : synthèse ;
+- DAEDALUS : documents et dossiers ;
+- IRIS : communication ;
+- HEPHAESTUS : diagrammes et artefacts techniques ;
+- APHRODITE : polish, jamais validation.
 
-Planning, classification, decomposition, workflow selection.
+## 5.5 System agents
 
-METIS
+- ARES : fallback contrôlé ;
+- POSEIDON : load et flow control.
 
-Structured deliberation, hypotheses, conflicts, uncertainty.
+---
 
-PROMETHEUS
+# 6. Governance Model
 
-Contradiction, critique, adversarial review, anti-consensus pressure.
+## 6.1 Criticity C1-C5
 
-THEMIS
+Criticité contrôle profondeur, agents, validations, veto, traceability.
 
-Procedural legitimacy, rules coherence, process enforcement.
+## 6.2 Reversibility
 
-HERA
+Actions : internal note, memory write, external communication, critical / irreversible action.
 
-Post-run supervision, orchestration scoring, coherence verdict.
+## 6.3 Draft-first
 
-APOLLO
+Toute action sérieuse suit génération, validation, exécution.
 
-Final validation, confidence scoring, traceability checks.
+## 6.4 Decision debt
 
-HECATE
+États D0-D3 : resolved, provisional, conditional, blocked / critical.
 
-Missing-information detection, uncertainty scoring, clarification trigger.
+Chaque debt conserve justification, lift condition, deadline éventuelle, phase de revue.
 
-5.2 Research and Analysis Agents
+## 6.5 Veto chain
 
-HERMES
+Un veto inclut verdict, justification, severity, lift_condition.
 
-Precheck, research routing, source strategy.
+Chaîne cible :
 
-DEMETER
-
-Document fetching and normalization.
-
-ARGOS
-
-Objective extraction of facts, citations, entities, relations.
-
-ARTEMIS
-
-Relevance filtering, noise reduction, evidence narrowing.
-
-5.3 Memory Agents
-
-HESTIA
-
-Session and project continuity.
-
-MNEMOSYNE
-
-Agency-wide knowledge, reusable patterns, templates.
-
-HADES
-
-Deep retrieval, archives, long-term search.
-
-5.4 Output Agents
-
-KAIROS
-
-Contextual synthesis and level-of-detail control.
-
-DAEDALUS
-
-Document assembly, dossiers, reports, appendices.
-
-IRIS
-
-Formulation, tone adaptation, clarification questions.
-
-HEPHAESTUS
-
-Diagrams, technical visuals, structured artifacts.
-
-APHRODITE
-
-Polish, presentation impact, public-facing refinement.
-Never auto-enabled by default.
-
-5.5 System Agents
-
-ARES
-
-Fast degraded mode, fallback execution, guard role.
-
-POSEIDON
-
-Load regulation, parallelism, flow control.
-
-⸻
-
-6. Governance Model
-
-6.1 Criticity C1 to C5
-
-* C1: information
-* C2: simple assistance
-* C3: local decision support
-* C4: consequential decision
-* C5: major risk
-
-Criticity must control:
-
-* execution depth
-* number of agents
-* validation needs
-* veto activation
-* traceability expectations
-
-6.2 Reversibility
-
-Each action must be classified as:
-
-* internal note
-* memory write
-* external communication
-* critical / irreversible action
-
-6.3 Draft-first
-
-Any serious action must follow:
-
-* generation
-* validation
-* execution
-
-6.4 Decision Debt
-
-States:
-
-* D0: resolved
-* D1: provisional
-* D2: conditional
-* D3: blocked / critical
-
-Each debt must preserve:
-
-* justification
-* lift condition
-* optional deadline
-* next review phase
-
-6.5 Structured Veto Chain
-
-A veto is not a raw boolean.
-
-Each veto must include:
-
-* verdict
-* justification
-* severity
-* lift_condition
-
-Target chain:
-
+```text
 execute_agents
 → veto_check
 → veto_themis
 → veto_zeus
 → zeus_judge
+```
 
-Veto levels:
+---
 
-* warning
-* blocking
+# 7. Memory Roadmap
 
-⸻
+## 7.1 Memory layers
 
-7. Memory
+Pantheon doit formaliser :
 
-7.1 Memory Layers
+- session memory ;
+- project memory ;
+- agency/global memory ;
+- functional memory ;
+- raw history ;
+- candidate facts ;
+- active facts ;
+- summaries ;
+- compact cards ;
+- traces.
 
-Session
+## 7.2 Memory routing
 
-Short-term run context.
+Après chaque run :
 
-Project
+- temporary context → session memory ;
+- validated project decision → HESTIA ;
+- reusable pattern → MNEMOSYNE proposal ;
+- contradiction → decision debt ou escalation ;
+- noise → ignored.
 
-Decisions, constraints, assumptions, debt, project-specific continuity.
+## 7.3 Auditable context injection
 
-Agency / Global
+Le système doit exposer le contexte injecté avant ou après exécution : facts, cards, summaries, chunks, documents, decisions, exclusions importantes.
 
-Reusable patterns, templates, reference cases, accumulated knowledge.
+Objectif : un opérateur doit pouvoir comprendre pourquoi un agent a vu telle information.
 
-7.2 Routing Rules
+## 7.4 Candidate fact lifecycle
 
-After each run:
+Cycle cible :
 
-* temporary context → session memory
-* validated project decision → Hestia
-* reusable pattern detected → proposal to Mnemosyne
-* noise → ignored
+```text
+raw source
+→ extraction / reflection
+→ candidate fact
+→ validation / scoring
+→ active fact
+→ consolidation
+→ context injection
+```
 
-7.3 Post-run Memory Routing
+Les candidate facts doivent inclure source, confidence, scope, subject, observer ou affaire, justification et statut.
 
-This must become explicit.
+## 7.5 Consolidation and dry-run
 
-After synthesis:
+La consolidation doit être prudente et inspectable.
 
-* validated decision → project memory
-* reusable pattern → capitalization proposal
-* never dump raw output automatically
+Opérations sensibles avec dry-run obligatoire : promotion, rétractation, supersession, fusion, condensation, card replacement.
 
-7.4 Memory Hygiene and Consolidation
+## 7.6 Cards and summaries
 
-Memory must remain compact, selective, and durable.
+Les cards sont des vues compactes, pas des sources de vérité. Elles ne doivent pas grossir automatiquement avec chaque active fact.
 
-The system should support a post-run memory consolidation process that:
+Les summaries sont des couches dérivées. Ils doivent rester rattachés à des fenêtres, sources ou scopes vérifiables.
 
-* extracts candidate memories from recent runs
-* scores candidates before promotion
-* routes candidates to:
-    * session-only retention
-    * Hestia
-    * Mnemosyne proposal
-* avoids promoting raw verbose residue
+## 7.7 External inspiration decision
 
-Candidate promotion should be evaluated using dimensions such as:
+Les idées de `hermes-local-memory` sont retenues pour la doctrine mémoire : raw history protégée, facts candidats, cards compactes, contexte inspectable, dry-run, consolidation explicite.
 
-* novelty
-* durability
-* specificity
-* reduction value
+À ne pas reprendre : remplacement de PostgreSQL/pgvector par SQLite, suppression du runtime FastAPI, suppression des workers ou copie mécanique de l’architecture externe.
 
-The system should also support periodic memory hygiene operations that:
+---
 
-* remove stale temporary entries
-* trim outdated task-progress residue
-* condense verbose memory into pointers when fuller detail already exists elsewhere
-* preserve signal while reducing hot-memory load
+# 8. Documentation Strategy
 
-Structural proposals such as new wiki pages, templates, or skills may emerge from recurring memory patterns, but such promotion must remain explicit and governed.
+Le système doit minimiser le contexte de démarrage.
 
-⸻
+Auto-loaded nucleus :
 
-8. Documentation Strategy
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- éventuellement un fichier opérationnel léger.
 
-The system must minimize startup context.
+Non auto-loaded par défaut : archives, learnings détaillés, runs, sessions, anciens historiques.
 
-8.1 Auto-loaded documentation nucleus
+---
 
-* AGENTS.md
-* ARCHITECTURE.md
-* optionally one lightweight operational file
+# 9. Implementation Phases
 
-8.2 Not auto-loaded by default
+## Phase A — MVP Foundation
 
-* docs/learnings/
-* docs/archive/
-* runs/
-* sessions/
-* older historical material
+Objectif : boucle contrôlée end-to-end.
 
-8.3 Targeted compression
+Tâches : FastAPI skeleton, PostgreSQL + pgvector, JWT/RBAC, manifests, base contracts, SessionState, RunState, workflow minimal, agent minimal, tool behind policy gate, route OpenWebUI, SSE, ingestion document simple, retrieval cité, run logging.
 
-Later, some runtime-facing docs may have:
+Succès : API boot, manifests validés, workflow E2E, streaming, ingestion + citation.
 
-* a human-readable source version
-* a condensed runtime version
+## Phase B — Controlled Orchestration
 
-Without changing the normal output style of the system.
+Objectif : séparer décision et exécution.
 
-⸻
+Tâches : DecisionContext, DecisionAction, DecisionPlan, DecisionEngine, control/data split, DAG workflow, criticity, HITL, veto nodes, conflict resolution.
 
-9. Implementation Phases
+Succès : plan avant exécution, criticity modifie le runtime, pause/resume, veto visibles.
 
-The roadmap is split into major phases.
+## Phase C — Context, Memory, and Efficiency
 
-⸻
+Objectif : réduire contexte inutile et préserver continuité.
 
-10. Phase A — MVP Foundation
+Tâches : formaliser memory layers, externaliser raw outputs, retrieve relevant state, checkpoints, smart_read, smart_diff, smart_grep, cache, analytics, recovery after compaction/crash, post-run consolidation, candidate scoring, lean-memory checks, context preview.
 
-Goal
+Succès : moins de raw context injecté, continuité robuste, reads moins coûteux, métriques visibles, candidate promotion sélective, hot memory compacte.
 
-Build one controlled execution loop that works end to end.
+## Phase D — Policy, Security, and Governance
 
-Tasks
+Objectif : rendre les actions risquées gouvernables et auditables.
 
-* FastAPI skeleton
-* PostgreSQL + pgvector + async SQLAlchemy
-* JWT auth + basic RBAC
-* manifests for agents, skills, tools, workflows
-* AgentBase, SkillBase, ToolBase, WorkflowBase
-* SessionState, RunState, Artifact
-* one minimal workflow
-* one minimal agent with SOUL.md
-* one tool behind a policy gate
-* OpenWebUI-compatible route
-* SSE streaming
-* simple document ingestion
-* simple retrieval with citations
-* run logging
+Tâches : PolicyEngine, ActionGate, approval API, secret isolation, lineage source → tool → agent → output, veto severity, escalation, decision debt.
 
-Git references
+Succès : aucune action risquée silencieuse, approvals traçables, outputs reliés aux sources.
 
-Infrastructure and API:
+## Phase E — Evaluation and Deliberation
 
-* tiangolo/fastapi
-* sqlalchemy/sqlalchemy
-* pgvector/pgvector-python
+Objectif : mesurer la qualité et réduire la fausse confiance.
 
-Contracts and runtime:
+Tâches : EvaluationRunner, scorecards, workflow comparison, metrics, Hera scoring, Metis artifacts, Prometheus checks, Apollo enrichment.
 
-* All-Hands-AI/OpenHands
-* pydantic/pydantic-ai
-* instructor-ai/instructor
-* guardrails-ai/guardrails
+Succès : workflows benchmarkables, weak claims rejetables, supervision explicite.
 
-Agent-facing repo rules:
+## Phase F — Structured Skills and Workflow Packs
 
-* agentsmd/agents.md
+Objectif : transformer les patterns répétés en blocs versionnés.
 
-Manifest-first modularity:
+Tâches : SkillRegistry, manifests, versions, states draft/candidate/active/archived, diff, rollback, promotion, workflow CRUD, console visibility.
 
-* mnfst/manifest
+Succès : skills testées en isolation, workflows promus/rollback, versions actives connues.
 
-Minimal startup documentation:
+## Phase G — Document Intelligence and Knowledge Layer
 
-* nadimtuhin/claude-token-optimizer
+Objectif : couche documentaire forte, citée, multimodale.
 
-Success criteria
+Tâches : PDF/DOCX/MD/TXT, metadata, hybrid retrieval, citations fiables, synthesis cache, markdown indexing, images/plans/photos plus tard.
 
-* the API boots cleanly
-* manifests are validated at startup
-* one end-to-end workflow works
-* one streamed response reaches OpenWebUI
-* one document can be ingested and cited
+Succès : citations page/section, retrieval hybride robuste, synthèses réutilisables.
 
-⸻
+## Phase H — Architecture Overlay
 
-11. Phase B — Controlled Orchestration
+Objectif : valeur architecture / chantier sans polluer le core.
 
-Goal
+Sous-modules : decisions, planning, chantier, finance, communications, webhooks, Vitruve.
 
-Separate decision from execution.
+Succès : overlay activable sans toucher core, skills métier visibles, flux chantier/planning/décision cohérents.
 
-Tasks
+## Phase I — Observability and Console
 
-* DecisionContext
-* DecisionAction
-* DecisionPlan
-* DecisionEngine
-* control plane / data plane split
-* DAG-capable workflow execution
-* support for:
-    * solo
-    * parallel
-    * cascade
-    * arena
-* criticity C1-C5
-* HITL checkpoints
-* veto nodes
-* cognitive limits by criticity
-* activation triggers by agent
-* structured conflict resolution
+Objectif : rendre Pantheon inspectable et contrôlable.
 
-Git references
+Tâches : prompt traces, decision traces, tool traces, scores, feedback, blocked actions, workflow UI, run state, metrics, toggles, logs, replay.
 
-Orchestration and graphs:
+Succès : opérateurs comprennent pourquoi un run a produit un résultat et avec quel contexte.
 
-* langchain-ai/langgraph
+## Phase J — Controlled Learning
 
-Deliberation:
+Objectif : améliorer sans mutation silencieuse.
 
-* beomwookang/deliberate
+Tâches : FeedbackEvent, LearningEngine, GapAnalyzer, candidate workflow generation, human approval, pattern promotion to MNEMOSYNE, proposals for wiki/templates/skills.
 
-Planning and routing:
+Succès : feedback négatif produit des améliorations candidates, pas des mutations automatiques.
 
-* salesforce-misc/switchplane
+## Phase K — Software / Code Branch
 
-Spec-first execution:
+Objectif : spécialisation software isolée.
 
-* JuliusBrussee/cavekit
+Tâches : minimal_code_context, change_impact_analysis, architecture_map, review workflows, debug workflows, repo onboarding, pre-merge checks.
 
-Success criteria
+## Phase L — Durable Execution and Portability
 
-* the system produces a plan before execution
-* criticity changes runtime behavior
-* a workflow can pause, wait for validation, and resume
-* vetoes are visible and justified
+Objectif : longs runs, reprise et migration.
 
-⸻
+Tâches : checkpoints, retries, replay runner, memory export/import, workflow bundles, server migration, durable orchestration si justifiée.
 
-12. Phase C — Context, Memory, and Efficiency
+---
 
-Goal
+# 10. External Inspiration Map
 
-Reduce wasted context, preserve continuity, and lower token waste.
+## À intégrer maintenant
 
-Tasks
+- agentsmd/agents.md : modèle de fichier agent-facing.
+- Hermes Skills system : skills documentées, catégorisées, activables.
+- mnfst/manifest : manifests déclaratifs.
+- nadimtuhin/claude-token-optimizer : contexte de démarrage minimal.
+- hermes-local-memory : doctrine mémoire auditable, context preview, candidate facts, cards compactes, dry-runs.
 
-* formal session / project / agency memory
-* externalize large raw outputs
-* retrieve only relevant state
-* session checkpoints
-* smart_read
-* smart_diff
-* smart_grep
-* persistent cache
-* session analytics
-* minimal startup context
-* recovery after compaction / crash
-* post-run memory consolidation (dreaming_job)
-* candidate scoring before promotion
-* selective routing to session memory, Hestia, or Mnemosyne proposals
-* lean-memory checks to trim stale entries and condense verbose memory into pointers
+## À intégrer plus tard
 
-Git references
+- mksglu/context-mode : externalisation de contexte.
+- ooples/token-optimizer-mcp : smart reads et cache.
+- JuliusBrussee/cavekit : spec-first execution.
+- nexus9888/hermes-memory-skills : consolidation mémoire et hygiene.
 
-Context externalization and continuity:
+## Intéressant mais non prioritaire
 
-* mksglu/context-mode
+- Honcho import patterns.
+- SQLite local-first memory, uniquement comme référence de simplicité locale.
 
-Reading optimization and cache:
+## À rejeter pour Pantheon OS
 
-* ooples/token-optimizer-mcp
+- remplacement de PostgreSQL/pgvector par SQLite ;
+- suppression de FastAPI comme runtime ;
+- worker mémoire opaque ;
+- promotion automatique massive de mémoire importée ;
+- copie mécanique d’une architecture externe.
 
-Startup context reduction:
+---
 
-* nadimtuhin/claude-token-optimizer
+# 11. Repo Governance
 
-Targeted document compression:
+Branches recommandées :
 
-* JuliusBrussee/caveman
+- `main` : stable ;
+- `develop` : intégration ;
+- `experiment/*` : explorations ;
+- `overlay/*` : overlays métier.
 
-Memory consolidation and hygiene:
+Règles :
 
-* nexus9888/hermes-memory-skills
+- toute migration schema est versionnée ;
+- toute brique critique a des tests ;
+- toute exploration V3 reste isolée ;
+- les Markdown de référence pilotent le code ;
+- si le code est techniquement meilleur que la documentation, proposer d’abord une mise à jour documentaire.
 
-Success criteria
+---
 
-* the system stops injecting large raw content into prompts
-* session continuity becomes robust
-* repeated reads become cheaper
-* the console exposes context and token metrics
-* candidate memories are promoted selectively rather than dumped
-* hot memory stays compact over time
+# 12. Immediate Priorities
 
-⸻
+1. Aligner `STATUS.md`, `ARCHITECTURE.md`, `MODULES.md`, `AGENTS.md`, `ROADMAP.md`, `README.md`.
+2. Auditer le code contre ces Markdown.
+3. Finaliser le module `decisions`.
+4. Compléter la refonte mémoire : scopes, candidate facts, active facts, context preview, dry-run consolidation.
+5. Compléter tests mémoire, orchestration et workflows C1-C5.
+6. Renforcer observability et console.
+7. Préparer webhooks.
+8. Préparer retrieval multimodal.
+9. Instrumenter pour DSPy plus tard.
 
-13. Phase D — Policy, Security, and Governance
+---
 
-Goal
+# 13. Final Target
 
-Make risky actions governable, auditable, and stoppable.
-
-Tasks
-
-* PolicyEngine
-* ActionGate
-* allow / block / require_approval
-* secret isolation
-* approval API
-* lineage source → tool → agent → output
-* veto severity
-* lift conditions
-* escalation
-* explicit decision debt representation
-
-Git references
-
-Policy engine:
-
-* open-policy-agent/opa
-
-Protection and guardrails:
-
-* wiserautomation/SupraWall
-* guardrails-ai/guardrails
-
-Success criteria
-
-* no risky action is executed silently
-* approvals are traceable
-* each output can be linked to its sources and generation path
-
-⸻
-
-14. Phase E — Evaluation and Deliberation
-
-Goal
-
-Measure quality and reduce weak or overconfident reasoning.
-
-Tasks
-
-* EvaluationRunner
-* scorecards
-* workflow comparison
-* metrics:
-    * confidence
-    * structure
-    * citation quality
-    * latency
-    * clarification count
-    * feedback
-* Hera supervision scoring
-* Metis deliberation artifacts
-* Prometheus contradiction checks
-* bullshit risk scoring
-* Apollo validation enrichment
-
-Git references
-
-Evaluation:
-
-* langchain-ai/openevals
-* promptfoo/promptfoo
-* langfuse/langfuse
-
-Deliberation and anti-bullshit:
-
-* beomwookang/deliberate
-* jrcruciani/baloney-detection-kit
-
-Success criteria
-
-* candidate workflows can be benchmarked
-* weak claims can be rejected
-* orchestration gets explicit supervision feedback
-
-⸻
-
-15. Phase F — Structured Skills and Workflow Packs
-
-Goal
-
-Turn repeated patterns into reusable, versioned blocks.
-
-Tasks
-
-* SkillRegistry
-* skill manifests
-* skill versions
-* workflow versions
-* statuses:
-    * draft
-    * candidate
-    * active
-    * archived
-* diff
-* rollback
-* promotion
-* workflow CRUD
-* seed YAML → DB
-* Hermes Console visibility
-
-Git references
-
-Skills:
-
-* Hermes Skills system
-* micpet7514088/skills-manager
-
-Manifests:
-
-* mnfst/manifest
-
-Other references:
-
-* microsoft/semantic-kernel
-* JustVugg/distillery
-
-Success criteria
-
-* a skill can be versioned and tested in isolation
-* a workflow can be promoted or rolled back
-* the runtime knows the active version explicitly
-
-⸻
-
-16. Phase G — Document Intelligence and Knowledge Layer
-
-Goal
-
-Build a strong, traceable, multimodal document layer.
-
-Tasks
-
-* ingest PDF, DOCX, MD, TXT
-* preserve metadata:
-    * file
-    * page
-    * section
-    * language
-    * source id
-* hybrid retrieval
-* semantic + lexical fusion
-* reliable citations
-* reusable synthesis cache
-* markdown indexing
-* later multimodal:
-    * images
-    * plans
-    * sections
-    * site photos
-    * visual descriptions
-    * technical qualification
-
-Git references
-
-Document RAG:
-
-* deepset-ai/haystack
-* run-llama/llama_index
-* sahilalaknur21/SmartDocs-Multillingual-Agentic-Rag
-
-Markdown and graph knowledge:
-
-* Fusion/mdidx
-* ADVASYS/ragraph
-* neo4j/neo4j-python-driver
-
-Success criteria
-
-* citations preserve page/section metadata
-* hybrid retrieval is more robust
-* critical syntheses can be reused
-* internal docs become searchable knowledge
-
-⸻
-
-17. Phase H — Architecture Overlay
-
-Goal
-
-Deliver architecture / construction value without polluting the core.
-
-Target submodules
-
-decisions
-
-* decision debt D0-D3
-* decision scoring
-* debt filters
-
-planning
-
-* lots
-* milestones
-* dependencies
-* slippage
-* cascade impacts
-
-chantier
-
-* observations
-* non-conformities
-* photos
-* reservations
-* resolution tracking
-
-finance
-
-* payment situations
-* change orders
-* budget lines
-* overrun alerts
-
-communications
-
-* correspondence register
-* reminders
-* links with actions and meeting records
-
-webhooks
-
-* Telegram / WhatsApp
-* mention-based routing
-* photo support
-* Hestia continuity
-* sender authentication
-
-Vitruve
-
-* project exploration agent
-* program
-* topo
-* soil
-* PLU
-* ABF
-* risks
-* budget / constraints coherence
-
-Success criteria
-
-* the overlay can be enabled without touching the core
-* business skills are visible in the console
-* chantier / planning / decision flows remain coherent
-
-⸻
-
-18. Phase I — Observability and Console
-
-Goal
-
-Make Pantheon inspectable and controllable.
-
-Tasks
-
-* prompt traces
-* decision traces
-* tool call traces
-* scores and feedback
-* blocked actions
-* workflow comparison UI
-* run state
-* runtime metrics
-* agent / skill / workflow toggles
-* logs
-* errors
-* replay later
-
-Git references
-
-Observability:
-
-* langfuse/langfuse
-* dagster-io/dagster
-* wandb/wandb
-
-Success criteria
-
-* operators can understand why a run produced a result
-* blocked actions, scores, paths, and versions are visible
-* agents and skills can be controlled cleanly
-
-⸻
-
-19. Phase J — Controlled Learning
-
-Goal
-
-Improve the system without silent mutation.
-
-Tasks
-
-* FeedbackEvent
-* explicit feedback:
-    * positive
-    * negative
-    * tags
-* implicit signals:
-    * copy
-    * export
-    * continue
-    * rewrite
-* LearningEngine
-* GapAnalyzer
-* candidate workflow generation
-* human approval before activation
-* pattern promotion to Mnemosyne
-* later pattern → skill under control
-* structural proposals for:
-    * wiki pages
-    * templates
-    * skills
-* approval-required promotion from recurring memory patterns to reusable assets
-
-Git references
-
-Learning and improvement:
-
-* stanfordnlp/dspy
-* micpet7514088/autogap
-* swapedoc/hermes2anti
-* nexus9888/hermes-memory-skills
-
-Success criteria
-
-* negative feedback produces process improvements
-* the system proposes candidate versions, never silent mutations
-* Mnemosyne receives useful patterns, not noise
-* recurring patterns can generate governed structural proposals
-
-⸻
-
-20. Phase K — Software / Code Branch
-
-Goal
-
-Add a software specialization without making it universal.
-
-Tasks
-
-* minimal_code_context
-* change_impact_analysis
-* architecture_map
-* review workflows
-* debug workflows
-* repo onboarding
-* pre-merge checks
-
-Git references
-
-* tirth8205/code-review-graph
-
-Success criteria
-
-* the software branch improves code workflows
-* it remains a domain branch
-* it does not become a universal dependency
-
-⸻
-
-21. Phase L — Durable Execution and Portability
-
-Goal
-
-Prepare for long runs, recovery, and migration.
-
-Tasks
-
-* checkpoints
-* retries
-* replay runner
-* memory export/import
-* workflow bundles
-* server-to-server migration
-* durable orchestration later only if justified
-
-Git references
-
-* samuelcolvin/arq
-* temporalio/temporal
-* awizemann/scarf
-
-Success criteria
-
-* long workflows can resume
-* project and agency memory are exportable
-* runs are replayable for debugging and validation
-
-⸻
-
-22. Phased Optimization Strategy
-
-Example-driven optimization must remain disciplined.
-
-Phase 1
-
-Instrumentation only.
-
-Phase 2
-
-Optimize only stable, structured tasks:
-
-* criticity classification
-* action extraction
-* metadata extraction
-* repeatable transformations
-
-Phase 3
-
-Possibly extend to Hermes or Zeus if examples become sufficient.
-
-Rules
-
-* never blindly optimize SOUL.md
-* avoid optimizing highly identity-defining or creative agents first
-* never sacrifice system character for shallow optimization
-
-⸻
-
-23. External Channels and Voice
-
-This belongs as an extension, not in the initial kernel.
-
-Targets
-
-* Telegram
-* WhatsApp
-* voice
-* TTS
-* STT
-* authenticated sender mapping
-* mention-based routing
-* Hermes fallback
-* Hestia continuity across channels
-
-⸻
-
-24. Git Repo Governance
-
-Recommended branching model:
-
-* main: stable
-* develop: integration
-* experiment/*: exploratory work
-* overlay/*: domain overlays
-
-Rules
-
-* every schema change requires a migration
-* every critical block requires regression tests
-* V3 experiments remain isolated
-
-⸻
-
-25. External Inspiration Map
-
-Adopt now
-
-agentsmd/agents.md
-
-Use it as the model for AGENTS.md as the root agent-facing file.
-
-Hermes Skills system
-
-Use it for skills as documented, categorized, activatable units.
-
-mnfst/manifest
-
-Use it for strong declarative manifests and enriched contracts.
-
-nadimtuhin/claude-token-optimizer
-
-Use it for minimal startup context.
-
-Claude Cowork rules
-
-Use them for:
-
-* hard rules
-* retros
-* final-pass gates
-* read-in-full discipline
-* crash resilience
-
-V2
-
-mksglu/context-mode
-
-Use it for:
-
-* raw context externalization
-* session continuity
-* targeted state retrieval
-* code-based analysis instead of context overload
-
-micpet7514088/autogap
-
-Use it for:
-
-* gap analysis
-* goal hypothesis
-* top blockers
-* macro-step planning
-
-ooples/token-optimizer-mcp
-
-Use it for:
-
-* smart reads
-* persistent cache
-* session analytics
-
-JuliusBrussee/cavekit
-
-Use it for:
-
-* spec-first execution
-* acceptance criteria
-* dependency graphs
-* build/check loops
-
-nexus9888/hermes-memory-skills
-
-Use it for:
-
-* post-run memory consolidation
-* candidate scoring before promotion
-* memory hygiene and lean-memory maintenance
-* controlled structural proposals from recurring patterns
-
-V3
-
-swapedoc/hermes2anti
-
-Use it for:
-
-* learning loops
-* pattern promotion
-* failure/success memory
-
-JuliusBrussee/caveman
-
-Use it for:
-
-* runtime document compression
-* not for the system’s response style
-
-Domain-specific code branch
-
-tirth8205/code-review-graph
-
-Use it for:
-
-* blast radius
-* minimal code context
-* targeted review
-
-Watchlist
-
-All-Hands-AI/OpenHands
-
-Watch for:
-
-* public/private packaging
-* loading order
-* runtime patterns
-
-OpenHands/software-agent-sdk
-
-Watch for:
-
-* runtime SDK
-* contracts
-* registry ideas
-
-⸻
-
-26. Final Target
-
-Pantheon Next must become an execution environment where:
-
-* agents remain replaceable
-* workflows remain versioned
-* skills remain reusable
-* tools remain governed
-* memory remains structured
-* evaluation drives improvement
-* human validation controls risk
-* domain overlays carry business value
-* the core stays thin, portable, and generic
-
-Final thesis:
-
-Turn AI from a chat interface into a structured working team for complex professional tasks.
+Pantheon OS doit devenir un environnement d’exécution où agents restent remplaçables, workflows versionnés, skills réutilisables, tools gouvernés, mémoire structurée, évaluation active, validation humaine présente quand le risque l’exige, overlays porteurs de valeur métier et core mince, portable, générique.
