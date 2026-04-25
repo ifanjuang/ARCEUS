@@ -257,11 +257,79 @@ Décisions possibles :
 - block ;
 - require_approval.
 
-Actions à risque : envoi d’email, modification de données persistantes, action externe, suppression de fichier, mutation de workflow, écriture mémoire forte.
+Actions à risque : envoi d’email, modification de données persistantes, action externe, suppression de fichier, mutation de workflow, écriture mémoire forte, action navigateur à effet de bord.
 
 ---
 
-# 12. Veto chain
+# 12. Approval Gate
+
+Pantheon OS doit disposer d’un mécanisme d’approbation humaine pour toute action sensible.
+
+Une action sensible inclut notamment :
+
+- communication externe ;
+- écriture ou modification de données persistantes ;
+- mutation mémoire forte ;
+- suppression, rétractation ou supersession massive ;
+- décision C4 ou C5 ;
+- appel d’outil externe à effet de bord ;
+- validation de document officiel ;
+- action navigateur avec login, formulaire, upload, publication, achat ou suppression ;
+- action irréversible ou difficilement réversible.
+
+## 12.1 ApprovalRequest
+
+Champs minimaux :
+
+- `id`
+- `run_id`
+- `workflow_id`
+- `agent_id`
+- `action_type`
+- `action_description`
+- `agent_reasoning`
+- `criticity`
+- `reversibility`
+- `assignee`
+- `assignee_type`
+- `escalate_to`
+- `timeout_at`
+- `status`
+- `decided_by`
+- `decision_note`
+- `created_at`
+- `decided_at`
+
+Statuts :
+
+- `pending`
+- `approved`
+- `rejected`
+- `expired`
+- `escalated`
+- `cancelled`
+
+## 12.2 Runtime rule
+
+Le data plane ne peut pas exécuter l’action tant que le statut n’est pas `approved`.
+
+Toute décision d’approbation est inscrite dans l’audit log.
+
+Une décision déjà résolue ne peut pas être réapprouvée ou rejetée une seconde fois.
+
+## 12.3 Workflow behavior
+
+Un workflow peut :
+
+- se suspendre en attente d’approbation ;
+- reprendre après approval ;
+- s’arrêter après reject ;
+- passer en fallback après expiration ;
+- escalader selon criticité ou délai.
+
+---
+
+# 13. Veto chain
 
 Un veto est une décision structurée : verdict, justification, severity, lift condition.
 
@@ -279,11 +347,11 @@ Niveaux : warning ou blocking.
 
 ---
 
-# 13. Memory system
+# 14. Memory system
 
 Pantheon OS utilise une mémoire multi-couches, sélective et auditable. La mémoire ne doit jamais devenir un dump de contexte.
 
-## 13.1 Typologie mémoire
+## 14.1 Typologie mémoire
 
 La mémoire distingue au minimum :
 
@@ -295,13 +363,13 @@ La mémoire distingue au minimum :
 - `traces` : décisions d’orchestration, veto, validations, erreurs, jobs, statuts ;
 - `knowledge` : corpus documentaire, markdown indexé, templates, sources de référence.
 
-## 13.2 Source de vérité
+## 14.2 Source de vérité
 
 Les sources brutes restent prioritaires. Les facts, summaries et cards sont des couches dérivées et reconstruisibles.
 
 Une carte compacte n’est pas une source de vérité. Elle est une vue synthétique destinée à réduire le coût de contexte.
 
-## 13.3 Exigence d’auditabilité
+## 14.3 Exigence d’auditabilité
 
 Toute mémoire injectée dans un prompt doit être :
 
@@ -312,7 +380,7 @@ Toute mémoire injectée dans un prompt doit être :
 - rétractable ou supersédable ;
 - visible dans les traces d’exécution.
 
-## 13.4 Cycle mémoire cible
+## 14.4 Cycle mémoire cible
 
 ```text
 raw input / event / document / message
@@ -324,11 +392,11 @@ raw input / event / document / message
 → card / summary / context injection
 ```
 
-## 13.5 Dry-run obligatoire
+## 14.5 Dry-run obligatoire
 
 Toute opération qui promeut, fusionne, rétracte, supersède ou condense la mémoire doit supporter un mode dry-run ou preview avant application, sauf écriture triviale de trace brute.
 
-## 13.6 Propriétaires agents
+## 14.6 Propriétaires agents
 
 - HESTIA : mémoire projet et continuité d’affaire ;
 - MNEMOSYNE : mémoire agence, patterns, templates, capitalisation ;
@@ -337,13 +405,69 @@ Toute opération qui promeut, fusionne, rétracte, supersède ou condense la mé
 - THEMIS : légitimité procédurale des promotions sensibles ;
 - ZEUS : arbitrage des conflits mémoire importants.
 
-## 13.7 Stockage cible
+## 14.7 Stockage cible
 
 Pantheon conserve PostgreSQL + pgvector comme socle principal. Les idées issues de systèmes local-first type Hermes Local Memory sont retenues au niveau doctrine : inspectabilité, raw history, facts candidats, cards compactes, dry-runs, consolidation explicite. Elles ne justifient pas de remplacer PostgreSQL/pgvector par SQLite.
 
 ---
 
-# 14. Post-run memory routing
+# 15. Browser automation
+
+Pantheon OS peut intégrer un outil navigateur pour consulter, tester ou interagir avec des sites web.
+
+Ce tool doit rester gouverné.
+
+## 15.1 Règles générales
+
+- le navigateur automatisé doit être isolé par défaut ;
+- le Chrome personnel de l’utilisateur ne doit pas être utilisé sauf validation explicite ;
+- toute action web à effet de bord passe par l’Approval Gate ;
+- chaque action significative produit une trace : URL, intention, action, screenshot avant, screenshot après, statut ;
+- le tool préfère HTTP/API direct lorsque cela suffit ;
+- les clics par coordonnées sont autorisés uniquement avec capture visuelle et vérification ;
+- aucun helper ne doit être auto-modifié silencieusement pendant un run.
+
+## 15.2 Cas autorisés sans approval forte
+
+- lecture de page publique ;
+- screenshot ;
+- extraction sans authentification ;
+- test de rendu ;
+- navigation passive.
+
+## 15.3 Cas soumis à approval
+
+- login ;
+- envoi de formulaire ;
+- achat ;
+- publication ;
+- suppression ;
+- modification de données ;
+- upload ;
+- action sur compte connecté ;
+- téléchargement sensible.
+
+## 15.4 Browser action trace
+
+Une trace d’action navigateur doit inclure :
+
+- `run_id`
+- `agent_id`
+- `tool_id`
+- `url_before`
+- `url_after`
+- `action_type`
+- `action_description`
+- `selector_or_coordinates` si utilisé
+- `screenshot_before_ref`
+- `screenshot_after_ref`
+- `approval_request_id` si applicable
+- `status`
+- `error` si applicable
+
+---
+
+# 16. Post-run memory routing
 
 Après synthèse, le runtime route explicitement :
 
@@ -357,7 +481,7 @@ Aucun output complet ne doit être automatiquement promu comme mémoire durable 
 
 ---
 
-# 15. Knowledge layer
+# 17. Knowledge layer
 
 La knowledge layer est distincte de la mémoire runtime. Elle contient prompts, templates, markdown indexé, documentation, exemples, trusted sources et corpus de référence.
 
@@ -365,7 +489,7 @@ Elle supporte retrieval et génération, mais ne remplace pas la mémoire de con
 
 ---
 
-# 16. Document intelligence layer
+# 18. Document intelligence layer
 
 Responsabilités : ingestion, parsing, chunking, indexation, retrieval hybride, citations, cache de synthèse, support multilingue et extension multimodale.
 
@@ -373,7 +497,7 @@ Métadonnées cibles : fichier, page, section, langue, source id, affaire, versi
 
 ---
 
-# 17. Evaluation and learning
+# 19. Evaluation and learning
 
 Pantheon évalue structure, confiance, qualité des citations, latence, clarification, workflow, supervision et feedback.
 
@@ -381,21 +505,21 @@ Le learning reste contrôlé : feedback, gap analysis, propositions candidates, 
 
 ---
 
-# 18. Observability
+# 20. Observability
 
-Le système trace agents, tools, prompts, décisions, workflows, scores, feedback, actions bloquées, approvals, vetoes, coûts, latences, mémoire injectée et changements de mémoire.
+Le système trace agents, tools, prompts, décisions, workflows, scores, feedback, actions bloquées, approvals, vetoes, coûts, latences, mémoire injectée, changements de mémoire et actions navigateur.
 
-La console doit permettre d’inspecter pourquoi un résultat a été produit et quel contexte a été injecté.
+La console doit permettre d’inspecter pourquoi un résultat a été produit, quel contexte a été injecté, quelles approbations ont été requises et quelles preuves d’action ont été enregistrées.
 
 ---
 
-# 19. External interfaces
+# 21. External interfaces
 
 OpenWebUI est l’interface principale, pas le runtime. Les canaux futurs Telegram, WhatsApp, voix ou API externe passent par le même runtime gouverné.
 
 ---
 
-# 20. Contraintes de conception
+# 22. Contraintes de conception
 
 - pas de logique métier dans `core/` ;
 - pas d’exécution d’outil non gouvernée ;
@@ -404,22 +528,24 @@ OpenWebUI est l’interface principale, pas le runtime. Les canaux futurs Telegr
 - pas de dépendance runtime à l’UI ;
 - pas de confusion agent / skill / tool / workflow ;
 - pas de croissance mémoire incontrôlée ;
-- pas de mémoire injectée non inspectable.
+- pas de mémoire injectée non inspectable ;
+- pas d’action sensible sans Approval Gate ;
+- pas d’action navigateur non tracée.
 
 ---
 
-# 21. Relation avec ROADMAP.md
+# 23. Relation avec ROADMAP.md
 
 `ARCHITECTURE.md` décrit les principes stables. `ROADMAP.md` définit le séquençage d’implémentation.
 
 ---
 
-# 22. Relation avec STATUS.md
+# 24. Relation avec STATUS.md
 
 `STATUS.md` dit ce qui est réellement livré, partiel, à faire ou en exploration. En cas d’écart entre ce document et le code, le statut doit clarifier la situation.
 
 ---
 
-# 23. Résultat cible
+# 25. Résultat cible
 
-Pantheon OS doit rester un système multi-agent contrôlé où raisonnement, exécution, validation, mémoire et gouvernance sont explicites, modulaires, portables, testables et inspectables.
+Pantheon OS doit rester un système multi-agent contrôlé où raisonnement, exécution, validation, mémoire, approbation, outils navigateur et gouvernance sont explicites, modulaires, portables, testables et inspectables.
