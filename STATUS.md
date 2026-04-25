@@ -128,6 +128,34 @@ Reste à faire :
 - enrichir progressivement les manifests existants avec `type`, `risk_profile`, `side_effect_profile`, `inputs`, `outputs` ;
 - exposer les quality issues dans la console.
 
+## 🔄 Sprint 3 — Task Contract / Workflow hardening
+
+Livré :
+
+- `platform/api/core/contracts/tasks.py`
+- `tests/test_task_contracts.py`
+
+Rôle :
+
+- créer `TaskDefinition` ;
+- créer `WorkflowDefinition` ;
+- imposer `expected_output` ;
+- imposer une affectation cohérente selon `execution_mode` : agent, skill, action, tool, workflow, manual ;
+- valider les dépendances entre tâches ;
+- détecter les IDs de tâches dupliqués ;
+- identifier les tâches critiques C4/C5 et les besoins d’approbation par défaut ;
+- préparer le futur support `tasks.yaml`.
+
+Statut : 🔄 Partiel. Contrats et tests ajoutés, non exécutés dans cette session.
+
+Reste à faire :
+
+- ajouter un loader `tasks.yaml` ;
+- connecter `WorkflowDefinition` au `ManifestLoader` ou au futur WorkflowRegistry ;
+- produire des traces `task_run` ;
+- ajouter exemples de workflow YAML réels ;
+- exposer les tâches dans Hermes Console.
+
 ## ✅ Refactoring modulaire majeur
 
 Livré selon l’historique projet, mais à revérifier dans le code complet :
@@ -163,24 +191,20 @@ Reste à faire :
 
 Priorité : P1.
 
-### ⬜ Task Contract / Workflow hardening
+### 🔄 Task Contract / Workflow hardening
 
-À faire.
+Partiel.
 
-Objectif : formaliser les tâches comme unités assignables et vérifiables.
+Les contrats `TaskDefinition` et `WorkflowDefinition` existent.
 
-À intégrer :
+Reste à faire :
 
-- `TaskDefinition` ;
-- `WorkflowDefinition` ;
-- `tasks.yaml` ;
-- `expected_output` obligatoire ;
-- `assigned_agent` ou `assigned_role` ;
-- `dependencies` ;
-- `tools_allowed` ;
-- `approval_required_if` ;
-- `success_criteria` ;
-- traces `task_run`.
+- exécuter `pytest tests/test_task_contracts.py` ;
+- ajouter un loader `tasks.yaml` ;
+- connecter les définitions au runtime workflow ;
+- ajouter `task_run` dans l’observability ;
+- créer un exemple de workflow réel ;
+- exposer les tâches dans Hermes Console.
 
 Priorité : P1.
 
@@ -192,7 +216,7 @@ Documenté mais désactivé.
 
 Reste à faire : module API complet, endpoints CRUD, filtres par dette, résolution manuelle, alertes D3, dashboard dédié.
 
-Priorité : P1 après Manifest hardening.
+Priorité : P1 après Task Contract.
 
 ### 🔄 Chaîne de veto séquencée
 
@@ -285,7 +309,8 @@ Confirmé :
 
 - `tests/test_guards.py` ;
 - `tests/test_manifest_loader.py` ;
-- `tests/test_manifest_contract.py`.
+- `tests/test_manifest_contract.py` ;
+- `tests/test_task_contracts.py`.
 
 Reste à faire : tests tools, `orchestra/service.py`, E2E RAG, mémoire complète, approvals, workflows C1-C5, context preview, consolidation dry-run.
 
@@ -473,11 +498,11 @@ Règles :
 
 Ordre recommandé :
 
-1. Exécuter les tests ajoutés : `pytest tests/test_manifest_loader.py tests/test_manifest_contract.py` puis suite existante pertinente.
-2. Corriger les éventuels échecs liés au contrat manifest.
-3. Finaliser l’audit code/docs avec inspection complète locale ou CI.
-4. Enrichir progressivement les manifests API et runtime.
-5. Formaliser Task Contract + `tasks.yaml`.
+1. Exécuter les tests ajoutés : `pytest tests/test_manifest_loader.py tests/test_manifest_contract.py tests/test_task_contracts.py` puis suite existante pertinente.
+2. Corriger les éventuels échecs liés aux contrats.
+3. Ajouter un loader `tasks.yaml`.
+4. Finaliser l’audit code/docs avec inspection complète locale ou CI.
+5. Enrichir progressivement les manifests API et runtime.
 6. Ajouter ou vérifier Approval Gate / HITL.
 7. Compléter la mémoire : raw/candidate/active/summaries/cards/traces.
 8. Ajouter context preview.
