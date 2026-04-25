@@ -1,15 +1,10 @@
 # Pantheon OS — Project Status
 
-> Source de vérité unique sur l’état du projet.
-> Ce fichier fusionne :
-> - l’historique utile des évolutions
-> - le backlog actif
-> - les explorations en cours
->
-> Il remplace la logique séparée `CHANGELOG.md` + `DEVLIST.md` par une vue consolidée :
-> **ce qui est livré**, **ce qui est partiellement en place**, **ce qui reste à faire**.
+> Source de vérité unique sur l’état actuel du projet.
+> Ce fichier consolide ce qui est livré, partiel, à faire et en exploration.
+> Les fichiers Markdown de référence pilotent le développement : `README.md`, `ARCHITECTURE.md`, `MODULES.md`, `AGENTS.md`, `ROADMAP.md`, `STATUS.md`.
 
-Dernière mise à jour : 2026-04-21
+Dernière mise à jour : 2026-04-25
 
 ---
 
@@ -19,6 +14,7 @@ Dernière mise à jour : 2026-04-21
 - 🔄 Partiellement implémenté
 - ⬜ À faire
 - 💡 Exploration / veille
+- ⚠️ À vérifier dans le code
 
 ---
 
@@ -27,58 +23,47 @@ Dernière mise à jour : 2026-04-21
 Le projet suit une logique SemVer.
 
 ## MAJOR (`X.0.0`)
-À utiliser pour :
-- rupture d’API
-- refonte architecturale
-- changement de schéma non rétrocompatible
-- changement majeur du runtime
+
+À utiliser pour : rupture d’API, refonte architecturale, changement de schéma non rétrocompatible, changement majeur du runtime.
 
 ## MINOR (`0.X.0`)
-À utiliser pour :
-- nouveau module
-- nouveau workflow
-- nouveau pattern d’orchestration
-- nouvelle brique fonctionnelle importante
+
+À utiliser pour : nouveau module, nouveau workflow, nouveau pattern d’orchestration, nouvelle brique fonctionnelle importante.
 
 ## PATCH (`0.0.X`)
-À utiliser pour :
-- correctif
-- optimisation
-- refactoring interne sans impact API
-- correction sécurité ou stabilité
 
-Règles :
-- un lot cohérent mergé sur `main` produit en général une release MINOR
-- un correctif critique peut produire un PATCH immédiat
-- une rupture de modèle ou d’architecture produit une MAJOR
+À utiliser pour : correctif, optimisation, refactoring interne sans impact API, correction sécurité ou stabilité.
+
+Règles : un lot cohérent mergé sur `main` produit en général une release MINOR ; un correctif critique peut produire un PATCH ; une rupture produit une MAJOR.
 
 ---
 
 # 3. Current Baseline
 
-Pantheon OS est maintenant structuré autour d’un noyau modulaire.
+Pantheon OS est structuré autour d’un noyau modulaire.
 
-## ✅ Baseline actuelle
+## ✅ Baseline actuelle documentée
 
-- `core/` devient le framework pur
-- `modules/` porte les composants auto-découverts
-- `platform/` regroupe API, UI, data, storage, infra
-- `domains/` existe comme couche d’overlays métier
-- les manifests deviennent la source de vérité locale des modules
-- l’auto-discovery remplace les anciens registres YAML centralisés
+- `core/` est le framework générique.
+- `modules/` porte les composants auto-découverts.
+- `platform/` regroupe API, UI, data, storage, infra.
+- `domains/` porte les overlays métier.
+- Les manifests sont la source de vérité locale des modules.
+- L’auto-discovery remplace les registres centralisés codés en dur.
 
 ## ✅ Direction d’architecture validée
 
-- séparation control plane / data plane
-- modularité filesystem-first
-- agents, skills, tools, workflows séparés
-- runtime générique
-- overlays métier hors du core
-- gouvernance explicite
-- criticité C1–C5
-- mémoire multi-couches
-- RAG hybride
-- orchestration multi-patterns
+- séparation control plane / data plane ;
+- modularité filesystem-first ;
+- agents, skills, tools, workflows séparés ;
+- runtime générique ;
+- overlays métier hors core ;
+- gouvernance explicite ;
+- criticité C1-C5 ;
+- mémoire multi-couches ;
+- RAG hybride ;
+- orchestration multi-patterns ;
+- observabilité runtime.
 
 ---
 
@@ -86,374 +71,291 @@ Pantheon OS est maintenant structuré autour d’un noyau modulaire.
 
 ## ✅ Refactoring modulaire majeur
 
-Livré :
-- passage de `runtime/hermes/` vers `core/` + `modules/`
-- `modules/agents/{layer}/{myth}_{role}/`
-- `modules/skills/`
-- `modules/tools/`
-- `modules/workflows/`
-- `platform/api/apps/` à la place de `platform/api/modules/`
-- config simplifiée à 5 fichiers
-- auto-discovery via `ManifestLoader`
+Livré selon l’historique projet :
 
-## ✅ Refactoring MVP précédent
+- passage de `runtime/hermes/` vers `core/` + `modules/` ;
+- `modules/agents/{layer}/{myth}_{role}/` ;
+- `modules/skills/` ;
+- `modules/tools/` ;
+- `modules/workflows/` ;
+- `platform/api/apps/` à la place de `platform/api/modules/` ;
+- configuration simplifiée ;
+- auto-discovery via `ManifestLoader`.
 
-Livré :
-- architecture MVP simplifiée
-- stack réduite pour le MVP
-- variables V2 isolées
-- simplification du `docker-compose`
-- suppression des dépendances V2 non nécessaires dans le MVP
-- activation limitée à 7 modules au démarrage
+## ✅ Orchestration et gouvernance
 
-## ✅ Registre agentique et conventions
+Livré selon l’historique projet :
 
-Livré :
-- source de vérité agentique
-- normalisation des rôles
-- renommages agents
-- convention SSE `{agent}.{event}`
-- généralisation multi-domaine
-- injection de contexte de domaine
-- activation conditionnelle des agents
-- limites cognitives par criticité
-- supervision Héra
-- score global de run
-
-## ✅ Orchestration multi-patterns
-
-Livré :
-- `solo`
-- `parallel`
-- `cascade`
-- `arena`
-- exécution topologique par niveaux
-- SSE enrichi
-- sous-tâches explicites
+- agents normalisés ;
+- convention SSE `{agent}.{event}` ;
+- activation conditionnelle ;
+- limites cognitives par criticité ;
+- supervision HERA ;
+- score global de run ;
+- patterns `solo`, `parallel`, `cascade`, `arena` ;
+- exécution topologique par niveaux ;
+- sous-tâches explicites ;
+- veto C4/C5 explicite.
 
 ## ✅ Retrieval hybride
 
-Livré :
-- FTS PostgreSQL
-- pgvector
-- fusion RRF
-- index GIN
-- `search_hybrid()` par défaut
+Livré selon l’historique projet :
 
-## ✅ Skills / tools / runtime avancés déjà ajoutés
+- FTS PostgreSQL ;
+- pgvector ;
+- fusion RRF ;
+- index GIN ;
+- `search_hybrid()` par défaut.
 
-Livré :
-- `FlowManager`
-- `HecateResolver`
-- `IrisClarifier`
-- `MetisEditor`
-- `deep_search`
-- DLQ ARQ
-- validation des secrets au démarrage
-- CI/CD GitHub Actions
-- control plane UI
-- OCR fallback GLM-4V
-- promotion mémoire `promotable`
-- protocole Hestia projet → agence
-- veto séquencé C4/C5 explicite
-- auto-capitalisation des décisions C3+
-- indexation RAG des courriers
-- cockpit d’affaire consolidé
+## ✅ Runtime avancé et modules métier
 
-## ✅ Modules métier déjà livrés
+Livré selon l’historique projet :
 
-Livré :
-- `planning`
-- `chantier`
-- `communications`
-- `finance`
+- `FlowManager` ;
+- `HecateResolver` ;
+- `IrisClarifier` ;
+- `MetisEditor` ;
+- `deep_search` ;
+- DLQ ARQ ;
+- validation des secrets au démarrage ;
+- CI/CD GitHub Actions ;
+- control plane UI ;
+- OCR fallback GLM-4V ;
+- promotion mémoire `promotable` ;
+- protocole HESTIA projet → agence ;
+- auto-capitalisation décisions C3+ ;
+- indexation RAG des courriers ;
+- cockpit d’affaire consolidé ;
+- modules `planning`, `chantier`, `communications`, `finance`.
 
-## ✅ Contexte métier enrichi
-
-Livré :
-- `erp_type`
-- `erp_categorie`
-- contexte domaine injecté dans les prompts
+⚠️ Ces éléments doivent être revérifiés par audit de code complet après la mise à jour documentaire.
 
 ---
 
 # 5. Active Backlog
 
-Cette section ne liste que ce qui reste réellement à faire après consolidation avec le changelog.
-
 ## 5.1 Core and Runtime
 
 ### ⬜ Module `decisions`
-Le besoin reste valide.
 
-Déjà en place :
-- table `project_decisions`
-- extraction post-orchestration de décisions C3+
-- dette décisionnelle D0–D3
+Déjà indiqué comme partiel : table `project_decisions`, extraction post-orchestration de décisions C3+, dette D0-D3.
 
-Reste à faire :
-- module API complet `decisions`
-- endpoints CRUD explicites
-- filtres par dette
-- résolution manuelle
-- alertes automatiques D3
-- tableau de bord dédié
+Reste à faire : module API complet, endpoints CRUD, filtres par dette, résolution manuelle, alertes D3, dashboard dédié.
 
 ### 🔄 Chaîne de veto séquencée
-Partiellement en place.
 
-Déjà livré :
-- veto explicite C4/C5
-- appels dédiés à Thémis et Héphaïstos
-- parse structuré
-- hiérarchie de sévérité
+Partiel.
 
-Reste à faire :
-- formalisation complète de la chaîne cible
-- intégration explicite de `veto_zeus`
-- enrichissement du modèle `verdict / justification / severity / lift_condition`
-- meilleure traçabilité UI
+Déjà documenté : veto C4/C5, THEMIS, HEPHAESTUS, parse structuré, hiérarchie de sévérité.
+
+Reste à faire : formalisation complète `veto_zeus`, modèle `verdict / justification / severity / lift_condition`, traçabilité UI.
 
 ### 🔄 Mémoire — refactoring de service
-Partiellement en place.
 
-Déjà livré :
-- promotion `promotable`
-- Hestia post-orchestration
-- proposition mémoire agence
+Partiel et prioritaire.
+
+Déjà indiqué comme livré : promotion `promotable`, HESTIA post-orchestration, proposition mémoire agence.
 
 Reste à faire :
-- nettoyage explicite des scopes
-- refonte de `extract_and_store_memories()`
-- purge des mémoires fonctionnelles expirées
-- clarification définitive des rôles Hestia / Mnemosyne / mémoire fonctionnelle
+
+- clarifier les scopes mémoire ;
+- distinguer raw history, candidate facts, active facts, summaries, cards et traces ;
+- vérifier si `extract_and_store_memories()` respecte cette séparation ;
+- éviter toute promotion massive non sourcée ;
+- ajouter ou vérifier le statut `candidate / active / superseded / retracted` ;
+- ajouter ou vérifier le context preview ;
+- ajouter ou vérifier le dry-run de consolidation ;
+- protéger raw messages, documents, traces et tool outputs contre réécriture de consolidation ;
+- vérifier que les cards compactes ne deviennent pas des dumps append-only ;
+- documenter les owners HESTIA / MNEMOSYNE / HADES / ARGOS / THEMIS / ZEUS dans le code.
+
+### ⬜ Auditable context injection
+
+À faire / à vérifier.
+
+Objectif : pouvoir afficher le contexte réellement injecté ou prévu pour un agent : facts, candidate exclusions, cards, summaries, chunks, documents, décisions, traces pertinentes.
+
+### ⬜ Memory consolidation dry-run
+
+À faire / à vérifier.
+
+Toute promotion, rétractation, supersession, fusion ou condensation doit pouvoir être prévisualisée avant application.
 
 ### ⬜ Affaires — exposition complète des nouveaux champs
-Reste à faire :
-- exposer tous les nouveaux champs de contexte dans `schemas.py`
-- exposer leur mise à jour propre dans le router
-- valider strictement les enums métier
+
+Reste à faire : schemas, router, enums métier.
 
 ### 🔄 Tests automatisés
-Partiellement en place.
 
-Déjà livré :
-- CI GitHub Actions
-- `tests/test_guards.py`
-- base pytest
-- couverture de plusieurs guards et patterns critiques
+Partiel.
 
-Reste à faire :
-- tests unitaires plus larges sur tools
-- tests d’intégration `orchestra/service.py`
-- tests E2E RAG
-- tests mémoire
-- tests workflows critiques C1–C5
+Déjà indiqué : CI, `tests/test_guards.py`, base pytest.
+
+Reste à faire : tests tools, `orchestra/service.py`, E2E RAG, mémoire, workflows C1-C5, context preview, consolidation dry-run.
 
 ### 🔄 Monitoring agents / runs
-Partiellement en place.
 
-Déjà livré :
-- control plane UI
-- runs list
-- traces
-- errors stream
-- websocket refresh
+Partiel.
 
-Reste à faire :
-- dashboards synthétiques de performance
-- durée moyenne par agent
-- taux d’échec par workflow
-- fréquence d’activation par agent
-- métriques d’usage consolidées
+Déjà indiqué : control plane UI, runs list, traces, errors stream, websocket refresh.
+
+Reste à faire : dashboards performance, durée par agent, taux d’échec, fréquence d’activation, métriques d’usage, changements mémoire, contexte injecté.
 
 ---
 
 ## 5.2 Interfaces and Channels
 
 ### ⬜ Module `webhooks` — Telegram / WhatsApp
-Toujours à faire.
 
-Cible :
-- réception Telegram / WhatsApp
-- routing par `@mention`
-- fallback Hermes
-- mémoire de fil par Hestia
-- support photo
-- réponse dans le même canal
-- auth expéditeur
+Cible : réception Telegram / WhatsApp, routing par mention, fallback HERMES, mémoire de fil par HESTIA, support photo, réponse canal, auth expéditeur.
 
 ### ⬜ OpenWebUI Pipelines
-Toujours à faire.
 
-Objectif :
-- déclencher directement Zeus / orchestra depuis OpenWebUI
-- réduire la friction UI → runtime
+Objectif : déclencher directement ZEUS / orchestra depuis OpenWebUI et réduire friction UI → runtime.
 
 ### 💡 Voix
-À explorer plus tard.
 
-Périmètre possible :
-- transcription
-- TTS
-- voix dans OpenWebUI
-- voix dans webhooks
+À explorer plus tard : transcription, TTS, OpenWebUI, webhooks.
 
 ---
 
 ## 5.3 Document and Retrieval Layer
 
 ### ⬜ Retrieval multimodal
-Toujours à faire.
 
-Objectif :
-- intégrer plans, coupes, photos, images
-- chunk image + description générée
-- pipeline Argos + qualification technique
-- fusion dans le retrieval
+Objectif : plans, coupes, photos, images, chunk image + description, pipeline ARGOS, qualification technique, fusion retrieval.
 
 ### 🔄 OCR / extraction avancée
-Partiellement en place.
 
-Déjà livré :
-- fallback OCR GLM-4V
-- remplacement du texte natif si OCR meilleur
+Partiel : fallback OCR GLM-4V indiqué.
 
-Reste à faire :
-- industrialisation
-- scoring qualité OCR plus visible
-- monitoring des modes d’extraction
+Reste à faire : industrialisation, scoring qualité OCR, monitoring extraction.
 
 ---
 
 ## 5.4 Optimization and Learning
 
 ### 🔄 DSPy — plan phasé
-Partiellement prêt conceptuellement, non réellement industrialisé.
 
-Phase 1 :
-- instrumentation des runs
-- structuration des exemples
+Conceptuellement prêt, non industrialisé.
 
-Phase 2 :
-- optimisation sur tâches très structurées
-- extraction d’actions
-- classification de criticité
-- extraction de métadonnées documentaires
+Phase 1 : instrumentation.
 
-Phase 3 :
-- éventuellement Hermès et Zeus si volume d’exemples suffisant
+Phase 2 : optimisation tâches structurées : criticité, actions, métadonnées documentaires.
 
-Règles :
-- ne pas optimiser les `SOUL.md`
-- ne pas optimiser les agents créatifs / identitaires trop tôt
+Phase 3 : éventuellement HERMES ou ZEUS si volume suffisant.
 
-### 🔄 Hestia / Mnemosyne learning loop
-Partiellement en place.
+Règles : ne pas optimiser les `SOUL.md`, ne pas optimiser les agents identitaires trop tôt.
 
-Déjà livré :
-- promotion `promotable`
-- protocole de capitalisation
+### 🔄 HESTIA / MNEMOSYNE learning loop
 
-Reste à faire :
-- gouvernance plus explicite de la promotion
-- outillage de revue avant promotion forte
-- tableau de bord de capitalisation
+Partiel.
+
+Déjà indiqué : promotion `promotable`, protocole capitalisation.
+
+Reste à faire : gouvernance plus explicite, revue avant promotion forte, dashboard de capitalisation.
 
 ---
 
 # 6. Architecture Overlay Backlog
 
-## 💡 `Vitruve`
-Toujours en exploration.
+## 💡 VITRUVE
 
-But :
-- agent de démarrage projet
-- programme
-- sol
-- topo
-- PLU
-- ABF
-- risques
-- cohérence budget / contraintes
+Exploration.
 
-Sortie cible :
-- fiche synthèse contraintes avant conception
+But : agent de démarrage projet, programme, sol, topo, PLU, ABF, risques, budget, contraintes.
+
+Sortie cible : fiche synthèse contraintes avant conception.
 
 ---
 
 # 7. Explorations and Watchlist
 
+## 💡 Hermes Local Memory
+
+Analyse réalisée comme source externe utile pour Pantheon OS.
+
+À intégrer maintenant dans la documentation :
+
+- séparation raw history / candidate facts / active facts / summaries / cards / traces ;
+- contexte injecté inspectable ;
+- dry-run avant mutations mémoire sensibles ;
+- cards compactes non considérées comme source de vérité ;
+- consolidation explicite et gouvernée.
+
+À rejeter :
+
+- remplacement de PostgreSQL/pgvector par SQLite ;
+- suppression du runtime FastAPI ;
+- worker mémoire opaque ;
+- copie mécanique de l’architecture externe.
+
 ## 💡 Hindsight / TEMPR
-Piste de mémoire agentique enrichie.
-À tester sur une affaire pilote avant toute migration.
+
+Piste de mémoire agentique enrichie. À tester sur une affaire pilote avant migration.
 
 ## 💡 Neo4j
-À envisager seulement si la complexité relationnelle dépasse ce que PostgreSQL + SQL récursif peuvent couvrir proprement.
+
+À envisager seulement si PostgreSQL + SQL récursif ne suffisent plus pour la complexité relationnelle.
 
 ## 💡 Micro-services
-Pas un objectif.
-À considérer seulement si la charge ou l’équipe le justifie.
+
+Pas un objectif. À considérer uniquement si charge ou équipe le justifie.
 
 ## 💡 Branch software / code
-Toujours pertinente comme branche de domaine future :
-- review
-- blast radius
-- minimal code context
-- repo onboarding
+
+Pertinente comme branche de domaine future : review, blast radius, minimal code context, repo onboarding.
 
 ---
 
 # 8. Repo Governance
 
-Branchements recommandés :
+Branches recommandées :
 
-- `main` → stable
-- `develop` → intégration
-- `experiment/*` → exploration
-- `overlay/*` → overlays métier
+- `main` → stable ;
+- `develop` → intégration ;
+- `experiment/*` → exploration ;
+- `overlay/*` → overlays métier.
 
 Règles :
 
-- toute migration de schéma doit être versionnée
-- toute brique critique doit avoir un test de non-régression
-- toute exploration V3 reste isolée
+- toute migration de schéma doit être versionnée ;
+- toute brique critique doit avoir un test de non-régression ;
+- toute exploration V3 reste isolée ;
+- les Markdown de référence font foi ;
+- si le code est plus pertinent que les Markdown, proposer d’abord la mise à jour documentaire ;
+- si le code contredit les Markdown sans justification, corriger le code après audit.
 
 ---
 
 # 9. Immediate Priorities
 
-Ordre recommandé de travail maintenant :
+Ordre recommandé :
 
-1. finaliser `AGENTS.md`
-2. finaliser `ARCHITECTURE.md`
-3. créer `MODULES.md`
-4. créer ou finaliser le module `decisions`
-5. compléter la refonte mémoire
-6. compléter les tests d’intégration
-7. renforcer le monitoring consolidé
-8. lancer `webhooks`
-9. préparer le retrieval multimodal
-10. instrumenter sérieusement pour DSPy plus tard
+1. Auditer le code contre `README.md`, `ARCHITECTURE.md`, `MODULES.md`, `AGENTS.md`, `ROADMAP.md`, `STATUS.md`.
+2. Vérifier l’état réel de la mémoire : raw history, candidate facts, active facts, cards, summaries, traces.
+3. Finaliser le module `decisions`.
+4. Compléter la refonte mémoire.
+5. Ajouter ou vérifier context preview.
+6. Ajouter ou vérifier dry-run de consolidation.
+7. Compléter tests mémoire et workflows C1-C5.
+8. Renforcer monitoring consolidé.
+9. Lancer `webhooks`.
+10. Préparer retrieval multimodal.
+11. Instrumenter DSPy plus tard.
 
 ---
 
 # 10. Final Rule
 
-Ce fichier doit rester la vue consolidée de la vérité projet.
+Ce fichier reste la vue consolidée de vérité projet.
 
-Il ne doit pas seulement raconter ce qui a changé.
 Il doit dire clairement :
 
-- ce qui est livré
-- ce qui est partiel
-- ce qui reste à faire
-- ce qui est seulement en exploration
+- ce qui est livré ;
+- ce qui est partiel ;
+- ce qui reste à faire ;
+- ce qui est en exploration ;
+- ce qui doit être vérifié dans le code.
 
-Pantheon OS doit rester :
-
-- modulaire
-- gouverné
-- portable
-- testable
-- exploitable en production
+Pantheon OS doit rester modulaire, gouverné, portable, testable, observable, exploitable et piloté par ses Markdown de référence.
