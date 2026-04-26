@@ -1,334 +1,335 @@
+# Pantheon OS
+
+Pantheon OS est un Domain Operating Layer pour systèmes d’agents appliqués aux environnements professionnels à forte densité documentaire : architecture, chantier, urbanisme, conduite de projet, audit, juridique, conseil et software.
+
+Pantheon OS n’est plus conçu prioritairement comme un runtime agentique autonome complet. La trajectoire retenue est désormais Hermes-backed :
+
+- OpenWebUI expose l’interface de chat et les knowledge bases documentaires.
+- NousResearch/Hermes Agent fournit le runtime agentique, les skills exécutables, la mémoire opérationnelle, les tools, le scheduler, le doctor, les gateways et les backends d’exécution.
+- Pantheon OS définit la gouvernance métier : agents abstraits, domain overlays, workflows, skills contracts, règles d’approbation, stratégie knowledge, mémoire validée et documentation source de vérité.
+
+Formule de conception :
+
+```text
+Pantheon définit.
+Hermes exécute.
+OpenWebUI expose et retrouve.
+```
+
+---
+
+# 1. Rôle de Pantheon OS
+
+Pantheon OS contient les règles qui spécialisent un runtime agentique généraliste pour un usage professionnel contrôlé.
+
+Il définit :
+
+- les agents abstraits et leurs responsabilités ;
+- les domain overlays ;
+- les workflows métier ;
+- les skills contracts ;
+- les policies d’action ;
+- les règles de mémoire ;
+- les règles d’approbation ;
+- les formats de sortie ;
+- les sources documentaires fiables ;
+- la mémoire projet et agence validée ;
+- la veille externe ;
+- le protocole de coordination IA.
+
+Pantheon ne doit pas dupliquer inutilement les capacités déjà fournies par Hermes Agent : CLI, gateway, scheduler, terminal backends, runtime de skills, doctor et mémoire opérationnelle.
+
+---
+
+# 2. Architecture cible
+
+```text
+Utilisateur
+  ↓
+OpenWebUI
+  - chat
+  - knowledge documentaire
+  - RAG simple
+  ↓
+Hermes Agent
+  - runtime agentique
+  - skills exécutables
+  - tools
+  - scheduler
+  - gateway
+  - doctor
+  - mémoire opérationnelle
+  ↓
 Pantheon OS
+  - agents abstraits
+  - domain overlays
+  - workflows
+  - skills contracts
+  - policies
+  - mémoire validée
+  - documentation source de vérité
+```
 
-Multi-agent operational intelligence platform for high-expertise environments
-(architecture, project management, legal, consulting, audit, IT)
+Pantheon n’est pas un simple dossier de prompts. C’est le référentiel contractuel qui encadre l’usage de Hermes et d’OpenWebUI.
 
-Pantheon OS combines structured data, document intelligence (RAG), and multi-agent orchestration into a single execution layer.
+---
 
-⸻
+# 3. Répartition des responsabilités
 
-Core Idea
+| Couche | Responsabilité | Ne doit pas faire |
+|---|---|---|
+| OpenWebUI | Interface chat, knowledge documentaire, RAG simple | Définir les agents officiels, porter la mémoire validée, gouverner les actions |
+| Hermes Agent | Exécuter, utiliser les skills, automatiser, mémoriser opérationnellement, diagnostiquer | Redéfinir seul la doctrine Pantheon, promouvoir une mémoire non validée comme vérité |
+| Pantheon OS | Définir, gouverner, versionner, valider, documenter | Réimplémenter sans gain le runtime agentique, scheduler, gateway ou doctor |
 
-This is not a chatbot.
+---
 
-Pantheon OS is a runtime system where:
+# 4. Agents
 
-* agents are modular execution units
-* workflows define reasoning pipelines
-* tools and skills extend capabilities
-* OpenWebUI is only the interface layer
+Les agents Pantheon restent neutres métier. Ils sont des rôles cognitifs génériques, pas des agents spécialisés architecture ou software.
 
-The system executes controlled reasoning, not free-form prompting.
+Exemples :
 
-⸻
+- ZEUS : orchestration et arbitrage ;
+- ATHENA : planification et décomposition ;
+- ARGOS : extraction factuelle et preuves ;
+- THEMIS : procédure, règles, risques et légitimité ;
+- APOLLO : validation finale et confiance ;
+- PROMETHEUS : contradiction et stress-test ;
+- HESTIA : mémoire projet ;
+- MNEMOSYNE : mémoire agence ;
+- IRIS : communication ;
+- HEPHAESTUS : analyse technique.
 
-Stack
+Le métier vient des overlays, skills, workflows et knowledge sources.
 
-* FastAPI (API + runtime host)
-* PostgreSQL + pgvector (data + semantic memory)
-* OpenWebUI (chat interface)
-* Ollama or OpenAI (LLM provider)
-* Docker Compose (deployment)
+---
 
-Optional (V2):
+# 5. Domain overlays
 
-* Redis / ARQ (async jobs)
-* MinIO (object storage)
-* LangGraph (complex orchestration)
+Les domaines portent la spécialisation.
 
-⸻
+Exemples :
 
-Quick Start
+```text
+domains/
+  architecture/
+  software/
+  legal/
+  consulting/
+```
 
-cp .env.example .env
-# Configure:
-# - DB_PASSWORD
-# - JWT_SECRET_KEY
-# - LLM_PROVIDER (ollama or openai)
-docker compose up -d
-docker compose exec api alembic upgrade head
+Un domain overlay peut contenir :
 
-Access:
+- règles métier ;
+- workflows ;
+- skills ;
+- templates ;
+- politiques de sources ;
+- formats de sortie ;
+- exemples ;
+- tests ;
+- règles de mémoire.
 
-* API → http://localhost:8000
-* Docs → http://localhost:8000/docs
-* UI (OpenWebUI) → http://localhost:3000
+Exemple : THEMIS reste un agent abstrait de conformité. Dans le domaine architecture, l’overlay lui fournit les contrôles liés aux missions, CCTP, DPGF, DOE, DGD, réception, ERP, SDIS, PLU ou clauses contractuelles.
 
-⸻
+---
 
-Architecture
+# 6. Skills
 
-The system is split into three layers:
+Les skills sont définies dans Pantheon et exécutées par Hermes.
 
-core/        → runtime engine (no business logic)
-modules/     → agents, skills, tools, workflows (plug-and-play)
-platform/    → API, UI, infrastructure
+Règle :
 
-1. Core (Hermes Runtime)
+```text
+Pantheon définit la skill.
+Hermes l’exécute.
+Toute skill auto-créée reste candidate tant qu’elle n’est pas validée.
+```
 
-Pure execution engine:
+Structure cible :
 
-* AgentBase, SkillBase, ToolBase, WorkflowBase
-* WorkflowEngine (async execution)
-* HermesRouter (intent → workflow)
-* SessionState (context per run)
-* ManifestLoader (auto-discovery)
-* VetoEngine (risk control)
-* Observability (logs, traces)
+```text
+skills/
+  architecture/
+    cctp_audit/
+      SKILL.md
+      manifest.yaml
+      examples.md
+      tests.md
+    dpgf_check/
+      SKILL.md
+      manifest.yaml
+  software/
+    repo_md_audit/
+      SKILL.md
+      manifest.yaml
+```
 
-No domain logic lives here.
+Chaque skill doit définir : objectif, inputs, outputs, agents mobilisés, sources autorisées, risques, approval nécessaire, format attendu, exemples et tests.
 
-⸻
+---
 
-2. Modules (Execution Units)
+# 7. Knowledge
 
-All intelligence is defined as self-contained modules.
+OpenWebUI peut porter les collections documentaires.
 
-modules/
-├── agents/
-├── skills/
-├── tools/
-└── workflows/
+Pantheon conserve la stratégie :
+
+```text
+knowledge/
+  openwebui_collections.md
+  source_policy.md
+  document_taxonomy.md
+```
+
+Règle :
+
+```text
+OpenWebUI retrouve.
+Pantheon décide ce qui fait foi.
+Hermes exploite.
+```
+
+Les documents lourds, PDF, CCTP, notices, PLU, rapports, guides et modèles peuvent être placés dans OpenWebUI Knowledge. Les règles de gouvernance et les décisions projet doivent rester dans Pantheon.
+
+---
+
+# 8. Mémoire
+
+La mémoire est séparée en trois niveaux :
+
+| Mémoire | Emplacement | Statut |
+|---|---|---|
+| documentaire | OpenWebUI Knowledge | consultable |
+| opérationnelle | Hermes Agent | vivante, pratique, non souveraine |
+| validée | Pantheon OS | source de vérité |
+
+Règle :
+
+```text
+Hermes peut apprendre.
+Pantheon valide.
+OpenWebUI documente.
+```
 
-Each module is:
+Toute information issue de Hermes qui modifie une règle, une décision, une skill ou une mémoire durable doit être proposée comme candidate avant intégration dans Pantheon.
+
+---
+
+# 9. Approval et sécurité
+
+Au stade Hermes-backed, l’Approval Gate peut d’abord être documentaire et opératoire, puis logiciel si nécessaire.
 
-* isolated
-* discoverable
-* configurable
-* optionally enabled/disabled
+Règles minimales :
 
-Agent structure
+- diagnostic : autorisé ;
+- modification de fichier : validation requise ;
+- envoi d’email : validation requise ;
+- suppression : confirmation explicite ;
+- commande shell hors allowlist : validation requise ;
+- promotion mémoire : validation requise ;
+- activation d’une skill candidate : validation requise ;
+- action web avec effet de bord : validation requise.
 
-modules/agents/meta/zeus_orchestrator/
-├── agent.py
-├── manifest.yaml
-├── config.yaml
-├── SOUL.md
+Hermes peut exécuter, mais ne doit pas contourner les règles Pantheon.
 
-Example manifest
+---
 
-id: zeus
-name: "@ZEUS"
-layer: meta
-role: orchestrator
-enabled: true
-veto: false
-class: modules.agents.meta.zeus_orchestrator.agent.Zeus
+# 10. Structure cible simplifiée
 
-Agents are loaded automatically at startup.
+```text
+Pantheon-OS/
+  README.md
+  STATUS.md
+  ROADMAP.md
+  ARCHITECTURE.md
+  AGENTS.md
+  MODULES.md
+  AI_LOG.md
+  EXTERNAL_WATCHLIST.md
 
-⸻
+  agents/
+    zeus.md
+    athena.md
+    argos.md
+    themis.md
+    apollo.md
+    prometheus.md
+    hestia.md
+    mnemosyne.md
+    iris.md
+    hephaestus.md
 
-3. Platform
+  domains/
+    architecture/
+      overlay.md
+      rules.md
+      knowledge_policy.md
+      output_formats.md
+      workflows/
+      skills/
+      templates/
 
-platform/
-├── api/        → FastAPI (modular apps)
-├── ui/         → OpenWebUI + admin console
-├── data/       → database + runtime state
-├── infra/      → docker, deployment
+  skills/
+    architecture/
+    software/
+    generic/
 
-⸻
+  workflows/
+    architecture/
+    software/
+    generic/
 
-Runtime Model
+  memory/
+    project/
+    agency/
+    candidates/
 
-Agent
+  knowledge/
+    openwebui_collections.md
+    source_policy.md
+    document_taxonomy.md
 
-An agent is defined by:
+  hermes/
+    context/
+    exports/
 
-* identity (@ZEUS)
-* role (orchestrator)
-* layer (meta, analysis, memory, output, system)
-* behavior (SOUL.md)
+  operations/
+    install.md
+    update.md
+    backup.md
+    doctor.md
+```
 
-Base contract:
+---
 
-class AgentBase:
-    agent: str
-    role: str
-    layer: str
+# 11. Développement
 
-⸻
+Les Markdown restent la base du développement.
 
-Workflow
+Les six fichiers de référence sont :
 
-A workflow is a deterministic pipeline of agents.
+- `STATUS.md` ;
+- `ROADMAP.md` ;
+- `ARCHITECTURE.md` ;
+- `AGENTS.md` ;
+- `MODULES.md` ;
+- `README.md`.
 
-Example:
+Avant toute modification du code, vérifier la cohérence avec ces fichiers. Si le code existant est meilleur que la documentation, mettre à jour la documentation avant de généraliser ce code.
 
-id: research
-steps:
-  - hecate
-  - hermes
-  - argos
-  - prometheus
-  - kairos
-  - iris
-fallback: simple_answer
+---
 
-Workflows define execution logic, not agents.
+# 12. État actuel
 
-⸻
+Le dépôt contient encore des éléments de l’ancienne trajectoire Pantheon autonome : FastAPI, registries, workflows, approvals, installer UI, manifests et tests partiels.
 
-Skills and Tools
+Ces éléments ne sont pas supprimés. Ils sont à réauditer après le pivot :
 
-* Skills = reusable reasoning capabilities (extraction, validation, synthesis)
-* Tools = external actions (PDF, web, DB, storage)
+- soit conservés comme outils d’intégration ;
+- soit simplifiés ;
+- soit archivés ;
+- soit réorientés vers Hermes-backed Pantheon.
 
-They are injected dynamically during execution.
-
-⸻
-
-API Modules
-
-FastAPI is modular via modules.yaml.
-
-Example:
-
-modules:
-  - name: auth
-    enabled: true
-  - name: agent
-    enabled: true
-  - name: hermes_console
-    enabled: true
-
-Each module is a self-contained app:
-
-platform/api/apps/{module}/
-├── manifest.yaml
-├── models.py
-├── schemas.py
-├── service.py
-└── router.py
-
-⸻
-
-OpenWebUI Integration
-
-OpenWebUI connects via OpenAI-compatible API:
-
-OPENAI_API_BASE_URL=http://api:8000/v1
-OPENAI_API_KEY=<JWT_SECRET_KEY>
-
-This allows:
-
-* chat interface
-* tool usage
-* multi-agent execution
-
-Without exposing internal complexity.
-
-⸻
-
-Data Model (MVP)
-
-Core tables:
-
-* users → authentication
-* affaires → projects / cases
-* documents → uploaded files
-* chunks → vectorized content
-* agent_runs → execution traces
-* agent_memory → learned knowledge
-
-⸻
-
-Auditable Memory
-
-Pantheon OS uses structured memory to preserve continuity across affairs, agents, workflows and documents.
-
-Memory is not an opaque summary layer. It must distinguish raw sources, validated facts, candidate facts, summaries, compact cards and orchestration traces.
-
-The operating rule is simple: any information injected into an agent context must be inspectable, source-linked, revisable and retractable. Raw documents, raw messages, tool outputs and execution traces remain the verification base. Cards, summaries and promoted facts are derived layers, not independent truth.
-
-The system must therefore support memory preview, source labels, candidate promotion, explicit consolidation and dry-run review before risky memory mutation.
-
-⸻
-
-Human Approval
-
-Pantheon OS blocks sensitive actions behind an Approval Gate.
-
-Agents may propose an action, but the runtime must require human validation whenever criticity, reversibility or policy requires it. This applies especially to external communications, persistent data changes, strong memory mutations, official documents, browser actions with side effects and irreversible operations.
-
-Each approval must preserve status, assignee, reasoning, decision, note, timestamp and audit trail.
-
-⸻
-
-Governed Browser Automation
-
-Pantheon OS may support browser automation as a governed tool, not as an unrestricted agent capability.
-
-A browser action must be traceable through URL, intention, action, screenshot before, screenshot after and result status. Passive reading and extraction may be allowed under policy. Login, upload, posting, deletion, purchase, form submission or any action on a connected account requires Approval Gate validation.
-
-The default target is an isolated or sandboxed browser. Direct control of a user’s personal browser is not a safe default.
-
-⸻
-
-Configuration
-
-Single source of truth:
-
-config/
-├── runtime.yaml
-├── settings.yaml
-├── sources.yaml
-├── ui.yaml
-├── domains.yaml
-
-Modules contain their own local config.
-
-⸻
-
-Design Principles
-
-1. Modularity first
-    Everything is a module (agent, skill, tool, workflow)
-2. Runtime > prompts
-    Execution logic replaces prompt engineering
-3. Separation of concerns
-    * core = engine
-    * modules = intelligence
-    * platform = delivery
-4. Deterministic orchestration
-    Workflows control reasoning, not LLM improvisation
-5. Scalable architecture
-    MVP runs without Redis or LangGraph
-    V2 enables distributed execution
-6. Auditable memory
-    Context injection must be inspectable, source-linked and governed.
-7. Approval before sensitive action
-    Human validation gates risky or irreversible execution.
-8. Governed browser automation
-    Browser control is allowed only through policy, tracing and approvals.
-
-⸻
-
-Roadmap
-
-MVP (current)
-
-* Core runtime
-* Modular agents
-* Basic workflows
-* RAG
-* OpenWebUI integration
-
-V2
-
-* Dynamic workflow generation
-* Strategy engine
-* Observability + scoring
-* Async execution (Redis / ARQ)
-* Multi-tenant + domain overlays
-* Auditable memory lifecycle: raw history, candidate facts, active facts, summaries, compact cards, dry-run consolidation
-* Approval Gate / HITL lifecycle for sensitive actions
-* Governed Browser Tool with screenshot traces and policy control
-
-⸻
-
-License
-
-Private / internal use (adapt as needed)
-
-⸻
+La prochaine étape n’est pas d’ajouter du code. La prochaine étape est l’audit de cohérence post-pivot.
