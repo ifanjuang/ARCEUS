@@ -10,22 +10,47 @@ Règle : ces dépôts ne sont pas des dépendances runtime de Pantheon OS sauf d
 
 | Source | Usage Pantheon OS | Statut | Dernier audit | Décision |
 |---|---|---|---|---|
-| `smarzola/hermes-local-memory` | Doctrine mémoire locale | Veille | 2026-04-26 | Idées retenues, pas de dépendance |
-| `suryamr2002/langgraph-approval-hub` | Approval Gate / HITL | Veille | 2026-04-26 | Idées retenues, pas de dépendance |
-| `browser-use/browser-harness` | Browser Tool gouverné | Plus tard | 2026-04-26 | À reporter après Approval + Observability |
-| `elizaOS/eliza` | Actions / providers / evaluators / services | Veille | 2026-04-26 | Concepts retenus, runtime rejeté |
-| `crewAIInc/crewAI` | Task Contract / workflow crew pattern | Veille | 2026-04-26 | Concepts retenus, runtime rejeté |
-| `agentscope-ai/agentscope` | Multi-agent runtime | Veille | 2026-04-26 | Intéressant, non prioritaire |
-| `FlowiseAI/Flowise` | Visual workflow builder | Plus tard | 2026-04-26 | À reporter |
-| `agentsmd/agents.md` | Convention agents | Veille | 2026-04-26 | À intégrer comme convention documentaire |
-| `agentskills/agentskills` | Skill contract | Veille | 2026-04-26 | À intégrer plus tard |
-| `NirDiamant/GenAI_Agents` | Patterns agents | Veille | 2026-04-26 | Inspiration seulement |
-| `NirDiamant/agents-towards-production` | Production hardening | Veille | 2026-04-26 | Inspiration seulement |
-| `e2b-dev/awesome-ai-agents` | Catalogue | Veille | 2026-04-26 | Pas d’import massif |
-| `ashishpatel26/500-AI-Agents-Projects` | Catalogue | Veille | 2026-04-26 | Pas d’import massif |
+| `smarzola/hermes-local-memory` | Doctrine mémoire locale | Veille active | 2026-04-26 | Retenir mémoire multi-couches, candidate facts, active facts, cards, context preview, dry-run ; pas de dépendance runtime |
+| `mage0535/hermes-memory-installer` | Installation mémoire locale / bootstrap mémoire | Plus tard | 2026-04-26 | Retenir installation mémoire, injection mémoire, auto-mount skills, archivage local ; rejeter SQLite FTS5 comme source principale et promotion non validée |
+| `suryamr2002/langgraph-approval-hub` | Approval Gate / HITL | Veille active | 2026-04-26 | Retenir statuts approval, pending queue, decision note, expiration, escalation, audit log ; pas de dashboard externe obligatoire |
+| `sunny84patel/RAG-Evaluation` | Evaluation Harness RAG | Plus tard | 2026-04-26 | Retenir génération questions, comparaison configs RAG, métriques retrieval/source/faithfulness/latency ; rejeter Streamlit et Qdrant in-memory comme base |
+| `browser-use/browser-harness` | Browser Tool gouverné | Plus tard | 2026-04-26 | À reporter après Approval Gate, PolicyGate et Observability ; retenir screenshots before/after et action traces |
+| `elizaOS/eliza` | Actions / providers / evaluators / services | Veille | 2026-04-26 | Retenir vocabulaire runtime ; rejeter remplacement du runtime Pantheon |
+| `crewAIInc/crewAI` | Task Contract / workflow crew pattern | Veille active | 2026-04-26 | Retenir Task, expected_output, Flow/Crew separation ; runtime rejeté |
+| `agentscope-ai/agentscope` | Multi-agent runtime avancé | Veille | 2026-04-26 | Intéressant pour observability, HITL, planning, MCP/A2A ; non prioritaire, ne pas empiler un second runtime |
+| `FlowiseAI/Flowise` | Visual workflow builder | Plus tard | 2026-04-26 | À utiliser seulement comme labo visuel optionnel ; ne doit pas devenir source de vérité |
+| `langflow-ai/langflow` | Visual Prototype Lab Python | Plus tard | 2026-04-26 | Préférable à Flowise pour Pantheon car Python/custom components ; service Docker optionnel lab, pas runtime officiel |
+| `langgenius/dify` | Plateforme RAG / agents / workflows / observability | Veille | 2026-04-26 | Référence UX/produit intéressante ; trop concurrent du cœur Pantheon pour intégration directe |
+| `n8n-io/n8n` | Automatisation externe / webhooks | Plus tard | 2026-04-26 | Utile comme connecteur périphérique : n8n déclenche, Pantheon décide ; ne pas exposer publiquement |
+| `iib0011/omni-tools` | Local Tools Hub / outils fichiers locaux | Plus tard | 2026-04-26 | Retenir outils self-hosted client-side PDF/image/CSV/JSON ; pas prioritaire avant mémoire/RAG/Approval |
+| `Start9Labs/start-os` | Self-hosting OS / service lifecycle | Veille active | 2026-04-26 | Retenir lifecycle services, update consent, health, backup scope, registry ; rejeter OS complet et `.s9pk` |
+| `commonmark.org` | Standard Markdown | Documentation standard | 2026-04-26 | Adopter convention Markdown CommonMark-compatible + tables GitHub ; pas de syntaxe propriétaire |
+| `agentsmd/agents.md` | Convention agents | Veille active | 2026-04-26 | À intégrer comme convention documentaire agents/coding |
+| `agentskills/agentskills` | Skill contract | Veille | 2026-04-26 | À intégrer plus tard pour formaliser les skills réutilisables |
+| `NirDiamant/GenAI_Agents` | Patterns agents / RAG / memory | Veille | 2026-04-26 | Inspiration seulement, pas d’import massif |
+| `NirDiamant/agents-towards-production` | Production hardening agents | Veille active | 2026-04-26 | Retenir checklist production : sécurité, evaluation, deployment, observability, RAG, memory |
+| `e2b-dev/awesome-ai-agents` | Catalogue | Veille | 2026-04-26 | Pas d’import massif ; veille seulement |
+| `ashishpatel26/500-AI-Agents-Projects` | Catalogue massif | Veille | 2026-04-26 | Pas d’import massif ; inspiration ponctuelle uniquement |
 | `contains-studio/agents` | Catalogue agents | Veille | 2026-04-26 | Pas d’import massif |
-| `msitarzewski/agency-agents` | Catalogue agents | Veille | 2026-04-26 | Pas d’import massif |
+| `msitarzewski/agency-agents` | Catalogue agents / agency patterns | Veille | 2026-04-26 | Inspiration seulement |
 | `hermesguide.xyz` | Guide Hermes | Veille | 2026-04-26 | À utiliser pour patterns, pas comme source unique |
+
+---
+
+## Synthèse par chantier Pantheon
+
+| Chantier | Sources utiles | Décision |
+|---|---|---|
+| Governance documentaire | CommonMark, agents.md, AI_LOG | À intégrer maintenant |
+| Runtime contracts | CrewAI, ElizaOS, agentskills | À intégrer progressivement |
+| Approval / Safety | langgraph-approval-hub | À finaliser avant actions sensibles |
+| Memory | hermes-local-memory, hermes-memory-installer | À documenter maintenant, implémenter après stabilisation |
+| RAG Quality | RAG-Evaluation, agents-towards-production | À intégrer après Approval Gate minimal |
+| Self-hosting | StartOS, Installer UI interne | À intégrer maintenant côté doctrine + UI |
+| Visual Lab | Langflow, Flowise, Dify | Optionnel, jamais runtime de vérité |
+| Automation périphérique | n8n | Plus tard via webhooks |
+| Local Tools | OmniTools | Plus tard comme service optionnel ou inspiration UI |
+| Browser Tool | browser-harness | Après Approval Gate, PolicyGate et Observability |
 
 ---
 
@@ -58,8 +83,16 @@ Pour chaque idée retenue :
 
 ---
 
-## Règle finale
+## Règles d’usage
 
 Ne pas copier mécaniquement une architecture externe.
+
+Ne pas ajouter un second runtime de vérité.
+
+Ne pas importer de catalogue massif d’agents.
+
+Ne pas intégrer de Browser Tool avant Approval Gate, PolicyGate, traces et screenshots.
+
+Ne pas faire de mise à jour automatique sans consentement explicite.
 
 Pantheon OS conserve son identité : modularité, agents spécialisés, orchestration contrôlée, mémoire projet, RAG, workflows, validation, observability, self-hosting.
