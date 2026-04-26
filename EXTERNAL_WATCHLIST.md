@@ -27,6 +27,8 @@ Règle : ces dépôts ne sont pas des dépendances runtime de Pantheon OS sauf d
 | `commonmark.org` | Standard Markdown | Documentation standard | 2026-04-26 | Adopter convention Markdown CommonMark-compatible + tables GitHub ; pas de syntaxe propriétaire |
 | `agentsmd/agents.md` | Convention agents | Veille active | 2026-04-26 | À intégrer comme convention documentaire agents/coding |
 | `agentskills/agentskills` | Skill contract | Veille | 2026-04-26 | À intégrer plus tard pour formaliser les skills réutilisables |
+| `canvascomputing/prompting` | Méthode de conception de prompts / systèmes prompts | À vérifier | 2026-04-26 | Référence utile pour structurer prompts, rôles, contraintes, exemples et évaluation ; audit fichier par fichier encore à faire |
+| `caliber-ai-org/ai-setup` | AI setup, context rot, scoring config IA | Veille active | 2026-04-26 | Retenir audit local des configs IA, score de fraîcheur, génération/refresh de fichiers agents, sync multi-outils ; ne pas installer automatiquement sans validation |
 | `NirDiamant/GenAI_Agents` | Patterns agents / RAG / memory | Veille | 2026-04-26 | Inspiration seulement, pas d’import massif |
 | `NirDiamant/agents-towards-production` | Production hardening agents | Veille active | 2026-04-26 | Retenir checklist production : sécurité, evaluation, deployment, observability, RAG, memory |
 | `e2b-dev/awesome-ai-agents` | Catalogue | Veille | 2026-04-26 | Pas d’import massif ; veille seulement |
@@ -42,6 +44,8 @@ Règle : ces dépôts ne sont pas des dépendances runtime de Pantheon OS sauf d
 | Chantier | Sources utiles | Décision |
 |---|---|---|
 | Governance documentaire | CommonMark, agents.md, AI_LOG | À intégrer maintenant |
+| Prompt systems | canvascomputing/prompting, GitHub prompt files, caliber-ai-org/ai-setup | À intégrer comme méthode documentaire et qualité prompts |
+| AI coding setup | caliber-ai-org/ai-setup, agents.md, AI_LOG | À intégrer plus tard comme audit/refresh contrôlé, pas comme génération automatique non relue |
 | Runtime contracts | CrewAI, ElizaOS, agentskills | À intégrer progressivement |
 | Approval / Safety | langgraph-approval-hub | À finaliser avant actions sensibles |
 | Memory | hermes-local-memory, hermes-memory-installer | À documenter maintenant, implémenter après stabilisation |
@@ -94,5 +98,7 @@ Ne pas importer de catalogue massif d’agents.
 Ne pas intégrer de Browser Tool avant Approval Gate, PolicyGate, traces et screenshots.
 
 Ne pas faire de mise à jour automatique sans consentement explicite.
+
+Ne pas régénérer automatiquement les fichiers d’instructions IA sans revue humaine, car les Markdown de référence restent souverains.
 
 Pantheon OS conserve son identité : modularité, agents spécialisés, orchestration contrôlée, mémoire projet, RAG, workflows, validation, observability, self-hosting.
