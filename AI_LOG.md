@@ -214,6 +214,54 @@ Prochaine action recommandée :
 
 ---
 
+### 2026-04-26 — ChatGPT
+
+Branche : `feature/approval-gate-activation`
+
+Objectif : acter le pivot documentaire Hermes-backed / Domain Operating Layer.
+
+Modifications :
+
+- Réécriture de `README.md` : Pantheon devient Domain Operating Layer ; Hermes Agent devient runtime agentique ; OpenWebUI devient interface + knowledge documentaire.
+- Réécriture de `ARCHITECTURE.md` : architecture en trois couches, responsabilités OpenWebUI / Hermes Agent / Pantheon OS, memory model, approval discipline, Hermes Integration Layer.
+- Réécriture de `AGENTS.md` : agents abstraits et neutres métier ; spécialisation uniquement par domain overlays, workflows, skills et knowledge policies.
+- Réécriture de `MODULES.md` : modules recentrés sur contrats, domain overlays, skills, workflows, memory, knowledge, hermes integration et operations.
+- Réécriture de `ROADMAP.md` : priorité à l’audit post-pivot, Hermes Lab isolé, skills métier, OpenWebUI Knowledge Strategy, mémoire validée et Hermes Integration Layer.
+- Mise à jour de `STATUS.md` : pivot documentaire confirmé ; code existant marqué comme partiellement obsolète et à réauditer.
+- Aucune modification de code.
+
+Fichiers critiques touchés :
+
+- `README.md`
+- `ARCHITECTURE.md`
+- `AGENTS.md`
+- `MODULES.md`
+- `ROADMAP.md`
+- `STATUS.md`
+- `AI_LOG.md`
+
+Tests lancés :
+
+- Non exécutés. Modification documentaire uniquement.
+
+Points à vérifier :
+
+- Le code existant reste majoritairement orienté ancienne trajectoire autonome : FastAPI, registries, workflow loader, approval API, Installer UI.
+- Ces éléments doivent être audités avant conservation, réorientation, archivage ou suppression.
+- Hermes Agent n’est pas installé. L’installation éventuelle doit se faire en Hermes Lab isolé, sans accès Docker socket, volumes Pantheon ou secrets.
+- OpenWebUI Knowledge Strategy reste à créer.
+- Les dossiers contractuels `agents/`, `domains/`, `skills/`, `workflows/`, `memory/`, `knowledge/`, `hermes/context/`, `operations/` restent à créer.
+
+Prochaine action recommandée :
+
+1. Faire l’audit post-pivot code/docs.
+2. Créer le squelette contractuel Pantheon Domain Layer.
+3. Préparer `hermes/context/pantheon_context.md`, `agents_context.md` et `rules_context.md`.
+4. Définir la stratégie OpenWebUI Knowledge.
+5. Préparer un plan d’installation Hermes Lab isolé.
+
+---
+
 ### YYYY-MM-DD — Claude
 
 Branche :
