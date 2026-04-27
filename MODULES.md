@@ -1,389 +1,289 @@
-# Pantheon OS — Modules
+# MODULES — Pantheon OS
 
-> Document de référence.
-> Dans la trajectoire Hermes-backed, les modules Pantheon sont principalement des contrats, overlays, workflows, skills et règles. Hermes exécute les capacités ; Pantheon les définit et les gouverne.
+> Ce document définit le découpage fonctionnel réel du système Pantheon OS.  
+> Les modules représentent les composants structurants du Domain Operating Layer.
 
 ---
 
 # 1. Principe
 
-Pantheon OS ne cherche plus à tout exécuter lui-même.
+Pantheon OS n’est pas un runtime.
 
-Le système distingue :
+C’est un système de définition structuré autour de :
 
-- les modules contractuels Pantheon ;
-- les capacités exécutables Hermes ;
-- les knowledge collections OpenWebUI ;
-- les outils ou scripts d’exploitation ;
-- les éventuels restes de l’ancien runtime autonome, à réauditer.
+- skills  
+- workflows  
+- agents  
+- mémoire  
+- knowledge  
+- règles  
 
-Règle :
+Chaque module doit être :
 
-```text
-Un module Pantheon doit être lisible, versionnable, exportable et gouvernable.
-```
+- lisible  
+- isolé  
+- maintenable  
+- aligné avec les Markdown  
 
 ---
 
-# 2. Familles de modules
+# 2. Modules principaux
 
 ## 2.1 Agents
 
-Les agents sont des rôles cognitifs abstraits.
+text agents/ 
 
-Emplacement cible :
+Rôle :
 
-```text
-agents/
-  zeus.md
-  athena.md
-  argos.md
-  themis.md
-  apollo.md
-```
+- définir les fonctions cognitives du système  
+- structurer l’analyse  
+- organiser les workflows  
 
-Ils définissent responsabilités, limites, activation, output attendu et règles de sécurité.
+Contenu :
 
-Ils ne contiennent pas de logique métier spécifique.
+- un fichier par agent  
+- rôle  
+- responsabilités  
+- limites  
 
-## 2.2 Domain overlays
+Important :
 
-Les overlays portent le métier.
+Les agents sont abstraits et non métier.
 
-```text
-domains/
-  architecture/
-    overlay.md
-    rules.md
-    knowledge_policy.md
-    output_formats.md
-    workflows/
-    skills/
-    templates/
-  software/
-  legal/
-  consulting/
-```
+---
 
-Un overlay spécialise les agents abstraits pour un domaine donné.
+## 2.2 Skills
 
-## 2.3 Skills
+text skills/ 
 
-Les skills sont les capacités procédurales réutilisables.
+Rôle :
 
-Pantheon définit les skills. Hermes les exécute.
+- représenter les capacités du système  
+- porter la logique métier  
+- produire des outputs exploitables  
 
-```text
-skills/
-  generic/
-  architecture/
-    cctp_audit/
-      SKILL.md
-      manifest.yaml
-      examples.md
-      tests.md
-  software/
-```
+Structure :
 
-Une skill doit indiquer : objectif, inputs, outputs, agents mobilisés, sources autorisées, risques, approval requis, exemples, tests et état.
+text skills/   generic/   architecture/     cctp_audit/       SKILL.md 
 
-États : draft, candidate, active, archived.
+Contenu d’une skill :
 
-## 2.4 Workflows
+- objectif  
+- inputs  
+- outputs  
+- règles  
+- risques  
+- conditions d’activation  
 
-Les workflows définissent les séquences de travail.
+Important :
 
-```text
-workflows/
-  generic/
-  architecture/
-    cctp_review.yaml
-    dpgf_review.yaml
-  software/
-    repo_consistency_audit.yaml
-```
+Toute logique métier doit être dans les skills.
 
-Un workflow peut être exécuté par Hermes comme procédure. LangGraph reste une option future pour formaliser les workflows complexes si Hermes ne suffit plus.
+---
 
-## 2.5 Knowledge policy
+## 2.3 Workflows
 
-Pantheon ne stocke pas nécessairement les documents lourds. Il définit leur stratégie.
+text workflows/ 
 
-```text
-knowledge/
-  openwebui_collections.md
-  source_policy.md
-  document_taxonomy.md
-```
+Rôle :
 
-OpenWebUI peut porter les collections documentaires. Pantheon définit les noms, usages, statuts, règles de fiabilité et exclusions.
+- structurer les enchaînements d’actions  
+- orchestrer les agents et les skills  
 
-## 2.6 Memory
+Structure :
 
-Pantheon porte la mémoire validée.
+text workflows/   generic/   architecture/     cctp_review.yaml 
 
-```text
-memory/
-  project/
-    facts.md
-    decisions.md
-    risks.md
-  agency/
-    patterns.md
-    clauses.md
-    preferences.md
-  candidates/
-    pending_facts.md
-    pending_skills.md
-    pending_rules.md
-```
+Contenu :
 
-Hermes peut garder une mémoire opérationnelle. Celle-ci ne devient pas vérité Pantheon sans promotion explicite.
+- étapes  
+- ordre  
+- agents mobilisés  
+- skills utilisées  
+- points de validation  
 
-## 2.7 Hermes integration
+Important :
 
-Module d’intégration vers Hermes Agent.
+Un workflow = une méthode claire.
 
-```text
-hermes/
-  context/
-    pantheon_context.md
-    agents_context.md
-    rules_context.md
-    domain_architecture.md
-  exports/
-    skills/
-    prompts/
-    workflows/
-```
+---
 
-Objectifs : fournir à Hermes les contextes et skills validés, sans redéfinition divergente.
+## 2.4 Domains (overlays métier)
+
+text domains/ 
+
+Rôle :
+
+- spécialiser le système par métier  
+- injecter contexte, règles et contraintes  
+
+Structure :
+
+text domains/   architecture/     overlay.md     workflows/     skills/ 
+
+Contenu :
+
+- règles métier  
+- contraintes réglementaires  
+- conventions  
+
+Important :
+
+Le domaine ne modifie pas les agents.  
+Il influence uniquement skills et workflows.
+
+---
+
+## 2.5 Memory
+
+text memory/ 
+
+Rôle :
+
+- structurer la connaissance du système  
+
+Structure :
+
+text memory/   session/   candidates/   project/   system/ 
+
+### session
+
+- temporaire  
+- non persistée  
+
+### candidates
+
+- persistée  
+- non validée  
+
+### project
+
+- spécifique à un projet  
+- contexte opérationnel  
+
+### system
+
+- globale  
+- validée  
+- réutilisable  
+
+Règle :
+
+Aucune promotion sans validation THEMIS.
+
+---
+
+## 2.6 Knowledge
+
+text knowledge/ 
+
+Rôle :
+
+- définir la stratégie documentaire  
+- organiser OpenWebUI  
+
+Contenu :
+
+- collections  
+- source policy  
+- classification  
+
+Important :
+
+La knowledge n’est pas la mémoire.  
+Elle alimente les skills.
+
+---
+
+## 2.7 Hermes Integration
+
+text hermes/ 
+
+Rôle :
+
+- connecter Pantheon au runtime Hermes  
+
+Structure :
+
+text hermes/   context/     pantheon_context.md     agents_context.md     rules_context.md 
+
+Contenu :
+
+- règles transmises à Hermes  
+- contexte système  
+- contraintes  
+
+Important :
+
+Pantheon ne remplace pas Hermes.  
+Il le pilote.
+
+---
 
 ## 2.8 Operations
 
-Modules d’exploitation documentaire et scripts éventuels :
+text operations/ 
 
-```text
-operations/
-  install.md
-  update.md
-  backup.md
-  doctor.md
-```
+Rôle :
 
-Ces fichiers décrivent les procédures NAS, Portainer, OpenWebUI, Hermes Lab, Ollama LAN, versions et backups.
+- exploitation du système  
+- installation  
+- maintenance  
 
----
+Contenu :
 
-# 3. Skill contract
-
-Chaque skill doit contenir au minimum :
-
-```text
-id
-name
-domain
-status
-purpose
-inputs
-outputs
-agents
-knowledge_sources
-approval_required_if
-risks
-failure_modes
-examples
-tests
-```
-
-`manifest.yaml` doit rester machine-readable. `SKILL.md` doit rester lisible par humain et par Hermes.
-
-Exemple minimal :
-
-```yaml
-id: cctp_audit
-domain: architecture
-status: candidate
-agents:
-  - ATHENA
-  - ARGOS
-  - THEMIS
-  - APOLLO
-approval_required_if:
-  - modifies_source_document
-  - sends_external_message
-  - promotes_memory
-outputs:
-  - diagnostic
-  - inconsistency_table
-  - risks
-  - corrections
-```
+- installation NAS  
+- update  
+- versioning  
+- monitoring  
 
 ---
 
-# 4. Workflow contract
+# 3. Modules legacy
 
-Chaque workflow doit contenir :
+Certains éléments existants sont considérés comme legacy :
 
-```text
-id
-domain
-purpose
-inputs
-steps
-agents
-skills
-knowledge_sources
-outputs
-approval_points
-memory_targets
-fallback
-```
+- runtime FastAPI autonome  
+- module registry  
+- workflow loader  
+- approval API initiale  
+- installer UI  
 
-Un workflow ne doit pas être un prompt long déguisé. Il doit être une procédure structurée.
+Règle :
+
+- ne pas supprimer sans audit  
+- classer  
+- réorienter ou archiver  
 
 ---
 
-# 5. Domain overlay contract
+# 4. Règles de conception
 
-Un overlay doit définir :
+Un module doit :
 
-- périmètre ;
-- règles métier ;
-- sources de référence ;
-- workflows actifs ;
-- skills actives ;
-- templates ;
-- output formats ;
-- règles d’approbation ;
-- règles de mémoire ;
-- exclusions.
-
-Le domaine ne doit pas modifier les agents abstraits. Il les spécialise contextuellement.
+- avoir une responsabilité claire  
+- ne pas dépendre implicitement d’un autre  
+- être documenté  
+- être testable  
 
 ---
 
-# 6. Memory contract
+# 5. Ce qui n’est PAS un module
 
-Toute mémoire Pantheon doit rester :
-
-- sourcée ;
-- datée ;
-- liée à un projet, une agence, une règle ou une skill ;
-- révisable ;
-- rétractable ;
-- différenciée entre candidate et active.
-
-Hermes peut proposer :
-
-- candidate fact ;
-- candidate skill ;
-- candidate rule ;
-- candidate workflow improvement.
-
-Pantheon valide ou rejette.
+text ❌ agent métier ❌ runtime complet ❌ interface UI ❌ base de données métier implicite ❌ logique cachée dans le code 
 
 ---
 
-# 7. Approval contract
+# 6. Flux global
 
-Une action doit être classée avant exécution.
-
-Actions sans approval forte :
-
-- diagnostic ;
-- lecture ;
-- extraction ;
-- brouillon ;
-- proposition.
-
-Actions avec approval :
-
-- modification de fichier ;
-- envoi email ;
-- suppression ;
-- commande shell hors allowlist ;
-- promotion mémoire ;
-- activation skill candidate ;
-- action web à effet de bord ;
-- accès secret, volume sensible ou Docker socket.
-
-Au départ, cette discipline peut être documentaire et opératoire. Un module logiciel peut être conservé ou réorienté si nécessaire après audit.
+text User → OpenWebUI → Pantheon (agents + workflows + skills) → Hermes (exécution) → résultats → mémoire (si validé) 
 
 ---
 
-# 8. OpenWebUI collections
+# 7. Résumé
 
-Collections recommandées :
-
-```text
-pantheon_governance
-architecture_cctp_models
-architecture_dpgf_models
-architecture_contract_clauses
-architecture_plu
-architecture_sdis_erp
-architecture_notices
-software_repo_docs
-```
-
-Chaque collection doit avoir :
-
-- objectif ;
-- types de documents ;
-- statut ;
-- règle de mise à jour ;
-- sources obsolètes ;
-- niveau de fiabilité ;
-- usage autorisé.
+text agents     → raisonnement skills     → métier workflows  → méthode domains    → contexte métier memory     → connaissance validée knowledge  → sources hermes     → exécution operations → exploitation 
 
 ---
 
-# 9. Modules hérités de l’ancien runtime
-
-Le dépôt contient encore des modules et fichiers liés à l’ancienne trajectoire autonome :
-
-- FastAPI apps ;
-- manifests runtime ;
-- workflow loader ;
-- approval API ;
-- Installer UI ;
-- tests contractuels ;
-- registries.
-
-Statut : à réauditer.
-
-Décisions possibles après audit :
-
-- conserver comme utilitaire ;
-- réorienter vers Hermes integration ;
-- archiver ;
-- supprimer ;
-- documenter comme option avancée.
-
-Aucun code ne doit être supprimé avant clarification documentaire et audit de cohérence.
-
----
-
-# 10. Anti-patterns
-
-À éviter :
-
-- module qui réimplémente Hermes sans gain ;
-- skill active non validée ;
-- agent métier figé ;
-- workflow caché dans un prompt ;
-- knowledge OpenWebUI qui remplace les Markdown ;
-- mémoire Hermes promue automatiquement ;
-- plusieurs sources de vérité pour les agents ;
-- duplication d’un scheduler, gateway ou terminal backend sans besoin clair ;
-- accès Docker socket ou secrets sans policy.
-
----
-
-# 11. Règle finale
-
-Un module Pantheon est bon s’il rend le système plus clair, plus gouverné, plus portable ou plus réutilisable.
-
-Un module est mauvais s’il recrée une capacité déjà fournie par Hermes, ajoute une source de vérité concurrente ou masque des effets de bord derrière du prompt engineering.
+FIN DU FICHIER
