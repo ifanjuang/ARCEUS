@@ -12,198 +12,169 @@ They can inform Pantheon only if they improve:
 
 - skill governance;
 - skill creation flow;
-- review discipline;
+- skill review;
 - safety policy;
 - observability;
+- UI/operator experience;
+- memory hygiene;
 - user-controlled learning.
 
 No external skill pack is installed directly in Pantheon production.
 
----
-
-# 2. Source classification
-
-| Source | Classification | Why | Pantheon decision |
-|---|---|---|---|
-| `0xNyk/awesome-hermes-agent` | `integrate_now` as watchlist method | Curated ecosystem map with maturity tags and categories | Use as radar for Hermes ecosystem, not as dependency |
-| `Cranot/super-hermes` | `integrate_later` as analysis pattern | Provides prism-based analysis, blind-spot reporting and constraint reports | Extract the `constraint report` idea into Pantheon review workflows |
-| `Romanescu11/hermes-skill-factory` | `integrate_later` as controlled pattern | Detects repeated workflows and proposes generated skills/plugins | Use only as inspiration for candidate skill proposals, never automatic activation |
+No external repository may bypass Pantheon governance.
 
 ---
 
-# 3. `awesome-hermes-agent`
+# 2. Global decision model
 
-## Problem solved
+| Decision | Meaning |
+|---|---|
+| `integrate_now` | Adopt as documentation or governance pattern now |
+| `integrate_later` | Keep as future implementation pattern |
+| `interesting_not_priority` | Useful idea, not needed for current core |
+| `redundant` | Already covered by Pantheon or Hermes |
+| `risky` | Requires strong sandbox, approval or audit before use |
+| `reject` | Do not import or use |
+| `to_verify` | Insufficient audit; keep in watchlist only |
 
-Pantheon needs a way to track the Hermes ecosystem without installing random community skills.
+---
 
-## Retained idea
+# 3. Source classification
 
-Use the repository as a radar:
+| Source | Classification | Retained idea | Pantheon decision | Priority |
+|---|---|---|---|---|
+| `0xNyk/awesome-hermes-agent` | `integrate_now` | Ecosystem radar and maturity watchlist | Use as watchlist method, not dependency | P1 |
+| `Cranot/super-hermes` | `integrate_later` | Constraint reports, blind spots, analysis transparency | Extract pattern into review workflows | P2 |
+| `Romanescu11/hermes-skill-factory` | `integrate_later` | Candidate skill proposal from repeated workflows | Proposal only; no active auto-generation | P1 docs / P2 implementation |
+| `AMAP-ML/SkillClaw` | `risky` | Request interception, session pattern mining, skill evolution | Inspiration only; no proxy/interception in Pantheon core | P3 |
+| `longyunfeigu/learn-hermes-agent` | `integrate_now` | Pedagogical system map of agent loop, tools, memory, skills, safety | Use as reference for Pantheon docs and developer onboarding | P1 |
+| `pyrate-llama/hermes-ui` | `interesting_not_priority` | Operator UI: logs, memory inspection, skills browser, cron, MCP, file browser | Useful UI inspiration; do not replace OpenWebUI now | P3 |
+| `ChuckSRQ/awesome-hermes-skills` | `integrate_later` | Artifact preview, deep research lenses, behavioral benchmarks, GitHub workflow skills | Extract benchmarks/review patterns only | P2 |
+| `Yonkoo11/hermes-dojo` | `risky` | Skill performance monitoring and weakness reports | Keep measurement/reporting; reject overnight auto-fix | P2/P3 |
+| `swarmclawai/swarmclaw` | `interesting_not_priority` | Control plane, visual agents, task board, approvals, eval lab, skill drafting | Strong inspiration for future operator console; not current runtime | P3 |
+| `zzyong24/skills-judgment` | `integrate_later` | Skill health scoring, probation, exile, graveyard, reversible quarantine | Adopt as future skill lifecycle pattern with human approval | P2 |
+| `nexus9888/hermes-memory-skills` | `integrate_later` | Memory dreaming, candidate extraction, lean memory check | Adapt to Pantheon memory, but no automatic promotion | P1/P2 |
+| `Lethe044/hermes-incident-commander` | `risky` | Incident workflow: detect, triage, diagnose, remediate, verify, learn | Use workflow anatomy only; reject autonomous infra remediation for Pantheon | P3 |
+| `thedavidweng/skills` | `integrate_later` | Wiki hygiene, document generation, code entropy reduction, source integrity | Extract wiki/source hygiene and document-as-source patterns | P2 |
 
-- maturity categories;
-- skill registries;
-- plugins;
-- deployment tools;
-- GUI tools;
-- memory tools;
-- multi-agent experiments.
+---
 
-## Markdown impact
+# 4. Retained patterns
+
+## 4.1 Ecosystem radar
+
+Source:
+
+```text
+0xNyk/awesome-hermes-agent
+```
+
+Retained idea:
+
+- track Hermes ecosystem;
+- classify maturity;
+- avoid random community skill installation;
+- identify useful patterns before implementation.
+
+Pantheon impact:
 
 | File | Section |
 |---|---|
 | `EXTERNAL_WATCHLIST.md` | Hermes ecosystem watch |
 | `hermes/skill_policy.md` | Community skills and external repository classification |
-| `ROADMAP.md` | Optional future Hermes ecosystem review cycle |
+| `ROADMAP.md` | Optional future ecosystem review cycle |
 
-## Architecture impact
+Code impact: none now.
 
-Low.
-
-No runtime change.
-
-## Code impact
-
-None.
-
-## Risks
-
-- catalogue bloat;
-- temptation to install too many skills;
-- unstable community repos;
-- duplication with Hermes Skills Hub.
-
-## Priority
-
-P1 for watchlist method.
+Risk: catalogue bloat.
 
 ---
 
-# 4. `super-hermes`
+## 4.2 Constraint reports
 
-## Problem solved
-
-Pantheon needs better analysis transparency: not only findings, but also what the analysis did not cover.
-
-## Retained idea
-
-Add a constraint report to deep reviews.
-
-A constraint report should state:
+Sources:
 
 ```text
-analysis focus
-maximized dimension
-sacrificed dimension
-blind spots
-recommended follow-up workflow
-confidence limits
+Cranot/super-hermes
+ChuckSRQ/awesome-hermes-skills
 ```
 
-## Pantheon adaptation
+Retained idea:
 
-Do not import prism skills directly.
+A deep review should not only state findings. It should also state what was not checked.
 
-Instead, create a general review capability later:
+Required output pattern:
+
+```text
+analysis_focus
+maximized_dimension
+sacrificed_dimension
+blind_spots
+confidence_limits
+recommended_follow_up
+```
+
+Pantheon adaptation:
 
 ```text
 domains/general/skills/analysis_constraint_report/
-```
-
-Potential workflow integration:
-
-```text
 domains/general/workflows/deep_review.yaml
 ```
 
-## Markdown impact
+Code impact: later only.
 
-| File | Section |
-|---|---|
-| `MODULES.md` | Skill review and workflow review outputs |
-| `AGENTS.md` | APOLLO / PROMETHEUS / HECATE responsibilities |
-| `hermes/skill_policy.md` | Meta-reasoning policy |
-
-## Architecture impact
-
-Medium.
-
-Adds quality discipline to review workflows.
-
-## Code impact
-
-None now.
-
-Later: tests for required `constraint_report` output field in review workflows.
-
-## Risks
-
-- verbose outputs;
-- false sense of depth;
-- model-dependent quality;
-- possible over-analysis for simple tasks.
-
-## Priority
-
-P2.
-
-Useful after the first real skills exist.
+Risk: verbose outputs and false sense of depth.
 
 ---
 
-# 5. `hermes-skill-factory`
+## 4.3 Candidate skill proposal
 
-## Problem solved
-
-Pantheon needs a way to convert repeated workflows into reusable skills without losing governance.
-
-## Retained idea
-
-Detect repeated workflows and propose skills.
-
-## Rejected behavior
-
-Automatic write into active skill folders is rejected.
-
-Automatic plugin creation is rejected for Pantheon production.
-
-## Pantheon adaptation
-
-Allowed flow:
+Sources:
 
 ```text
-repeated workflow detected
+Romanescu11/hermes-skill-factory
+AMAP-ML/SkillClaw
+Yonkoo11/hermes-dojo
+swarmclawai/swarmclaw
+```
+
+Retained idea:
+
+Repeated workflows can produce candidate skill proposals.
+
+Rejected behavior:
+
+- automatic active skill creation;
+- automatic plugin creation;
+- automatic skill patching;
+- request interception without explicit consent;
+- background rewrite of active skills.
+
+Pantheon-approved flow:
+
+```text
+observed pattern
 → candidate proposal
 → name check
 → duplicate check
-→ Hermes built-in / optional skill check
+→ Hermes skill check
 → privacy check
 → review
 → human validation
 → create candidate files
+→ promote only after validation
 ```
 
-Generated skill files must start as candidates.
-
-## Markdown impact
+Pantheon impact:
 
 | File | Section |
 |---|---|
-| `hermes/skill_policy.md` | Skill factory policy |
-| `MEMORY.md` | Candidate memory and skill updates |
+| `MEMORY.md` | Candidate memory |
 | `MODULES.md` | Skill lifecycle |
-| `ROADMAP.md` | Candidate skill creation workflow |
+| `hermes/skill_policy.md` | Skill factory policy |
+| `ROADMAP.md` | Capability creation workflow |
 
-## Architecture impact
-
-Medium.
-
-This strengthens the `domains/general` layer.
-
-## Code impact
-
-Later only:
+Future code/files:
 
 ```text
 domains/general/skills/skill_design/
@@ -213,40 +184,262 @@ domains/general/skills/hermes_skill_check/
 domains/general/workflows/capability_creation.yaml
 ```
 
-## Risks
-
-- skill spam;
-- poor names;
-- duplicated skills;
-- privacy leaks from real sessions;
-- uncontrolled plugin generation;
-- silent self-modification.
-
-## Priority
-
-P1 for documented candidate flow.
-
-P2 for implementation.
+Risk: skill spam, duplicates, privacy leaks.
 
 ---
 
-# 6. Final decision
+## 4.4 Skill health and quarantine
 
-| Idea | Decision |
+Sources:
+
+```text
+zzyong24/skills-judgment
+Yonkoo11/hermes-dojo
+```
+
+Retained idea:
+
+Skills need lifecycle discipline: usage, freshness, completeness, relationships, failures and reversibility.
+
+Pantheon adaptation:
+
+```text
+active
+candidate
+probation
+quarantine
+archived
+rejected
+```
+
+Allowed actions:
+
+- mark as candidate;
+- mark as probation;
+- mark as quarantine;
+- propose archive;
+- propose deletion.
+
+Rejected actions:
+
+- automatic deletion;
+- automatic exile without review;
+- automatic promotion;
+- automatic patching of active skills.
+
+Pantheon should prefer reversible states.
+
+Future files:
+
+```text
+domains/general/skills/skill_health_check/
+domains/general/workflows/skill_review.yaml
+```
+
+Risk: over-managing small skill libraries before there are enough skills.
+
+Priority: P2 after first domain skills exist.
+
+---
+
+## 4.5 Memory hygiene
+
+Sources:
+
+```text
+nexus9888/hermes-memory-skills
+thedavidweng/skills
+```
+
+Retained idea:
+
+Memory should be lean, verified and linked to durable sources instead of becoming a raw transcript archive.
+
+Pantheon adaptation:
+
+- candidate extraction is allowed;
+- memory trimming is allowed;
+- source integrity checks are allowed;
+- broken reference detection is allowed;
+- automatic memory promotion is rejected.
+
+Approved cycle:
+
+```text
+session material
+→ candidates
+→ privacy check
+→ review
+→ project or system memory
+```
+
+Pantheon impact:
+
+| File | Section |
 |---|---|
-| Ecosystem radar | Keep now |
-| Maturity classification | Keep now |
-| Constraint reports | Integrate later |
-| Prism skills | Inspiration only |
-| Automatic skill generation | Reject as direct behavior |
-| Candidate skill proposals | Keep later |
-| Automatic plugin generation | Reject for production |
+| `MEMORY.md` | Candidate memory, promotion, privacy |
+| `hermes/skill_policy.md` | Automatic memory promotion risk |
+| `ROADMAP.md` | Memory hygiene workflow |
+
+Future files:
+
+```text
+domains/general/skills/memory_candidate_review/
+domains/general/skills/memory_lean_check/
+domains/general/workflows/memory_review.yaml
+```
+
+Risk: leaking real project/private data into system memory.
+
+Priority: P1 documentation, P2 implementation.
 
 ---
 
-# 7. Pantheon rule
+## 4.6 Operator UI and observability
+
+Sources:
+
+```text
+pyrate-llama/hermes-ui
+swarmclawai/swarmclaw
+```
+
+Retained idea:
+
+An operator should see:
+
+- skills;
+- memory;
+- logs;
+- cron jobs;
+- MCP tools;
+- running jobs;
+- failed runs;
+- pending approvals;
+- evals;
+- context pressure.
+
+Pantheon decision:
+
+Do not build UI now.
+
+Keep this as future inspiration for a Pantheon operator console.
+
+Potential future:
+
+```text
+operations/operator_console.md
+```
+
+Risk: UI work before the domain model is stable.
+
+Priority: P3.
+
+---
+
+## 4.7 Workflow anatomy and training references
+
+Sources:
+
+```text
+longyunfeigu/learn-hermes-agent
+Lethe044/hermes-incident-commander
+ChuckSRQ/awesome-hermes-skills
+```
+
+Retained idea:
+
+Good workflows expose their phases explicitly.
+
+Useful phase patterns:
+
+```text
+detect → triage → diagnose → act → verify → report → learn
+measure → identify weakness → propose fix → review → validate → report
+research → multi-lens analysis → synthesis → open questions
+```
+
+Pantheon adaptation:
+
+Use these as anatomy references for workflows, not as runtime imports.
+
+Risk:
+
+- importing highly autonomous remediation patterns too early;
+- giving agents external action rights before approval gates exist.
+
+Priority: P2 for workflow templates.
+
+---
+
+# 5. Explicit rejections
+
+Pantheon rejects these behaviors unless a future policy explicitly authorizes them:
+
+- installing external skill packs directly into production;
+- giving external skills unrestricted file access;
+- giving external skills unrestricted terminal access;
+- proxying or intercepting requests without explicit user approval;
+- automatic active skill generation;
+- automatic active skill patching;
+- automatic memory promotion;
+- autonomous infrastructure remediation;
+- automatic deletion of skills;
+- direct wallet, payment or signing operations;
+- public posting from agents without approval.
+
+---
+
+# 6. Required review before adoption
+
+Before any retained idea becomes a Pantheon capability, the review must define:
+
+| Field | Required |
+|---|---|
+| Problem solved | yes |
+| Target Markdown file | yes |
+| Target section | yes |
+| Architecture impact | yes |
+| Code impact | yes |
+| Security risk | yes |
+| Privacy risk | yes |
+| Rollback path | yes |
+| Human validation | yes |
+
+---
+
+# 7. Priority synthesis
+
+## P1 — integrate in documentation now
+
+- Hermes ecosystem radar.
+- Candidate skill proposal policy.
+- Memory hygiene doctrine.
+- Reversible skill lifecycle states.
+
+## P2 — implement after core domain skills exist
+
+- `skill_health_check`.
+- `memory_candidate_review`.
+- `analysis_constraint_report`.
+- `capability_creation.yaml`.
+- behavioral benchmark templates.
+
+## P3 — later / not current core
+
+- operator console;
+- SwarmClaw-style control plane;
+- autonomous incident workflows;
+- UI for cron/MCP/skills/memory;
+- proxy-based skill evolution.
+
+---
+
+# 8. Final rule
 
 ```text
 External repositories can teach Pantheon how to govern skills.
 They cannot bypass Pantheon governance.
 ```
+
+Pantheon may learn from the Hermes ecosystem, but every retained pattern must become a documented Pantheon rule before it becomes code.
