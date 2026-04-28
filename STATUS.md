@@ -15,8 +15,8 @@ Pantheon OS adopte une trajectoire Hermes-backed.
 
 ```text
 OpenWebUI = interface chat + knowledge documentaire
-Hermes Agent = runtime agentique + skills + tools + scheduler + doctor + gateway + mémoire opérationnelle
-Pantheon OS = Domain Operating Layer + agents abstraits + workflows + skills contracts + mémoire validée + gouvernance
+Hermes Agent = runtime agentique + skills + tools + scheduler + gateway + mémoire opérationnelle
+Pantheon OS = Domain Operating Layer + agents abstraits + domain packages + workflows + skills contracts + mémoire validée + gouvernance
 ```
 
 Formule de conception :
@@ -27,8 +27,6 @@ Hermes exécute.
 OpenWebUI expose et retrouve.
 ```
 
-Cette décision remplace la trajectoire antérieure où Pantheon devait devenir un runtime agentique autonome complet.
-
 ---
 
 # 2. État global
@@ -36,11 +34,12 @@ Cette décision remplace la trajectoire antérieure où Pantheon devait devenir 
 | Élément | Statut | Commentaire |
 |---|---|---|
 | Pivot Hermes-backed | ✅ Fait | Direction validée : Pantheon Domain Layer + Hermes + OpenWebUI |
-| README produit | ✅ À mettre / aligner | README doit rester vision/compréhension, non duplicatif avec `MODULES.md` |
+| README produit | ✅ Aligné | Version simplifiée, non redondante avec `MODULES.md` |
+| MODULES.md | ✅ Aligné | Domain packages, triage, naming, privacy, lifecycle, XP |
+| ARCHITECTURE.md | ✅ Aligné Hermes | Tient compte des concepts Hermes : AIAgent loop, prompt assembly, provider runtime, tool registry, session storage, gateways, cron, optional skills |
+| Hermes skill policy | ✅ Créée | `hermes/skill_policy.md` ajouté |
 | AGENTS.md | 🔄 À mettre à jour | Panthéon étendu validé conceptuellement ; agents abstraits, non métier |
-| MODULES.md | 🔄 À mettre à jour | Doit détailler modules réels : agents, skills, workflows, domains, memory, knowledge, hermes, operations |
 | MEMORY.md | ⬜ À créer | Nouveau fichier de référence : session / candidates / project / system |
-| ARCHITECTURE.md | 🔄 À aligner | Doit décrire architecture réelle : OpenWebUI / Pantheon / Hermes + legacy |
 | Branche code post-pivot | ✅ Créée | `work/chatgpt/hermes-code-rewrite` |
 | PR draft | ✅ Ouverte | PR #50 : `WIP: rewrite API around Hermes-backed domain layer` |
 | Nouvelle API Domain Layer | ✅ Première passe | `platform/api/pantheon_domain/*` + `platform/api/main.py` |
@@ -48,9 +47,8 @@ Cette décision remplace la trajectoire antérieure où Pantheon devait devenir 
 | Tests Domain Layer | 🔄 Écrits, non exécutés ici | `tests/test_domain_layer_api.py` ajouté, exécution locale/CI à faire |
 | Hermes Agent | ⬜ Non installé | À tester plus tard en Hermes Lab isolé |
 | OpenWebUI Knowledge Strategy | ⬜ À faire | Collections et source policy à créer |
-| Skills métier | 🔄 À formaliser | Première priorité : `quote_vs_cctp_analysis` / `quote_vs_cctp_review` |
+| Skills métier | 🔄 À formaliser | Première priorité : `devis_cctp` / `devis_cctp_review` |
 | Mémoire validée Pantheon | 🔄 Modèle clarifié | Quatre niveaux actés : session, candidates, project, system |
-| Installer UI existante | ⚠️ Legacy à classer | À réorienter vers Hermes Lab / NAS preflight si conservée |
 
 ---
 
@@ -58,16 +56,21 @@ Cette décision remplace la trajectoire antérieure où Pantheon devait devenir 
 
 ## 3.1 Documentation
 
-Statut : 🔄 En cours de réalignement fin.
+Statut : 🔄 En cours de réalignement final.
 
-Décisions déjà actées dans la conversation :
+Déjà aligné :
 
-- README doit être orienté produit/vision, sans duplication détaillée de `MODULES.md`.
-- `AGENTS.md` doit intégrer le panthéon étendu.
-- `MODULES.md` doit détailler le découpage fonctionnel réel.
-- `MEMORY.md` doit être créé pour formaliser session / candidates / project / system.
-- `ARCHITECTURE.md` doit rester technique et décrire les responsabilités réelles.
-- Les agents restent abstraits ; le métier est porté par skills, workflows, knowledge et memory.
+- `README.md` ;
+- `MODULES.md` ;
+- `ARCHITECTURE.md` ;
+- `hermes/skill_policy.md`.
+
+À finaliser :
+
+- `AGENTS.md` avec panthéon étendu ;
+- `MEMORY.md` ;
+- `ROADMAP.md` si nécessaire ;
+- `AI_LOG.md` à compléter après chaque intervention.
 
 ## 3.2 Code nouveau
 
@@ -99,31 +102,37 @@ Endpoints principaux :
 
 Statut : ⚠️ Présent, non supprimé.
 
-Le dépôt contient encore les éléments de l’ancienne architecture autonome :
+Éléments legacy à auditer :
 
 - `platform/api/apps/*` ;
 - `modules.yaml` ;
 - registries ;
 - workflow loader ;
-- `TaskDefinition` / `WorkflowDefinition` legacy ;
 - module `approvals` legacy ;
 - migration Alembic `approval_requests` ;
 - Installer UI ;
 - tests contractuels legacy.
 
-Ces éléments sont classés dans `/domain/legacy` comme composants à auditer :
-
-- `fastapi_runtime` ;
-- `module_registry` ;
-- `workflow_loader` ;
-- `approval_api` ;
-- `installer_ui`.
-
 Aucune suppression n’a été faite.
 
 ---
 
-# 4. Panthéon retenu
+# 4. Décisions Hermes intégrées
+
+Statut : ✅ Acté dans `ARCHITECTURE.md` et `hermes/skill_policy.md`.
+
+Décisions :
+
+- Pantheon ne duplique pas le runtime Hermes.
+- Avant de créer une skill Pantheon, vérifier les skills Hermes built-in et optional.
+- Les community skills ne servent que d’inspiration tant qu’elles ne sont pas reviewées.
+- Une skill Pantheon peut wrapper une skill Hermes, mais doit garder la gouvernance : inputs, outputs, privacy, approval, memory impact, risques.
+- Les tools risqués Hermes doivent être policy-gated : terminal, browser, web actions, MCP, file mutation, scheduler, gateways, credentials, external APIs.
+- Les contextes envoyés à Hermes doivent rester des exports contrôlés, pas la source de vérité.
+
+---
+
+# 5. Panthéon retenu
 
 Statut : 🔄 À inscrire dans `AGENTS.md`.
 
@@ -153,7 +162,7 @@ Règle : aucun agent métier. Le métier est injecté par skills, workflows, dom
 
 ---
 
-# 5. Modèle mémoire retenu
+# 6. Modèle mémoire retenu
 
 Statut : 🔄 À formaliser dans `MEMORY.md`.
 
@@ -172,17 +181,9 @@ Cycle :
 SESSION → CANDIDATES → validation THEMIS → PROJECT ou SYSTEM
 ```
 
-Agents mémoire :
-
-- ZEUS / ATHENA : mémoire session ;
-- ARGOS : alimentation candidates ;
-- THEMIS : validation ;
-- HESTIA : mémoire project ;
-- MNEMOSYNE : mémoire system.
-
 ---
 
-# 6. Premier use case métier prioritaire
+# 7. Premier use case métier prioritaire
 
 Statut : ✅ Priorisé conceptuellement, ⬜ fichiers à créer.
 
@@ -191,30 +192,20 @@ Use case : analyse de devis vis-à-vis d’un CCTP.
 Skill cible :
 
 ```text
-quote_vs_cctp_analysis
+devis_cctp
 ```
 
 Workflow cible :
 
 ```text
-quote_vs_cctp_review
+devis_cctp_review
 ```
 
-Agents mobilisés :
-
-- ATHENA : méthode ;
-- ARGOS : extraction CCTP / devis ;
-- HEPHAESTUS : cohérence technique ;
-- DEMETER : quantités / économie ;
-- THEMIS : périmètre, responsabilité, validation ;
-- PROMETHEUS : pièges et contradictions ;
-- APOLLO : validation finale ;
-- IRIS : message client/entreprise si nécessaire ;
-- ZEUS : arbitrage.
+Rappel privacy : les exemples et tests seront fictifs et non traçables.
 
 ---
 
-# 7. Tests
+# 8. Tests
 
 Statut : ⚠️ Non exécutés dans cette intervention.
 
@@ -236,55 +227,33 @@ Puis, si le legacy doit rester importable :
 pytest
 ```
 
-Points de vigilance :
-
-- dépendances FastAPI / Pydantic / pytest / httpx à vérifier dans l’environnement ;
-- ancien code susceptible d’avoir des imports devenus non utilisés ;
-- CI non vérifiée ;
-- pas de test Docker exécuté.
-
 ---
 
-# 8. Chantiers immédiats
+# 9. Chantiers immédiats
 
-## P0 — Mettre à jour les Markdown structurants
+## P0 — Finaliser les Markdown structurants
 
 À faire :
 
-- remplacer `README.md` par une version produit/vision ;
 - remplacer `AGENTS.md` par la version panthéon étendu ;
-- remplacer `MODULES.md` par la version découpage fonctionnel ;
 - créer `MEMORY.md` ;
-- réaligner `ARCHITECTURE.md` ;
-- mettre `ROADMAP.md` en cohérence si nécessaire.
+- mettre `ROADMAP.md` en cohérence si nécessaire ;
+- compléter `AI_LOG.md`.
 
-## P0 — Tester la première couche Domain Layer
-
-À faire :
-
-- lancer `pytest tests/test_domain_layer_api.py` ;
-- lancer l’API localement ;
-- vérifier `/health` ;
-- vérifier `/domain/snapshot` ;
-- vérifier `/domain/approval/classify` ;
-- corriger imports ou dépendances si nécessaire.
-
-## P0/P1 — Créer les dossiers contractuels Markdown
+## P0 — Créer le noyau `domains/general`
 
 À créer :
 
 ```text
-agents/
-domains/architecture/
-skills/
-workflows/
-memory/session/
-memory/candidates/
-memory/project/
-memory/system/
-knowledge/
-hermes/context/
-operations/
+domains/general/domain.md
+domains/general/skills/name_check/
+domains/general/skills/change_request_triage/
+domains/general/skills/skill_design/
+domains/general/skills/workflow_design/
+domains/general/skills/hermes_skill_check/
+domains/general/workflows/capability_creation.yaml
+domains/general/workflows/change_request_triage.yaml
+domains/general/workflows/method_before_code.yaml
 ```
 
 ## P1 — Formaliser le premier use case réel
@@ -292,48 +261,22 @@ operations/
 À créer :
 
 ```text
-skills/architecture/quote_vs_cctp_analysis/SKILL.md
-workflows/architecture/quote_vs_cctp_review.yaml
-domains/architecture/overlay.md
+domains/architecture/domain.md
+domains/architecture/skills/devis_cctp/SKILL.md
+domains/architecture/skills/devis_cctp/manifest.yaml
+domains/architecture/skills/devis_cctp/UPDATES.md
+domains/architecture/workflows/devis_cctp_review.yaml
 ```
 
-## P1 — Hermes Lab isolé
+## P1 — Tester la première couche Domain Layer
 
 À faire :
 
-- installer Hermes Agent dans un environnement isolé ;
-- ne pas donner accès au Docker socket ;
-- ne pas donner accès aux volumes Pantheon ;
-- ne pas exposer les secrets Pantheon ;
-- tester CLI, doctor, mémoire, skills, Ollama LAN ;
-- documenter les résultats.
-
-## P1 — OpenWebUI Knowledge Strategy
-
-À faire :
-
-- définir collections ;
-- définir source policy ;
-- définir taxonomy ;
-- distinguer documents projet, système, réglementaire, modèle, obsolète.
-
----
-
-# 9. Chantiers ralentis ou dépriorisés
-
-Les éléments suivants ne doivent plus être traités comme cœur prioritaire :
-
-- runtime agentique FastAPI complet ;
-- scheduler maison ;
-- gateway messagerie maison ;
-- terminal backend maison ;
-- runtime skills maison ;
-- dashboard lourd ;
-- marketplace interne ;
-- Browser Tool avant discipline safety ;
-- microservices.
-
-Ils peuvent rester en option, être réorientés ou être archivés après audit.
+- lancer `pytest tests/test_domain_layer_api.py` ;
+- lancer l’API localement ;
+- vérifier `/health` ;
+- vérifier `/domain/snapshot` ;
+- vérifier `/domain/approval/classify`.
 
 ---
 
@@ -342,28 +285,18 @@ Ils peuvent rester en option, être réorientés ou être archivés après audit
 - Ne pas installer Hermes Agent globalement sur le NAS sans isolation.
 - Ne pas donner à Hermes accès aux volumes Pantheon ou au Docker socket au début.
 - Ne pas laisser OpenWebUI devenir source officielle des agents ou de la mémoire validée.
+- Ne pas activer une skill Hermes optional/community sans review Pantheon.
 - Ne pas promouvoir automatiquement une mémoire Hermes dans Pantheon.
-- Ne pas activer une skill générée par Hermes sans validation.
 - Ne pas supprimer l’ancien code avant audit post-pivot.
 - Ne pas merger la PR #50 sans tests locaux.
-- Ne pas laisser `README.md` dupliquer `MODULES.md`.
+- Ne jamais inscrire dans le repo des informations issues de discussions privées ou de projets réels.
 
 ---
 
-# 11. Prochaine action recommandée
+# 11. Résumé final
 
-1. Mettre à jour `README.md`, `AGENTS.md`, `MODULES.md`, `ARCHITECTURE.md`.
-2. Créer `MEMORY.md`.
-3. Lancer `pytest tests/test_domain_layer_api.py`.
-4. Créer le premier vrai use case : `quote_vs_cctp_analysis` + `quote_vs_cctp_review`.
-5. Auditer le legacy avant suppression ou archivage.
+Fiable maintenant : la direction documentaire, le modèle domain package, la première API Domain Layer, la séparation Pantheon/Hermes/OpenWebUI et la policy Hermes skills.
 
----
+Non fiable encore : exécution réelle des tests, création physique des domain packages et alignement complet de `AGENTS.md` / `MEMORY.md`.
 
-# 12. Résumé final
-
-Fiable maintenant : la direction documentaire, la première API Domain Layer et la séparation conceptuelle agents / skills / workflows / memory / knowledge.
-
-Non fiable encore : exécution réelle des tests, compatibilité locale/NAS et alignement complet des Markdown modifiés manuellement dans la conversation.
-
-Prochaine étape logique : écrire les Markdown structurants dans le repo, puis créer le premier workflow réel devis vs CCTP.
+Prochaine étape logique : créer le noyau `domains/general`, puis la première skill métier `devis_cctp`.
