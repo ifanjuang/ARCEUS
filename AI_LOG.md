@@ -486,6 +486,49 @@ Prochaine action recommandée :
 
 ---
 
+### 2026-04-29 — ChatGPT
+
+Branche : `work/chatgpt/hermes-docs-architecture-fr`
+
+Objectif : mettre à jour `ROADMAP.md` avec la roadmap corrigée d’intégration des outils externes, PDF, OpenWebUI extensions, skills, mémoire structurée et self-evolution encadrée.
+
+Modifications :
+
+- Remplacement de `ROADMAP.md` par une version alignée sur la doctrine actuelle.
+- Ajout du principe : Pantheon définit/gouverne, Hermes exécute, OpenWebUI expose, Stirling traite les PDF, les plugins restent sous allowlist.
+- Ajout de `EXTERNAL_TOOLS_POLICY.md` comme prochaine priorité documentaire.
+- Ajout du séquençage strict : compléter `APPROVALS.md`, `EVIDENCE_PACK.md`, `TASK_CONTRACTS.md` avec outils externes, fallback et remediation.
+- Ajout de la stratégie Stirling-PDF comme premier outil externe P1.
+- Ajout des chemins corrigés pour les skills/workflows : `domains/general/...`, `domains/architecture_fr/...`, `domains/software/...`.
+- Ajout des blocs OpenWebUI extensions, Skill Resolver, conventions, Skill Lifecycle, Memory Event Schema, Self-Evolution, Workflow Schema, Hermes allowlists et Remediation Candidate Lane.
+- Suppression des anciens chemins actifs `domains/architecture`, `skills/generic`, `workflows/generic`, `memory/agency` hors mention legacy explicite.
+- Aucun code runtime modifié.
+
+Fichiers critiques touchés :
+
+- `ROADMAP.md`
+- `AI_LOG.md`
+
+Tests lancés :
+
+- Non exécutés. Intervention documentaire uniquement.
+
+Points à vérifier :
+
+- Rechercher les anciens chemins dans `ROADMAP.md` et le dépôt : `domains/architecture`, `skills/generic`, `workflows/generic`, `memory/agency`.
+- Vérifier que `STATUS.md` reste cohérent avec la nouvelle priorité `EXTERNAL_TOOLS_POLICY.md`.
+- Vérifier que `APPROVALS.md`, `TASK_CONTRACTS.md`, `EVIDENCE_PACK.md` seront complétés avant toute intégration Stirling/OpenWebUI/plugin.
+
+Prochaine action recommandée :
+
+1. Créer `EXTERNAL_TOOLS_POLICY.md`.
+2. Compléter `APPROVALS.md` avec outils externes, fallback et remediation.
+3. Compléter `EVIDENCE_PACK.md` avec extended schema, fallback et remediation.
+4. Compléter `TASK_CONTRACTS.md` avec contrats PDF, `fallback_policy` et `remediation_policy`.
+5. Créer `operations/stirling_pdf.md` seulement après le verrouillage documentaire externe.
+
+---
+
 ### YYYY-MM-DD — Claude
 
 Branche :
