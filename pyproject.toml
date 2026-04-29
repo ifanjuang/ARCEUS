@@ -8,7 +8,7 @@ ignore = [
     "E501",   # line too long — géré au cas par cas
     "F401",   # imported but unused — certains imports sont pour side-effects
 ]
-exclude = ["alembic/versions/", "benchmarks/"]
+exclude = ["alembic/versions/", "legacy/"]
 
 [tool.ruff.lint.per-file-ignores]
 # conftest manipulates sys.path before importing modules — required ordering.
