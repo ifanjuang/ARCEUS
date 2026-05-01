@@ -1,12 +1,30 @@
 version: '3.9'
 
-# ── Pantheon OS — MVP Stack ──────────────────────────────────────────
-# Services: OpenWebUI · FastAPI · PostgreSQL+pgvector · Ollama
-# V2 (Redis, MinIO, ARQ workers): see infra/compose/docker-compose.v2.yml
+# ── Pantheon Next — LEGACY MVP WIRING ───────────────────────────────
+# This compose file is kept for local/MVP continuity only.
+# It is NOT the final Pantheon Next deployment model.
+#
+# Legacy wiring in this file:
+# - OpenWebUI points to the local FastAPI `/v1` compatibility path.
+# - OpenWebUI and Pantheon currently share the same `pantheon` PostgreSQL DB.
+# - The `api` service is the Pantheon Domain API plus legacy MVP apps.
+#
+# Target wiring documented in governance:
+#   OpenWebUI → Hermes Agent Gateway → Pantheon Context Pack / Domain API
+#
+# Before production/self-hosted refactor, split this into dedicated stacks:
+# - Pantheon Domain API
+# - Hermes Lab / Gateway
+# - OpenWebUI bridge
+# - separated OpenWebUI and Pantheon databases
+#
+# V2 legacy infra notes: Redis, MinIO and ARQ workers were previously planned
+# under infra/compose/docker-compose.v2.yml and must be revalidated before use.
 
 services:
 
-  # ── PostgreSQL + pgvector ─────────────────────────────────────────
+  # ── PostgreSQL + pgvector — legacy shared MVP DB ──────────────────
+  # Target model: separate OpenWebUI and Pantheon databases.
   db:
     image: pgvector/pgvector:pg16
     environment:
@@ -25,7 +43,9 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # ── FastAPI — Hermes Runtime API ──────────────────────────────────
+  # ── FastAPI — Pantheon Domain API + legacy MVP apps ───────────────
+  # This service must not be treated as the final Hermes Runtime API.
+  # It exposes the Domain Layer, context export and legacy MVP endpoints.
   api:
     build:
       context: .
@@ -50,7 +70,9 @@ services:
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload --workers 1
     restart: unless-stopped
 
-  # ── OpenWebUI — Chat interface ────────────────────────────────────
+  # ── OpenWebUI — legacy MVP chat interface wiring ─────────────────
+  # Legacy: points to `api:8000/v1`.
+  # Target: point OpenWebUI to Hermes Agent Gateway, not Pantheon API.
   openwebui:
     image: ghcr.io/open-webui/open-webui:v0.5.20
     environment:
