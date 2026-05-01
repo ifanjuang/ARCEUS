@@ -1,8 +1,8 @@
-"""Static repository for Pantheon OS Domain Layer definitions.
+"""Static repository for Pantheon Next Domain Layer definitions.
 
-The repository intentionally starts as an in-code registry. This is simpler and
-safer than binding the new Domain Layer to the previous autonomous runtime before
-the post-pivot audit is complete.
+The repository intentionally starts as an in-code bootstrap registry. This is
+simpler and safer than binding the new Domain Layer to the previous autonomous
+runtime before the post-pivot audit is complete.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ from .contracts import (
 
 
 class DomainLayerRepository:
-    """Read-only source of Pantheon definitions for API exposure."""
+    """Read-only source of Pantheon Next definitions for API exposure."""
 
     def snapshot(self) -> DomainLayerSnapshot:
         return DomainLayerSnapshot(
@@ -120,11 +120,11 @@ class DomainLayerRepository:
             AgentDefinition(
                 id="mnemosyne",
                 name="MNEMOSYNE",
-                role="Mémoire agence, patterns et capitalisation.",
+                role="Mémoire système, patterns et capitalisation.",
                 responsibilities=["Identifier les méthodes réutilisables.", "Proposer patterns, clauses et templates."],
                 limits=["Ne généralise pas sans validation.", "Ne reçoit pas le bruit projet."],
-                activation_triggers=["pattern réutilisable", "clause", "template", "préférence agence"],
-                output_contract=["agency_memory_candidates", "generalization_rationale"],
+                activation_triggers=["pattern réutilisable", "clause", "template", "règle système"],
+                output_contract=["system_memory_candidates", "generalization_rationale"],
             ),
             AgentDefinition(
                 id="iris",
@@ -199,7 +199,7 @@ class DomainLayerRepository:
             SkillDefinition(
                 id="source_check",
                 name="Vérification des sources",
-                domain="generic",
+                domain="general",
                 purpose="Distinguer source fiable, source obsolète, hypothèse, inférence et information non supportée.",
                 agents=["argos", "apollo", "themis"],
                 inputs=["claims", "sources"],
@@ -211,7 +211,7 @@ class DomainLayerRepository:
             SkillDefinition(
                 id="client_message",
                 name="Message client",
-                domain="generic",
+                domain="general",
                 purpose="Rédiger un message clair, humain, proportionné et juridiquement prudent sans changer le fond validé.",
                 agents=["iris", "themis", "apollo"],
                 inputs=["facts", "recipient", "tone", "risk_level"],
@@ -245,19 +245,19 @@ class DomainLayerRepository:
             WorkflowDefinition(
                 id="memory_promotion",
                 name="Promotion mémoire",
-                domain="generic",
+                domain="general",
                 purpose="Transformer une information candidate en mémoire Pantheon validée, ou la rejeter.",
                 steps=["Identifier source", "Qualifier scope", "Vérifier conflit", "Demander validation", "Promouvoir ou rejeter"],
                 agents=["hestia", "mnemosyne", "argos", "themis", "zeus"],
                 skills=["source_check"],
                 approval_points=[ActionKind.MEMORY_PROMOTION],
-                memory_targets=["memory/project", "memory/agency", "memory/candidates"],
+                memory_targets=["memory/project", "memory/system", "memory/candidates"],
                 fallback="Conserver comme candidate non active.",
             ),
             WorkflowDefinition(
                 id="skill_promotion",
                 name="Promotion skill",
-                domain="generic",
+                domain="general",
                 purpose="Évaluer une skill candidate avant activation officielle.",
                 steps=["Lire SKILL.md", "Vérifier manifest", "Vérifier exemples", "Vérifier risques", "Valider ou archiver"],
                 agents=["athena", "themis", "apollo", "hephaestus"],
@@ -280,8 +280,8 @@ class DomainLayerRepository:
                 rejection_rule="Bruit, hypothèse non supportée, doublon ou information périmée.",
             ),
             MemoryStoreDefinition(
-                id="agency_memory",
-                name="Mémoire agence",
+                id="system_memory",
+                name="Mémoire système",
                 owner="mnemosyne",
                 purpose="Patterns, clauses, préférences, méthodes et templates réutilisables.",
                 accepted_entries=["patterns", "clauses", "preferences", "templates"],
@@ -307,7 +307,7 @@ class DomainLayerRepository:
                 purpose="Markdown de référence, règles de gouvernance, doctrine agents, modules et mémoire.",
                 accepted_documents=["README", "ARCHITECTURE", "AGENTS", "MODULES", "ROADMAP", "STATUS", "AI_LOG"],
                 excluded_documents=["drafts non validés", "logs bruts non synthétisés"],
-                reliability_rule="Les six Markdown de référence prévalent sur tout autre document.",
+                reliability_rule="Les Markdown de gouvernance prévalent sur tout autre document.",
             ),
             KnowledgeCollectionDefinition(
                 id="architecture_fr_cctp_models",
