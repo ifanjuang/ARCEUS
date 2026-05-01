@@ -37,6 +37,7 @@ This policy applies to:
 - OCR tools;
 - workflow frameworks;
 - memory frameworks;
+- graph memory frameworks;
 - runtime authority systems;
 - budget / cost-control systems;
 - self-evolution systems;
@@ -60,6 +61,7 @@ GBrain
 BrainAPI2
 AgentScope
 Cycles / runcycles
+Omnigraph
 Hermes self-evolution
 OCRmyPDF
 Gotenberg
@@ -181,6 +183,7 @@ Baseline mapping:
 | Hermes plugin install | C3 |
 | MCP server install | C3/C4 |
 | memory plugin install | C4 |
+| graph memory runtime install | C4 |
 | runtime authority integration | C4 |
 | autonomy plugin install | C5 |
 | secrets access | C5 |
@@ -588,6 +591,68 @@ Potential Pantheon reuse:
 - add `budget_scope`, `risk_scope`, `action_scope` and `reservation_id` fields to future Evidence Packs;
 - add `ALLOW`, `ALLOW_WITH_CAPS`, `DENY` as possible runtime decision vocabulary under Pantheon approval policy;
 - use Cycles only as optional local sandbox infrastructure if a real execution-cost problem appears.
+
+## 10.9 Omnigraph
+
+```yaml
+tool_name: Omnigraph
+repository: ModernRelay/omnigraph
+license: to_verify
+type: graph_database_memory_graph_search_runtime_server_runtime
+status: watch
+maturity: emerging
+data_classification: internal_or_project_sensitive_if_tested
+local_only: true
+network_exposure: none_or_LAN_only_if_tested
+auth_required: true_if_server
+sandbox_required: true
+file_access: none_by_default
+network_access: none_by_default
+memory_access: none_by_default
+secrets_access: forbidden
+shell_access: forbidden
+side_effects:
+  - may_store_typed_graph_memory
+  - may_create_branches_and_merges
+  - may expose server runtime
+  - may store searchable project context
+approval_level: C0_for_conceptual_review_C3_for_local_sandbox_C4_if_memory_runtime_C5_if_public_or_secret_access
+allowed_usage:
+  - memory_event_schema_inspiration
+  - graph_memory_model_inspiration
+  - branch_merge_memory_candidate_pattern
+  - hybrid_search_RRF_inspiration
+  - lineage_query_model_inspiration
+  - future_local_sandbox_only_after_license_and_security_review
+forbidden_usage:
+  - replace_pantheon_memory_policy
+  - become_pantheon_source_of_truth_now
+  - install_with_curl_pipe_bash_without_review
+  - store_real_project_documents_without_policy
+  - expose_server_publicly
+  - bypass_Evidence_Pack_or_C3_memory_promotion
+  - replace_MEMORY_md_EVIDENCE_PACK_md_or_TASK_CONTRACTS_md
+rollback_plan: documentation_only_now; future_sandbox_remove_server_storage_keys_and_network_bindings
+review_frequency: before_any_sandbox_then_quarterly_if_retained
+last_reviewed: 2026-05-01
+default_decision: conceptual_only_watch
+```
+
+Pantheon interpretation:
+
+```text
+Omnigraph is useful as a pattern for typed graph memory, candidate branches, lineage queries and future hybrid retrieval.
+It is not Pantheon memory authority.
+It must not replace MEMORY.md, EVIDENCE_PACK.md, TASK_CONTRACTS.md or APPROVALS.md.
+```
+
+Potential Pantheon reuse:
+
+- model `memory/candidates` as branch-like proposals before validation;
+- define typed graph nodes for Actor, Document, Decision, Risk, TaskContract, EvidencePack, Tool, Approval and MemoryCandidate;
+- define lineage queries for claim → source → tool → role → task contract → Evidence Pack;
+- inform future `MEMORY_EVENT_SCHEMA.md` and graph memory work;
+- keep hybrid search / RRF as P2/P3 inspiration only.
 
 ---
 
