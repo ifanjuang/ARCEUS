@@ -1,0 +1,225 @@
+# Pantheon Next model routing example
+#
+# This file is an example policy configuration.
+# It does not make Pantheon a model router.
+# OpenWebUI exposes available providers and presets.
+# Hermes executes model calls while respecting this policy.
+
+version: 0.1.0
+mode: single_ollama_instance
+
+# Supported modes:
+# - single_ollama_instance
+# - multi_ollama_instance
+
+instances:
+  default:
+    provider: ollama
+    base_url: http://ollama:11434
+    openwebui_prefix: ""
+    local_only: true
+    data_policy: private_data_allowed
+    notes: "Default single Ollama instance used by OpenWebUI."
+
+  # Example multi-instance setup. Keep disabled until actually configured in OpenWebUI.
+  nas:
+    enabled: false
+    provider: ollama
+    base_url: http://ollama-nas:11434
+    openwebui_prefix: "nas/"
+    local_only: true
+    data_policy: private_data_allowed
+
+  gpu:
+    enabled: false
+    provider: ollama
+    base_url: http://ollama-gpu:11434
+    openwebui_prefix: "gpu/"
+    local_only: true
+    data_policy: private_data_allowed
+
+  remote:
+    enabled: false
+    provider: ollama
+    base_url: http://ollama-remote:11434
+    openwebui_prefix: "remote/"
+    local_only: false
+    data_policy: public_data_only
+
+fallback_defaults:
+  C0: use_fallback_with_warning
+  C1: use_fallback_with_warning
+  C2: use_fallback_with_warning
+  C3: degrade_to_draft_only
+  C4: stop_and_request_manual_review
+  C5: block
+
+agents:
+  athena:
+    role: planning
+    openwebui_preset_name: "ATHENA Planner"
+    preferred_model: qwen3:14b
+    fallback_models:
+      - llama3.1:8b
+      - mistral:7b
+    required_capabilities:
+      - reasoning
+      - planning
+      - structured_output
+    if_unavailable: use_fallback_with_warning
+    max_criticality_without_manual_review: C3
+
+  argos:
+    role: extraction
+    openwebui_preset_name: "ARGOS Extractor"
+    preferred_model: llama3.1:8b
+    fallback_models:
+      - mistral:7b
+      - qwen3:14b
+    required_capabilities:
+      - extraction
+      - source_discipline
+      - low_latency
+    if_unavailable: use_fallback_with_warning
+    max_criticality_without_manual_review: C3
+
+  themis:
+    role: risk_policy
+    openwebui_preset_name: "THEMIS Risk Check"
+    preferred_model: qwen3:14b
+    fallback_models:
+      - llama3.1:8b
+    required_capabilities:
+      - reasoning
+      - policy_review
+      - contradiction_check
+    if_unavailable: stop_and_request_manual_review
+    max_criticality_without_manual_review: C3
+
+  apollo:
+    role: validation
+    openwebui_preset_name: "APOLLO Validator"
+    preferred_model: deepseek-r1:14b
+    fallback_models:
+      - qwen3:14b
+      - llama3.1:8b
+    required_capabilities:
+      - validation
+      - contradiction_check
+      - source_discipline
+    if_unavailable: stop_and_request_manual_review
+    max_criticality_without_manual_review: C3
+
+  iris:
+    role: communication
+    openwebui_preset_name: "IRIS Communication"
+    preferred_model: mistral:7b
+    fallback_models:
+      - llama3.1:8b
+      - qwen3:14b
+    required_capabilities:
+      - style_control
+      - summarization
+    if_unavailable: use_fallback_with_warning
+    max_criticality_without_manual_review: C3
+
+  hestia:
+    role: project_memory_context
+    openwebui_preset_name: "HESTIA Project Memory"
+    preferred_model: llama3.1:8b
+    fallback_models:
+      - qwen3:14b
+    required_capabilities:
+      - extraction
+      - source_discipline
+      - structured_output
+    if_unavailable: degrade_to_diagnostic_only
+    max_criticality_without_manual_review: C3
+
+  mnemosyne:
+    role: system_memory_patterns
+    openwebui_preset_name: "MNEMOSYNE System Memory"
+    preferred_model: qwen3:14b
+    fallback_models:
+      - llama3.1:8b
+    required_capabilities:
+      - reasoning
+      - structured_output
+      - validation
+    if_unavailable: stop_and_request_manual_review
+    max_criticality_without_manual_review: C3
+
+  hephaestus:
+    role: technical_review
+    openwebui_preset_name: "HEPHAESTUS Technical Review"
+    preferred_model: qwen3:14b
+    fallback_models:
+      - llama3.1:8b
+    required_capabilities:
+      - reasoning
+      - coding
+      - contradiction_check
+    if_unavailable: use_fallback_with_warning
+    max_criticality_without_manual_review: C3
+
+  prometheus:
+    role: adversarial_challenge
+    openwebui_preset_name: "PROMETHEUS Challenge"
+    preferred_model: qwen3:14b
+    fallback_models:
+      - deepseek-r1:14b
+      - llama3.1:8b
+    required_capabilities:
+      - contradiction_check
+      - reasoning
+    if_unavailable: stop_and_request_manual_review
+    max_criticality_without_manual_review: C3
+
+  zeus:
+    role: arbitration
+    openwebui_preset_name: "ZEUS Arbitration"
+    preferred_model: qwen3:14b
+    fallback_models:
+      - deepseek-r1:14b
+      - llama3.1:8b
+    required_capabilities:
+      - reasoning
+      - planning
+      - validation
+    if_unavailable: stop_and_request_manual_review
+    max_criticality_without_manual_review: C3
+
+criticality_rules:
+  C0:
+    allowed_fallback: true
+    evidence_required: false
+  C1:
+    allowed_fallback: true
+    evidence_required: false
+  C2:
+    allowed_fallback: true
+    evidence_required: true
+  C3:
+    allowed_fallback: conditional
+    evidence_required: true
+    fallback_limit: draft_or_candidate_only
+  C4:
+    allowed_fallback: false
+    evidence_required: true
+    manual_review_required: true
+  C5:
+    allowed_fallback: false
+    evidence_required: true
+    manual_review_required: true
+    default_behavior: block
+
+evidence_trace_fields:
+  - requested_agent
+  - preferred_model
+  - actual_model
+  - instance_id
+  - fallback_used
+  - fallback_reason
+  - criticality
+  - output_limitations
+  - manual_review_required
