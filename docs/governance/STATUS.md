@@ -67,8 +67,9 @@ uncontrolled plugin installation
 | `OPENWEBUI_DOMAIN_MAPPING.md` | ✅ Added | Maps Pantheon domains to OpenWebUI Knowledge, Models and operator Skills |
 | `MODEL_ROUTING_POLICY.md` | ✅ Added | Defines Ollama/OpenWebUI/Hermes model routing policy without a Pantheon router |
 | `EXTERNAL_TOOLS_POLICY.md` | ✅ Done | Defines external tool classification and allowlist policy |
-| `EXTERNAL_RUNTIME_OPTIONS.md` | ✅ Added | Classifies LangChain, Langflow, OpenClaw, Symphony, Graphify, CTX, Binderly, NeverWrite and related options |
+| `EXTERNAL_RUNTIME_OPTIONS.md` | ✅ Added | Classifies external runtime/framework options without authorizing integration |
 | `EXTERNAL_AI_OPTION_REVIEWS.md` | ✅ Added | Classifies AnimoCerebro and Caliber/ai-setup |
+| `EXTERNAL_MEMORY_RUNTIME_REVIEWS_OPENCONCHO_HONCHO.md` | ✅ Added | Classifies OpenConcho/Honcho as watch/test-only memory options, rejected for core |
 | `KNOWLEDGE_TAXONOMY.md` | ✅ Done | Defines Knowledge layers, reliability levels and source tiers |
 | `knowledge/registry.example.yaml` | ✅ Added | Example registry maps OpenWebUI Knowledge Bases to domains, tiers, privacy, freshness and evidence rules |
 | `CODE_AUDIT_POST_PIVOT.md` | ✅ Added | Initial register for legacy/runtime component classification |
@@ -87,7 +88,8 @@ uncontrolled plugin installation
 | `domains/software` | 🔄 Targeted | Audit/governance domain to verify in repo |
 | `adaptive_orchestration` skill | ✅ Candidate | Created under `domains/general/skills/adaptive_orchestration/` |
 | `project_context_resolution` skill | ✅ Candidate | Created under `domains/general/skills/project_context_resolution/` |
-| OpenWebUI Knowledge Strategy | 🔄 Example added | Registry example exists; live OpenWebUI validation and Knowledge Selection still pending |
+| `knowledge_selection` skill | ✅ Candidate | Created under `domains/general/skills/knowledge_selection/` |
+| OpenWebUI Knowledge Strategy | 🔄 Example + candidate skill added | Registry example and Knowledge Selection candidate exist; live OpenWebUI validation still pending |
 | Validated Pantheon memory | 🔄 Model clarified | Levels: session, candidates, project, system; runtime incomplete |
 | Legacy FastAPI runtime | ⚠️ Legacy to audit | Existing autonomous runtime components must not be deleted without audit |
 | Tests | ⚠️ Not executed here | Local/CI execution still required |
@@ -122,6 +124,7 @@ Documented components:
 | Manual OpenWebUI setup | ✅ Documented | `operations/openwebui_manual_setup.md` |
 | Model routing policy | ✅ Documented | `MODEL_ROUTING_POLICY.md` + `config/model_routing.example.yaml` |
 | Knowledge Registry example | ✅ Added | `knowledge/registry.example.yaml` |
+| Knowledge Selection candidate skill | ✅ Candidate | `domains/general/skills/knowledge_selection/` |
 | Hermes integration boundary | ✅ Documented | `HERMES_INTEGRATION.md` |
 | Hermes `pantheon-os` skill template | ✅ Added | `hermes/templates/pantheon-os/` |
 | Pantheon Context Pack | ✅ First static implementation | `GET /runtime/context-pack` |
@@ -141,7 +144,7 @@ Planned or incomplete:
 | Run Graph | ⬜ Planned | Display agents, consultations, warnings, vetoes and approvals |
 | Hermes Result Scorecard | ⬜ Planned | Source, execution, scope, governance and reuse confidence |
 | Live Knowledge Registry | ⬜ Planned | Validate the example registry against live OpenWebUI Knowledge names and metadata |
-| Knowledge Selection candidate skill | ⬜ Planned | Select Knowledge sources under Task Contract and source-tier constraints |
+| Hermes context exports | 🔄 In parallel | Claude is expected to work under `hermes/context/`; not yet reflected here until merged |
 
 Not implemented yet:
 
@@ -154,7 +157,7 @@ memory promotion runtime
 automated PR workflow
 Notion connector
 live Knowledge Registry sync
-Knowledge Selection candidate skill
+Hermes retrieval preflight using knowledge_selection
 ```
 
 ---
@@ -188,12 +191,16 @@ docs/governance/MODEL_ROUTING_POLICY.md
 docs/governance/EXTERNAL_TOOLS_POLICY.md
 docs/governance/EXTERNAL_RUNTIME_OPTIONS.md
 docs/governance/EXTERNAL_AI_OPTION_REVIEWS.md
+docs/governance/EXTERNAL_MEMORY_RUNTIME_REVIEWS_OPENCONCHO_HONCHO.md
 docs/governance/KNOWLEDGE_TAXONOMY.md
 docs/governance/CODE_AUDIT_POST_PIVOT.md
 docs/governance/WORKFLOW_SCHEMA.md
 docs/governance/SKILL_LIFECYCLE.md
 docs/governance/MEMORY_EVENT_SCHEMA.md
 knowledge/registry.example.yaml
+domains/general/skills/adaptive_orchestration/
+domains/general/skills/project_context_resolution/
+domains/general/skills/knowledge_selection/
 operations/openwebui_hermes_pantheon.md
 operations/openwebui_manual_setup.md
 operations/doctor.md
@@ -209,6 +216,7 @@ CODE_AUDIT_POST_PIVOT.md must be completed by real tree audit.
 Domain folder contents must be verified against MODULES.md.
 OpenWebUI/Hermes live wiring remains to verify outside the repo docs.
 Knowledge Registry example must be validated against live OpenWebUI Knowledge Base names.
+Hermes context exports must be synchronized after Claude's work lands.
 ```
 
 ### 4.2 Code
@@ -291,13 +299,14 @@ Use system memory, not agency memory.
 Memory promotion is at least C3 and requires Evidence Pack review.
 OpenWebUI Knowledge is not Pantheon memory.
 Hermes local memory is not Pantheon memory.
+OpenConcho/Honcho conclusions are not Pantheon memory.
 ```
 
 ---
 
 ## 6. Knowledge / document strategy
 
-Status: 🔄 Example registry added, live wiring incomplete.
+Status: 🔄 Example registry and candidate selection skill added, live wiring incomplete.
 
 Current target:
 
@@ -319,14 +328,17 @@ OPENWEBUI_INTEGRATION.md
 OPENWEBUI_DOMAIN_MAPPING.md
 operations/openwebui_manual_setup.md
 knowledge/registry.example.yaml
+domains/general/skills/knowledge_selection/
 ```
 
 Current status:
 
 ```text
 knowledge/registry.example.yaml exists.
+domains/general/skills/knowledge_selection/ exists as candidate.
 live knowledge/registry.yaml is not created yet.
-Knowledge Selection candidate skill is not created yet.
+live OpenWebUI Knowledge Base validation is not done yet.
+Hermes retrieval preflight mapping is not implemented yet.
 ```
 
 Registry example covers:
@@ -351,6 +363,7 @@ Existing candidate skills:
 ```text
 domains/general/skills/adaptive_orchestration/
 domains/general/skills/project_context_resolution/
+domains/general/skills/knowledge_selection/
 ```
 
 Status: ✅ Candidate.
@@ -358,7 +371,7 @@ Status: ✅ Candidate.
 Next general-domain target:
 
 ```text
-knowledge_selection
+markdown_quality_check or openwebui_plugin_review
 ```
 
 Status: ⬜ Not created yet.
@@ -389,6 +402,7 @@ Current external classification docs:
 EXTERNAL_TOOLS_POLICY.md
 EXTERNAL_RUNTIME_OPTIONS.md
 EXTERNAL_AI_OPTION_REVIEWS.md
+EXTERNAL_MEMORY_RUNTIME_REVIEWS_OPENCONCHO_HONCHO.md
 ```
 
 Classified options include:
@@ -400,6 +414,16 @@ OpenWebUI extensions
 Hermes plugins
 Cycles / runcycles
 Omnigraph
+RAGFlow
+Thoth
+kontext-brain-ts
+Kanwas
+AKS Reference Server
+AgentRQ
+opencode-loop
+six-hats-skill
+OpenConcho
+Honcho
 LangChain / LangGraph
 Langflow
 OpenClaw
@@ -418,12 +442,16 @@ Rules:
 ```text
 Unknown external tools are blocked until classified.
 External runtimes may assist Pantheon but must not become Pantheon.
+External memory runtimes may be studied but must not become Pantheon Memory.
 OpenClaw and AnimoCerebro are not Pantheon core.
 LangChain/LangGraph are only allowed as Hermes-side library options later.
 Langflow is lab-only.
 Caliber is test_read_only and inspiration for Doctor/config parity.
 Symphony is watch/rejected_for_core and inspiration for lifecycle/workspace/proof-of-work only.
 Graphify is test_read_only for possible repo/docs graph audit.
+RAGFlow is optional test_read_only Knowledge/RAG engine, not memory or runtime authority.
+Thoth is inspiration_only/rejected_for_core.
+OpenConcho/Honcho are memory UX/benchmark inspirations only, rejected for core.
 ```
 
 ---
@@ -487,16 +515,18 @@ Do not reactivate the autonomous runtime path by accident.
 20. ✅ `operations/openwebui_manual_setup.md` added.
 21. ✅ `operations/doctor.md` added.
 22. ✅ `knowledge/registry.example.yaml` added.
+23. ✅ `domains/general/skills/knowledge_selection/` added as candidate.
+24. ✅ `EXTERNAL_MEMORY_RUNTIME_REVIEWS_OPENCONCHO_HONCHO.md` added.
 
 ### P1 — next documentation/contracts
 
-1. Create Knowledge Selection candidate skill.
+1. Review Claude's Hermes context export PR when it lands, then synchronize STATUS/ROADMAP if needed.
 2. Run the Doctor checklist manually against the current tree.
 3. Run `pytest tests/test_api_smoke.py` locally or in CI.
-4. Create Hermes context exports under `hermes/context/`.
-5. Create/verify domain package rule files: `rules.md`, `knowledge_policy.md`, `output_formats.md`.
-6. Create first `architecture_fr` skill/workflow: `quote_vs_cctp_review`.
-7. Validate `knowledge/registry.example.yaml` against live OpenWebUI Knowledge Base names, then decide whether to create `knowledge/registry.yaml`.
+4. Validate `knowledge/registry.example.yaml` against live OpenWebUI Knowledge Base names, then decide whether to create `knowledge/registry.yaml`.
+5. Define Hermes retrieval preflight mapping for `knowledge_selection`.
+6. Create/verify domain package rule files: `rules.md`, `knowledge_policy.md`, `output_formats.md`.
+7. Create first `architecture_fr` skill/workflow: `quote_vs_cctp_review`.
 8. Complete `CODE_AUDIT_POST_PIVOT.md` from a real tree audit.
 9. Define OpenWebUI Router Pipe specification.
 10. Define OpenWebUI Actions specification.
@@ -511,6 +541,7 @@ Do not reactivate the autonomous runtime path by accident.
 6. Evaluate whether `pantheon_runtime` should be renamed or documented as context export only.
 7. Consider a read-only `operations/doctor.py` only after C3 approval.
 8. Implement live Knowledge Registry sync only after policy and approval flow are stable.
+9. Consider Memory Candidate Review UX only after memory doctrine and approvals are stable.
 
 ---
 
@@ -532,6 +563,7 @@ Do not reactivate the autonomous runtime path by accident.
 | Public Hermes Dashboard exposure | Active risk | Local-only unless auth/VPN and explicit approval |
 | Model fallback misuse | Active risk | `MODEL_ROUTING_POLICY.md` forbids silent C4/C5 fallback |
 | External runtime drift | Active risk | `EXTERNAL_RUNTIME_OPTIONS.md` + `EXTERNAL_AI_OPTION_REVIEWS.md` |
+| External memory drift | Active risk | OpenConcho/Honcho rejected for core; no memory backend added |
 | Doctor used as auto-fixer | Active risk | `operations/doctor.md` is read-only and report-only |
 | Knowledge Registry treated as live config too early | Active risk | Current file is example-only until live OpenWebUI validation |
 
@@ -553,8 +585,10 @@ OpenWebUI integration doctrine
 OpenWebUI domain mapping
 model routing policy
 external tools/runtime/AI option policies
+external memory runtime option review
 Knowledge taxonomy
 Knowledge Registry example
+Knowledge Selection candidate skill
 README diagram asset registry
 adaptive_orchestration candidate skill
 project_context_resolution candidate skill
@@ -572,6 +606,7 @@ Partial:
 Domain Layer API
 Knowledge strategy live wiring
 Hermes pantheon-os skill installation
+Hermes context exports
 OpenWebUI router/actions
 legacy runtime classification
 architecture_fr workflows
@@ -589,7 +624,7 @@ memory promotion runtime
 skill promotion runtime
 Notion connector
 live Knowledge Registry
-Knowledge Selection candidate skill
+Hermes retrieval preflight using knowledge_selection
 completed post-pivot code audit
 Doctor automation
 ```
@@ -597,5 +632,5 @@ Doctor automation
 Next logical step:
 
 ```text
-Create the Knowledge Selection candidate skill.
+Review Claude's Hermes context export PR when it lands, then run the read-only Doctor checklist.
 ```
