@@ -1,83 +1,15 @@
-"""Runtime-facing read-only context export routes for Pantheon Next.
+"""Backward-compatible shim for context export routes.
 
-This package is named `pantheon_runtime` for backward compatibility, but it must
-not become an execution runtime. It only exposes context exports for Hermes,
-OpenWebUI and governance diagnostics.
+New imports must use `pantheon_context.router`.
+
+This module remains only to avoid abrupt breakage for any legacy internal import
+that still references `pantheon_runtime.router`. It must not grow new routes,
+execution logic, task execution, tool calls, workflow execution or memory
+promotion.
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from pantheon_context.router import get_context_pack, router
 
-router = APIRouter(prefix="/runtime", tags=["context-export"])
-
-
-@router.get("/context-pack")
-def get_context_pack() -> dict:
-    """Return a compact static orientation pack for Hermes and OpenWebUI."""
-
-    return {
-        "project": "Pantheon Next",
-        "mode": "hermes_backed_domain_layer",
-        "status": "planned_interaction_layer_partial_api",
-        "doctrine": "Pantheon Next defines and canonizes. Hermes operates and proposes. OpenWebUI routes, displays and asks for validation.",
-        "route_boundary": "read_only_context_export_not_execution_runtime",
-        "truth_files": [
-            "README.md",
-            "ai_logs/README.md",
-            "docs/governance/STATUS.md",
-            "docs/governance/ARCHITECTURE.md",
-            "docs/governance/MODULES.md",
-            "docs/governance/AGENTS.md",
-            "docs/governance/MEMORY.md",
-            "docs/governance/ROADMAP.md",
-        ],
-        "active_rules": [
-            "read_ai_log_before_intervention",
-            "read_status_before_intervention",
-            "docs_before_code",
-            "markdown_source_of_truth",
-            "no_main_push",
-            "branch_required",
-            "candidate_before_active",
-            "ai_log_required_after_intervention",
-            "no_memory_promotion_without_validation",
-            "no_skill_level_up_without_review",
-        ],
-        "domain_packages": [
-            "domains/general",
-            "domains/architecture_fr",
-        ],
-        "memory_levels": [
-            "session",
-            "candidates",
-            "project",
-            "system",
-        ],
-        "knowledge_rules": [
-            "documents_are_knowledge_not_memory",
-            "validated_facts_become_memory_candidates",
-            "no_cross_project_mixing_without_approval",
-            "knowledge_selection_required_for_ambiguous_requests",
-        ],
-        "planned_components": [
-            "OpenWebUI Router Pipe",
-            "OpenWebUI Actions",
-            "Hermes pantheon-os local skill",
-            "ConsultationRequest and ConsultationResult",
-            "Evidence Pack",
-            "Run Graph",
-            "Knowledge Registry",
-            "Project Context Resolution",
-            "Notion candidate sync policy",
-        ],
-        "recommended_entrypoint": "Hermes Pantheon Operator",
-        "limitations": [
-            "static_context_pack",
-            "read_only_endpoint",
-            "context_export_only",
-            "does_not_execute_tasks",
-            "does_not_replace_reference_markdowns",
-            "does_not_prove_capability_is_implemented",
-        ],
-    }
+__all__ = ["get_context_pack", "router"]

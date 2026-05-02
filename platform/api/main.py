@@ -12,8 +12,8 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from pantheon_context.router import router as context_router
 from pantheon_domain.router import router as domain_router
-from pantheon_runtime.router import router as runtime_router
 
 app = FastAPI(
     title="Pantheon Next Domain Layer API",
@@ -40,7 +40,7 @@ app.add_middleware(
 )
 
 app.include_router(domain_router)
-app.include_router(runtime_router)
+app.include_router(context_router)
 
 
 @app.get("/health", tags=["system"])
