@@ -34,6 +34,7 @@ The runtime must not treat these documents as decorative notes. They drive devel
 | `OPENWEBUI_DOMAIN_MAPPING.md` | Mapping policy between Pantheon canonical domains and OpenWebUI Knowledge Bases, Workspace Models and operator Skills |
 | `MODEL_ROUTING_POLICY.md` | Model selection policy for OpenWebUI presets, Ollama instances, Hermes execution and Pantheon abstract agents |
 | `EXTERNAL_TOOLS_POLICY.md` | Governance for external integrations |
+| `EXTERNAL_RUNTIME_OPTIONS.md` | Classification of optional runtimes, workflow labs, context engines and graph/workspace tools |
 | `KNOWLEDGE_TAXONOMY.md` | Knowledge vs Memory classification |
 | `CODE_AUDIT_POST_PIVOT.md` | Legacy/runtime code classification register |
 | `PRE_REFACTOR_ARCHITECTURE_FINDINGS.md` | Read-only audit synthesis of existing code assets to preserve or reclassify before refactor |
