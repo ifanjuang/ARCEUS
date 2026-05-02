@@ -1,10 +1,15 @@
-"""Runtime-facing read-only routes for Pantheon OS."""
+"""Runtime-facing read-only context export routes for Pantheon Next.
+
+This package is named `pantheon_runtime` for backward compatibility, but it must
+not become an execution runtime. It only exposes context exports for Hermes,
+OpenWebUI and governance diagnostics.
+"""
 
 from __future__ import annotations
 
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/runtime", tags=["pantheon-runtime"])
+router = APIRouter(prefix="/runtime", tags=["context-export"])
 
 
 @router.get("/context-pack")
@@ -12,10 +17,11 @@ def get_context_pack() -> dict:
     """Return a compact static orientation pack for Hermes and OpenWebUI."""
 
     return {
-        "project": "Pantheon OS",
+        "project": "Pantheon Next",
         "mode": "hermes_backed_domain_layer",
         "status": "planned_interaction_layer_partial_api",
-        "doctrine": "Pantheon defines and canonizes. Hermes operates and proposes. OpenWebUI routes, displays and asks for validation.",
+        "doctrine": "Pantheon Next defines and canonizes. Hermes operates and proposes. OpenWebUI routes, displays and asks for validation.",
+        "route_boundary": "read_only_context_export_not_execution_runtime",
         "truth_files": [
             "README.md",
             "ai_logs/README.md",
@@ -69,6 +75,8 @@ def get_context_pack() -> dict:
         "limitations": [
             "static_context_pack",
             "read_only_endpoint",
+            "context_export_only",
+            "does_not_execute_tasks",
             "does_not_replace_reference_markdowns",
             "does_not_prove_capability_is_implemented",
         ],
