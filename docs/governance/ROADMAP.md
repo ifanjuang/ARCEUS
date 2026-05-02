@@ -83,12 +83,13 @@ docs/governance/MEMORY_EVENT_SCHEMA.md
 docs/governance/VERSIONS.md
 ```
 
-Operational docs:
+Operational and asset docs:
 
 ```text
 operations/openwebui_hermes_pantheon.md
 operations/openwebui_manual_setup.md
 operations/doctor.md
+docs/assets/README.md
 ```
 
 Rules:
@@ -118,6 +119,14 @@ Pantheon-Next/
     YYYY-MM-DD-slug.md
 
   docs/
+    assets/
+      README.md
+      pantheon-next-overview.png
+      pantheon-governed-flow.png
+      pantheon-hermes-contract.png
+      pantheon-agent-roles.png
+      pantheon-knowledge-vs-memory.png
+      pantheon-repository-map.png
     governance/
       README.md
       STATUS.md
@@ -178,6 +187,7 @@ Pantheon-Next/
     system/
 
   knowledge/
+    registry.example.yaml
     registry.yaml
     source_tiers.md
     freshness_policy.md
@@ -231,6 +241,7 @@ Completed:
 
 ```text
 README.md
+docs/assets/README.md
 docs/governance/README.md
 STATUS.md
 ROADMAP.md
@@ -253,6 +264,7 @@ MEMORY_EVENT_SCHEMA.md
 operations/openwebui_hermes_pantheon.md
 operations/openwebui_manual_setup.md
 operations/doctor.md
+knowledge/registry.example.yaml
 ```
 
 Also completed or started:
@@ -263,6 +275,7 @@ API smoke tests under tests/test_api_smoke.py
 local Hermes pantheon-os template under hermes/templates/pantheon-os/
 candidate skill domains/general/skills/adaptive_orchestration/
 candidate skill domains/general/skills/project_context_resolution/
+README Lucid diagram sources registered under docs/assets/README.md
 ```
 
 P0 guardrail:
@@ -283,21 +296,20 @@ Turn the documentation baseline into a verifiable, minimal operating setup witho
 
 Priority order:
 
-1. Run the read-only Doctor checklist against the repository tree.
-2. Execute API smoke tests locally or in CI:
+1. Create Knowledge Selection candidate skill:
+
+```text
+domains/general/skills/knowledge_selection/
+```
+
+2. Run the read-only Doctor checklist against the repository tree.
+3. Execute API smoke tests locally or in CI:
 
 ```text
 pytest tests/test_api_smoke.py
 ```
 
-3. Create Knowledge Registry example:
-
-```text
-knowledge/registry.example.yaml
-```
-
-4. Create Knowledge Selection candidate skill.
-5. Create Hermes context exports:
+4. Create Hermes context exports:
 
 ```text
 hermes/context/pantheon_context.md
@@ -310,7 +322,8 @@ hermes/context/architecture_fr_context.md
 hermes/context/software_context.md
 ```
 
-6. Verify or document `PANTHEON_CONTEXT_URL` consumption by Hermes.
+5. Verify or document `PANTHEON_CONTEXT_URL` consumption by Hermes.
+6. Validate `knowledge/registry.example.yaml` against live OpenWebUI Knowledge Base names, then decide whether to create `knowledge/registry.yaml`.
 7. Complete domain package rule files if missing:
 
 ```text
@@ -337,6 +350,7 @@ domains/architecture_fr/workflows/quote_vs_cctp_review.yaml
 9. Complete `CODE_AUDIT_POST_PIVOT.md` after real tree audit.
 10. Define OpenWebUI Router Pipe specification.
 11. Define OpenWebUI Actions specification.
+12. Export clean colored README diagrams from Lucid, commit them under `docs/assets/`, then embed them in `README.md`.
 
 ---
 
@@ -367,10 +381,23 @@ Tasks:
 4. Add SearXNG to `EXTERNAL_TOOLS_POLICY.md` if used.
 5. Add Hermes Dashboard as local-only/test under `EXTERNAL_TOOLS_POLICY.md` if used.
 6. Add manual OpenWebUI setup verification after live configuration.
+7. Align live Knowledge names with `knowledge/registry.example.yaml` before creating a real registry.
 
 ---
 
 ## 7. P1 — Domain packages and first useful capabilities
+
+First general-domain target:
+
+```text
+knowledge_selection
+```
+
+Purpose:
+
+```text
+Select the correct Knowledge sources for a task under Pantheon domain, source-tier, privacy, project-scope and freshness constraints.
+```
 
 First architecture_fr target:
 
@@ -381,6 +408,7 @@ quote_vs_cctp_analysis / quote_vs_cctp_review
 Recommended first skills:
 
 ```text
+domains/general/skills/knowledge_selection/
 domains/architecture_fr/skills/quote_vs_cctp_consistency/
 domains/architecture_fr/skills/dpgf_quantity_sanity_check/
 domains/architecture_fr/skills/client_message_safety/
@@ -401,13 +429,28 @@ A Hermes skill is executable capability.
 
 ## 8. P1 — Knowledge Registry
 
-Create:
+Status:
 
 ```text
-knowledge/registry.example.yaml
+knowledge/registry.example.yaml exists.
+knowledge/registry.yaml is not created yet.
 ```
 
-Minimum fields:
+The example registry defines:
+
+```text
+source tiers T0-T5
+reliability levels R0-R5
+privacy levels
+freshness policies
+OpenWebUI Knowledge Base mappings
+allowed use / forbidden use
+evidence requirements
+memory candidate constraints
+anonymized project collection template
+```
+
+Minimum fields for any future live registry entry:
 
 ```text
 id
@@ -427,6 +470,9 @@ Initial mapped Knowledge Bases:
 
 ```text
 pantheon_governance
+pantheon_approvals
+pantheon_task_contracts
+pantheon_evidence_pack
 architecture_fr_cctp_models
 architecture_fr_dpgf_models
 architecture_fr_contract_clauses
@@ -445,6 +491,7 @@ Rules:
 Knowledge is not Memory.
 OpenWebUI Knowledge is source material.
 Memory requires candidate → Evidence Pack → validation.
+Live registry must not be created until OpenWebUI names and source scopes are verified.
 ```
 
 ---
@@ -678,6 +725,7 @@ self-evolution code
 Docker socket
 secrets access
 Doctor auto-fix
+Knowledge auto-sync without approval
 ```
 
 ---
