@@ -1,0 +1,472 @@
+# Quote vs CCTP Review — Tasks
+#
+# Source of truth:
+#   docs/governance/WORKFLOW_SCHEMA.md §4
+#   docs/governance/WORKFLOW_ADAPTATION.md §9 (dependency graph)
+#   docs/governance/TASK_CONTRACTS.md §7.2 (quote_vs_cctp_review)
+#   ../workflow.yaml (this workflow's metadata)
+#
+# Status: Documented / not runtime.
+# Execution mode: dependency_graph.
+# Hermes executes bounded tasks under approved task contract.
+# Pantheon governs; OpenWebUI exposes evidence and approval.
+
+mode: dependency_graph
+
+tasks:
+  # ---------------------------------------------------------------
+  # 1. Resolve project context (read-only).
+  # ---------------------------------------------------------------
+  - id: resolve_project_context
+    description: >
+      Determine whether project context is required. If yes, identify
+      the correct project. Refuse to proceed under cross-project mixing
+      without explicit authorization.
+    role: ATHENA
+    execution_mode: skill
+    assigned_skill: project_context_resolution
+    inputs:
+      - user_request
+      - visible_context
+    optional_inputs:
+      - session_memory
+    dependencies: []
+    outputs:
+      - project_context_result
+    tools_allowed:
+      - read_reference_markdowns
+      - read_project_memory_if_authorized
+    tools_forbidden:
+      - write_memory
+      - external_message
+    memory_scope: session
+    criticity: C0
+    approval_required_if:
+      - project_merge
+      - alias_persistence
+      - low_confidence
+    success_criteria:
+      - project_context_is_resolved_or_marked_not_required
+      - uncertainty_is_visible
+    failure_modes:
+      - ambiguous_project
+      - missing_registry
+      - cross_project_input_without_authorization
+    on_failure:
+      action: stop_with_explicit_reason
+
+  # ---------------------------------------------------------------
+  # 2. Select Knowledge sources (read-only).
+  # ---------------------------------------------------------------
+  - id: select_knowledge_sources
+    description: >
+      Select OpenWebUI Knowledge Bases relevant to this lot and project.
+      Forbid cross-project mixing without authorization.
+    role: ATHENA
+    execution_mode: skill
+    assigned_skill: knowledge_selection
+    inputs:
+      - project_context_result
+      - lot_scope
+    dependencies:
+      - resolve_project_context
+    outputs:
+      - knowledge_selection_report
+    tools_allowed:
+      - read_knowledge_registry
+    tools_forbidden:
+      - cross_project_knowledge_merge_without_authorization
+      - install_knowledge_plugin
+    memory_scope: session
+    criticity: C0
+    success_criteria:
+      - knowledge_bases_selected_for_lot
+      - cross_project_risks_visible
+
+  # ---------------------------------------------------------------
+  # 3. Extract CCTP items (parallel candidate).
+  # ---------------------------------------------------------------
+  - id: extract_cctp_items
+    description: >
+      Extract structured items from the CCTP for the requested lot.
+      Record version, date, source status and chunks consulted.
+    role: ARGOS
+    execution_mode: skill
+    assigned_skill: quote_vs_cctp_consistency
+    inputs:
+      - cctp_document
+      - lot_scope
+      - knowledge_selection_report
+    dependencies:
+      - select_knowledge_sources
+    parallel_group: extraction_pass
+    outputs:
+      - cctp_items
+    tools_allowed:
+      - read_project_documents_under_task_contract
+      - structured_extraction
+    tools_forbidden:
+      - external_message
+      - cross_project_knowledge_merge_without_authorization
+    memory_scope: session
+    criticity: C0
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 4. Extract quote items (parallel candidate).
+  # ---------------------------------------------------------------
+  - id: extract_quote_items
+    description: >
+      Extract structured items from the quote for the requested lot.
+      Record version, date, source status and chunks consulted.
+    role: ARGOS
+    execution_mode: skill
+    assigned_skill: quote_vs_cctp_consistency
+    inputs:
+      - quote_document
+      - lot_scope
+    dependencies:
+      - select_knowledge_sources
+    parallel_group: extraction_pass
+    outputs:
+      - quote_items
+    tools_allowed:
+      - read_project_documents_under_task_contract
+      - structured_extraction
+    tools_forbidden:
+      - external_message
+    memory_scope: session
+    criticity: C0
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 5. Optional DPGF / CCAP cross-check (parallel, only if provided).
+  # ---------------------------------------------------------------
+  - id: extract_dpgf_items
+    description: >
+      Extract DPGF / DQE structured items if provided, for
+      quantitative cross-check.
+    role: DEMETER
+    execution_mode: skill
+    assigned_skill: quote_vs_cctp_consistency
+    inputs:
+      - dpgf_document
+      - lot_scope
+    optional: true
+    dependencies:
+      - select_knowledge_sources
+    parallel_group: extraction_pass
+    outputs:
+      - dpgf_items
+    criticity: C0
+    evidence_required: true
+
+  - id: extract_ccap_items
+    description: >
+      Extract CCAP responsibility-relevant clauses if provided.
+    role: THEMIS
+    execution_mode: skill
+    assigned_skill: quote_vs_cctp_consistency
+    inputs:
+      - ccap_document
+    optional: true
+    dependencies:
+      - select_knowledge_sources
+    parallel_group: extraction_pass
+    outputs:
+      - ccap_clauses
+    criticity: C0
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 6. THEMIS pre-check (parallel-safe).
+  # ---------------------------------------------------------------
+  - id: themis_precheck
+    description: >
+      Initial approval-level classification and forbidden-action
+      check. Detects privacy leaks and cross-project hazards before
+      heavier passes.
+    role: THEMIS
+    execution_mode: agent
+    inputs:
+      - project_context_result
+    dependencies:
+      - resolve_project_context
+    parallel_group: extraction_pass
+    outputs:
+      - initial_approval_level
+      - forbidden_actions
+      - veto_warnings
+    criticity: C1
+
+  # ---------------------------------------------------------------
+  # 7. Match CCTP ↔ quote items (skill core).
+  # ---------------------------------------------------------------
+  - id: match_items
+    description: >
+      Map CCTP items to quote lines. Detect missing, divergent,
+      duplicate and out-of-scope items.
+    role: ARGOS
+    execution_mode: skill
+    assigned_skill: quote_vs_cctp_consistency
+    inputs:
+      - cctp_items
+      - quote_items
+    optional_inputs:
+      - dpgf_items
+      - ccap_clauses
+    dependencies:
+      - extract_cctp_items
+      - extract_quote_items
+    join_policy: wait_required_then_include_optional_if_ready
+    outputs:
+      - matched_items
+      - missing_items
+      - divergent_items
+      - duplicate_items
+      - out_of_scope_items
+    criticity: C1
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 8. Technical risk pass (HEPHAESTUS).
+  # ---------------------------------------------------------------
+  - id: technical_risk_pass
+    description: >
+      Review technical / structural / constructability coherence
+      across matched and divergent items, including inter-lot
+      interfaces.
+    role: HEPHAESTUS
+    execution_mode: agent
+    inputs:
+      - matched_items
+      - divergent_items
+      - missing_items
+    dependencies:
+      - match_items
+    outputs:
+      - technical_risk_flags
+    criticity: C1
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 9. Quantitative risk pass (DEMETER).
+  # ---------------------------------------------------------------
+  - id: quantitative_risk_pass
+    description: >
+      Review unit prices, quantities, units and DPGF coherence.
+    role: DEMETER
+    execution_mode: agent
+    inputs:
+      - matched_items
+      - divergent_items
+      - duplicate_items
+      - out_of_scope_items
+    optional_inputs:
+      - dpgf_items
+    dependencies:
+      - match_items
+    outputs:
+      - quantitative_risk_flags
+    criticity: C1
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 10. Contractual risk pass (THEMIS) — final-check role.
+  # ---------------------------------------------------------------
+  - id: contractual_risk_pass
+    description: >
+      Review contractual clauses, responsibility, missing waivers,
+      penalty references, scope additions without CCTP basis.
+    role: THEMIS
+    execution_mode: agent
+    inputs:
+      - matched_items
+      - divergent_items
+      - out_of_scope_items
+    optional_inputs:
+      - ccap_clauses
+    dependencies:
+      - match_items
+      - themis_precheck
+    outputs:
+      - contractual_risk_flags
+      - clearance_or_veto
+    criticity: C1
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 11. Regulatory freshness check.
+  # ---------------------------------------------------------------
+  - id: regulatory_freshness_check
+    description: >
+      Check the regulatory or normative references cited in CCTP and
+      quote (RE2020, DTU, Eurocodes, NF C 15-100, CCAG, code civil,
+      code de l'urbanisme, etc.) for freshness and applicability.
+    role: HECATE
+    execution_mode: agent
+    inputs:
+      - matched_items
+      - divergent_items
+      - missing_items
+    optional_inputs:
+      - freshness_window
+    dependencies:
+      - match_items
+    outputs:
+      - freshness_flags
+    criticity: C1
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 12. Alternatives / contradictions (PROMETHEUS).
+  # ---------------------------------------------------------------
+  - id: contradictions_pass
+    description: >
+      Surface missing scope, internal contradictions and alternative
+      interpretations not visible in the matching pass.
+    role: PROMETHEUS
+    execution_mode: agent
+    inputs:
+      - matched_items
+      - divergent_items
+      - missing_items
+      - out_of_scope_items
+    dependencies:
+      - match_items
+    outputs:
+      - contradictions
+      - alternative_interpretations
+    criticity: C1
+
+  # ---------------------------------------------------------------
+  # 13. Consolidation (ATHENA).
+  # ---------------------------------------------------------------
+  - id: consolidate_review
+    description: >
+      Consolidate matching, technical, quantitative, contractual and
+      freshness findings into a single structured review object,
+      with hypotheses and limits made explicit.
+    role: ATHENA
+    execution_mode: agent
+    inputs:
+      - matched_items
+      - missing_items
+      - divergent_items
+      - duplicate_items
+      - out_of_scope_items
+      - technical_risk_flags
+      - quantitative_risk_flags
+      - contractual_risk_flags
+      - freshness_flags
+      - contradictions
+    dependencies:
+      - technical_risk_pass
+      - quantitative_risk_pass
+      - contractual_risk_pass
+      - regulatory_freshness_check
+      - contradictions_pass
+    join_policy: wait_all_required
+    outputs:
+      - quote_vs_cctp_consistency_result_draft
+      - hypotheses
+      - limits
+    criticity: C1
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 14. APOLLO gate (final coherence and evidence quality).
+  # ---------------------------------------------------------------
+  - id: apollo_final_gate
+    description: >
+      Final coherence, completeness and evidence-quality check.
+      Decides whether the review is `review_complete`,
+      `needs_more_evidence` or `review_blocked`.
+    role: APOLLO
+    execution_mode: agent
+    inputs:
+      - quote_vs_cctp_consistency_result_draft
+      - clearance_or_veto
+      - hypotheses
+      - limits
+    dependencies:
+      - consolidate_review
+    outputs:
+      - final_quality_status
+      - approval_required
+      - next_safe_action
+      - evidence_pack_draft
+    criticity: C1
+    evidence_required: true
+    approval_required_if:
+      - any_unresolved_veto
+      - any_freshness_flag_unresolved
+      - any_privacy_leak_detected
+
+  # ---------------------------------------------------------------
+  # 15. Compose Evidence Pack (review artifact).
+  # ---------------------------------------------------------------
+  - id: compose_evidence_pack
+    description: >
+      Assemble the Evidence Pack with the canonical and
+      domain-specific fields. No promotion, no canonization.
+    role: APOLLO
+    execution_mode: skill
+    assigned_skill: quote_vs_cctp_consistency
+    inputs:
+      - evidence_pack_draft
+    dependencies:
+      - apollo_final_gate
+    outputs:
+      - evidence_pack
+    criticity: C1
+    evidence_required: true
+
+  # ---------------------------------------------------------------
+  # 16. Optional handoff: client message draft (C4).
+  # ---------------------------------------------------------------
+  - id: handoff_client_message_draft
+    description: >
+      If the user requests a client-facing wording derived from the
+      review, hand off to the `client_message_draft` format and the
+      `client_message_review` task contract. This step is optional
+      and never produces a sent message; the user controls the
+      channel.
+    role: IRIS
+    execution_mode: format_handoff
+    target: domains/architecture_fr/output_formats.md#28-client_message_draft
+    target_task_contract: docs/governance/TASK_CONTRACTS.md#73-client_message_review
+    inputs:
+      - quote_vs_cctp_consistency_result_draft
+    optional: true
+    dependencies:
+      - apollo_final_gate
+    outputs:
+      - client_message_draft_request
+    criticity: C4
+    approval_required_if:
+      - any_external_use_intent_detected
+    forbidden:
+      - auto_send_message
+      - publish_to_third_party_channel
+
+  # ---------------------------------------------------------------
+  # 17. Workflow revision signal (per WORKFLOW_ADAPTATION.md §11).
+  # ---------------------------------------------------------------
+  - id: emit_revision_signal_if_needed
+    description: >
+      Emit a workflow_revision_signal if the review crosses an
+      adaptation threshold (e.g. risk shifts from internal review to
+      external contractual exposure). Triggers ZEUS arbitration; does
+      not apply changes by itself.
+    role: ZEUS
+    execution_mode: control_signal
+    inputs:
+      - final_quality_status
+      - approval_required
+    optional: true
+    dependencies:
+      - apollo_final_gate
+    outputs:
+      - workflow_revision_signal
+    criticity: C0

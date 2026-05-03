@@ -1,0 +1,178 @@
+id: quote_vs_cctp_consistency
+name: Quote vs CCTP Consistency
+domain: architecture_fr
+status: candidate
+version: 0.1.0
+language: en
+
+summary: >
+  Compares a contractor quote against the CCTP (and where relevant the DPGF / programme)
+  and returns a structured review of matched, missing, divergent, duplicate and
+  out-of-scope items, with technical / contractual / quantitative / regulatory risk
+  flags and explicit limits. Review-mode only — never a final contractual position.
+
+lifecycle:
+  state: candidate
+  level: 0
+  xp:
+    validated: 0
+    pending: 0
+  review_required: true
+
+mode: review
+
+task_contract_reference: docs/governance/TASK_CONTRACTS.md#72-quote_vs_cctp_review
+
+inputs:
+  required:
+    - cctp_document
+    - quote_document
+    - lot_scope
+  optional:
+    - dpgf_document
+    - ccap_document
+    - project_context
+    - freshness_window
+    - priority_aspects
+
+outputs:
+  - quote_vs_cctp_consistency_result
+
+capabilities:
+  - cctp_item_extraction
+  - quote_item_extraction
+  - lot_aware_item_matching
+  - divergence_detection
+  - duplicate_detection
+  - out_of_scope_detection
+  - technical_risk_flagging
+  - contractual_risk_flagging
+  - quantitative_risk_flagging
+  - regulatory_freshness_flagging
+  - hypothesis_emission
+  - limit_emission
+  - evidence_pack_assembly
+
+allowed_actions:
+  - read_cctp_text_or_chunks_under_task_contract
+  - read_quote_text_or_chunks_under_task_contract
+  - read_dpgf_or_ccap_when_provided
+  - extract_items_into_structured_form
+  - match_items_by_lot_label_or_normative_reference
+  - emit_candidate_findings_with_source_references
+  - emit_hypotheses_and_limits_explicitly
+  - ask_user_one_targeted_clarification_when_ambiguity_blocks_a_flag
+  - produce_evidence_pack
+
+forbidden_actions:
+  - mark_quote_as_compliant_or_non_compliant_as_final
+  - recommend_payment_or_refusal_as_final
+  - issue_regulatory_validation
+  - sign_or_apply_contractual_position
+  - mutate_pantheon_source_of_truth_files
+  - canonize_finding_as_pantheon_memory
+  - promote_finding_to_project_or_system_memory_automatically
+  - send_anything_to_third_party
+  - mix_two_real_projects_without_explicit_authorization
+  - use_search_snippet_as_evidence
+  - fabricate_cctp_or_quote_reference_when_unknown
+  - drop_themis_or_apollo_from_consuming_workflow
+
+agents_typically_consulted:
+  - ATHENA
+  - ARGOS
+  - HEPHAESTUS
+  - DEMETER
+  - THEMIS
+  - APOLLO
+  - PROMETHEUS
+  - HECATE
+
+knowledge_sources:
+  preferred:
+    - architecture_fr_cctp_models
+    - architecture_fr_dpgf_models
+    - architecture_fr_contract_clauses
+  conditional:
+    - architecture_fr_notices
+    - architecture_fr_sdis_erp
+    - architecture_fr_plu_reference
+  forbidden_by_default:
+    - cross_project_knowledge_bases
+    - public_search_snippets_as_evidence
+
+approval_default:
+  level: C1
+  rationale: review_mode_candidate_output
+  escalation:
+    - condition: drives_file_mutation
+      level: C3
+    - condition: presented_externally_as_position
+      level: C4
+    - condition: includes_legal_or_regulatory_validation_as_final
+      level: forbidden_by_this_skill
+
+memory_impact:
+  default: none
+  candidate_only: true
+  promotion_review_required: true
+  forbidden:
+    - promote_quote_into_reusable_rule
+    - promote_project_specific_clause_into_system_memory_without_review
+    - mix_two_project_memory_scopes_without_explicit_trace_and_approval
+
+evidence_required: true
+evidence_pack_minimum_fields:
+  - files_read
+  - sources_used
+  - documents_used
+  - knowledge_bases_consulted
+  - tools_used
+  - assumptions
+  - unsupported_claims
+  - limitations
+  - outputs
+  - approval_required
+  - next_safe_action
+evidence_pack_domain_specific_fields:
+  - project_documents_used
+  - source_status
+  - version_or_filename
+  - chunks_or_excerpts_consulted
+  - regulatory_references_used
+  - regulatory_freshness_check
+  - risk_flags
+
+confidence_policy:
+  review_complete:
+    action: return_structured_review_with_evidence
+  needs_more_evidence:
+    action: return_structured_review_with_blockers_and_request_more_sources
+  review_blocked:
+    action: stop_with_explicit_reason
+
+privacy:
+  real_project_data_allowed_in_examples: false
+  raw_private_history_allowed_in_output: false
+  examples_must_be_fictional: true
+  cross_project_use: forbidden_by_default
+
+risks:
+  - "Surinterprétation réglementaire si la freshness check est ignorée."
+  - "Confusion review-mode / décision contractuelle si l'output est utilisé hors task contract."
+  - "Fuite de données projet réel dans des exemples ou tests si pas de discipline privacy."
+  - "Bypass THEMIS/APOLLO si la skill est appelée hors du workflow quote_vs_cctp_review."
+
+review:
+  required_before_activation: true
+  required_documents:
+    - docs/governance/SKILL_LIFECYCLE.md
+    - docs/governance/TASK_CONTRACTS.md
+    - docs/governance/EVIDENCE_PACK.md
+    - docs/governance/APPROVALS.md
+    - docs/governance/KNOWLEDGE_TAXONOMY.md
+    - domains/architecture_fr/rules.md
+    - domains/architecture_fr/knowledge_policy.md
+    - domains/architecture_fr/output_formats.md
+
+api_module: null
