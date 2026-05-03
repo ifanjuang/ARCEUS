@@ -164,7 +164,7 @@ governance flow, not by adding code here.
 |---|---:|---|
 | read CCTP / DPGF / CCAP / devis / notices | C0 | `pdf_info_check`, `pdf_text_layer_check` mode |
 | extract facts under task contract | C0 / C1 | depends on whether the output is presented as a fact or a draft |
-| draft client wording for review | C1 | drafted only, not sent |
+| draft client wording for review | **C4** | drafted only, not sent — C4 from the start because it enters the client-communication workflow and must inherit THEMIS / APOLLO / IRIS controls; aligns with `TASK_CONTRACTS.md` §7.3 (`client_message_review`) and `output_formats.md` §2.8 (`client_message_draft`) |
 | compare quote vs CCTP (`quote_vs_cctp_review`) | C1 | review mode, candidate output |
 | produce a contractual position summary | C3+ | persistent internal output; if external, C4 |
 | transmit a client message | C4 | explicit user approval; user controls the channel |

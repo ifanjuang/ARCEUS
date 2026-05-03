@@ -90,13 +90,18 @@ note
 lettre
 email
 rapport
-résumé
+resume
 cctp_review
 dpgf_review
 client_message_draft
 quote_vs_cctp_analysis
 evidence_summary
 ```
+
+Identifiers are ASCII to keep filesystem and validator behavior
+predictable. The human-readable label remains French ("résumé") in prose
+and section headings; the canonical identifier used in filenames, tables
+and code-formatted references is `resume`.
 
 Examples (fictional):
 

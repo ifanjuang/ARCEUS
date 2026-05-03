@@ -153,9 +153,13 @@ annexes (extraits de sources)
 prochaine action sûre
 ```
 
-### 2.5 `résumé`
+### 2.5 `resume` (label: "résumé")
 
 Short summary of a longer document, exchange or workflow run.
+
+Note: the canonical identifier is ASCII (`resume`) so filenames, tables
+and validators stay predictable. The human-readable French label
+"résumé" is used in prose only.
 
 | Field | Value |
 |---|---|
@@ -173,7 +177,7 @@ limites du résumé
 prochaine action sûre
 ```
 
-A `résumé` must not present an interpretation as a fact. If the source
+A `resume` must not present an interpretation as a fact. If the source
 is private, the summary stays project-scoped.
 
 ### 2.6 `cctp_review`
@@ -333,7 +337,7 @@ OpenWebUI approval display. Reference:
 | User asks for a DPGF review | `dpgf_review` |
 | User asks for a quote vs CCTP comparison | `quote_vs_cctp_analysis` |
 | User asks for a written report | `rapport` |
-| User asks for a summary of a long document | `résumé` |
+| User asks for a summary of a long document | `resume` |
 | User asks "what did you do" / "what did you check" | `evidence_summary` |
 | User asks for a letter to a third party | `lettre` |
 | User asks for an email to a third party | `email` |
@@ -351,7 +355,7 @@ status, more limits stated).
 | `lettre` | yes | `project_documents_used`, `regulatory_references_used`, `regulatory_freshness_check` |
 | `email` | yes | same as `lettre` |
 | `rapport` | yes | `project_documents_used`, `regulatory_references_used`, `regulatory_freshness_check`, `before_after_metrics` if applicable |
-| `résumé` | recommended | `source_status` |
+| `resume` | recommended | `source_status` |
 | `cctp_review` | yes | `project_documents_used`, `version_or_filename`, `chunks_or_excerpts_consulted` |
 | `dpgf_review` | yes | `project_documents_used`, `version_or_filename`, `chunks_or_excerpts_consulted` |
 | `client_message_draft` | yes | `project_documents_used`, `recipient_role` (no PII), `risk_notes` |
@@ -371,7 +375,7 @@ Reference: `docs/governance/EVIDENCE_PACK.md` §3,
 | `lettre` | C4 | always external |
 | `email` | C4 | always external |
 | `rapport` | C3 | shared externally → C4 |
-| `résumé` | C0 / C1 | summary used as authoritative → C3 |
+| `resume` | C0 / C1 | summary used as authoritative → C3 |
 | `cctp_review` | C1 | drives a file mutation → C3 |
 | `dpgf_review` | C1 | drives a file mutation → C3 |
 | `client_message_draft` | C4 | always external once approved |
