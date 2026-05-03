@@ -22,6 +22,8 @@ A workflow must stay readable, testable and auditable.
 
 Workflow templates are reusable governed patterns, not fixed rails.
 
+Not every user request requires a workflow. Simple, low-risk requests may be handled through a single Pantheon Role and, when needed, a single bounded skill.
+
 Reference:
 
 ```text
@@ -30,7 +32,66 @@ WORKFLOW_ADAPTATION.md
 
 ---
 
-## 2. Recommended directory structure
+## 2. Single-role path
+
+Some questions do not need workflow orchestration.
+
+Use the single-role path when the task is:
+
+```text
+simple
+low-risk
+non-persistent
+not externally sent
+not memory-promoting
+not file-mutating
+not tool-complex
+not dependent on multiple sources or branches
+```
+
+Examples:
+
+```text
+IRIS reformulates a short message.
+ARGOS extracts one fact from a provided source.
+ATHENA structures a simple plan.
+THEMIS classifies an approval level.
+APOLLO checks a short answer for unsupported claims.
+```
+
+A single-role path may still require an Evidence Pack if the output is consequential.
+
+A single-role path must escalate to a workflow when:
+
+```text
+multiple roles are required
+multiple sources must be reconciled
+external communication is requested
+approval level rises
+memory could be affected
+file mutation is requested
+technical, contractual, financial or regulatory exposure appears
+```
+
+Minimal shape:
+
+```yaml
+single_role_task:
+  id: client_message_tone_review
+  role: IRIS
+  purpose: "Rewrite a short draft without sending it."
+  mode: suggest
+  approval_level: C1
+  evidence_required: false
+  memory_impact: none
+  forbidden_tools:
+    - external_send
+    - memory_write
+```
+
+---
+
+## 3. Recommended directory structure
 
 ```text
 domains/{domain}/workflows/{workflow_id}/
@@ -49,7 +110,7 @@ domains/{domain}/workflows/{workflow_id}/
 
 ---
 
-## 3. Workflow fields
+## 4. Workflow fields
 
 ```yaml
 id: quote_vs_cctp_review
@@ -92,7 +153,7 @@ fallback: keep_as_diagnostic_if_sources_are_incomplete
 
 ---
 
-## 4. Task fields
+## 5. Task fields
 
 ```yaml
 tasks:
@@ -130,7 +191,7 @@ tasks:
 
 ---
 
-## 5. Dependency graph fields
+## 6. Dependency graph fields
 
 For adaptive or dependency-aware workflows, task definitions may also include:
 
@@ -175,13 +236,13 @@ APOLLO validates final evidence and quality.
 
 ---
 
-## 6. Workflow patterns
+## 7. Workflow patterns
 
 Allowed initial patterns:
 
 | Pattern | Use |
 |---|---|
-| `solo` | one bounded task or one agent/skill |
+| `solo` | one bounded task or one role/skill; no workflow graph required |
 | `cascade` | sequential steps with dependencies |
 | `parallel` | independent branches merged at review |
 | `arena` | competing or contradictory analyses before synthesis |
@@ -208,7 +269,7 @@ automatic workflow canonization
 
 ---
 
-## 7. Criticality
+## 8. Criticality
 
 Workflow tasks use C0-C5.
 
@@ -225,7 +286,7 @@ A legacy schema that starts at C1 must be corrected before activation.
 
 ---
 
-## 8. Validation rules
+## 9. Validation rules
 
 A workflow is invalid if:
 
@@ -240,9 +301,16 @@ A workflow is invalid if:
 - adaptive changes bypass `WORKFLOW_ADAPTATION.md`;
 - dependency graph steps have undeclared outputs or unresolved required inputs.
 
+A single-role task is invalid if:
+
+- it is used to hide a multi-role workflow requirement;
+- it includes external action without approval;
+- it mutates files or memory without Task Contract and approval;
+- it bypasses THEMIS or APOLLO when risk requires them.
+
 ---
 
-## 9. Adaptive orchestration
+## 10. Adaptive orchestration
 
 `adaptive_orchestration` may propose workflow changes only as candidate updates unless the change is:
 
@@ -256,6 +324,8 @@ not a memory promotion
 not a skill level-up
 ```
 
+It may also decide that no workflow is needed and that a single-role path is sufficient.
+
 Durable workflow changes require review.
 
 Reference:
@@ -266,7 +336,7 @@ WORKFLOW_ADAPTATION.md
 
 ---
 
-## 10. Evidence
+## 11. Evidence
 
 Every consequential workflow must record:
 
@@ -288,6 +358,8 @@ approval_required
 next_safe_action
 ```
 
+Single-role consequential outputs must still record the evidence needed for their approval level.
+
 Reference:
 
 ```text
@@ -297,10 +369,11 @@ WORKFLOW_ADAPTATION.md
 
 ---
 
-## 11. Final rule
+## 12. Final rule
 
 ```text
-Workflows define method.
+Simple requests may use a single role.
+Workflows define method when orchestration is needed.
 Workflow adaptation defines governed session changes.
 Task contracts frame execution.
 Hermes executes.
