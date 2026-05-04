@@ -86,13 +86,14 @@ Author privacy:         CLEAN (commits via GitHub noreply email)
 Production guard:       PRESENT (settings.py rejects weak prod secrets)
 ```
 
-No critical / high-confidence leak found. The 14 findings are
-**defensive hygiene** items (1 HIGH, 5 MEDIUM, 3 LOW, 2 UNKNOWN
-GitHub-side, 3 governance gaps).
+No critical / high-confidence leak found. The 15 findings are
+**defensive hygiene** items (2 HIGH, 7 MEDIUM, 3 LOW, 2 UNKNOWN, 1 INFO).
+The 7 MEDIUM rows split into 4 compose-port bindings and 3 missing
+OSS-governance files (`LICENSE`, `SECURITY.md`, `CODEOWNERS`).
 
 ## Findings
 
-The 14 findings are listed in `docs/governance/SECURITY_AUDIT.md` §3
+The 15 findings are listed in `docs/governance/SECURITY_AUDIT.md` §3
 with severity, location and remediation approval level. Highlights:
 
 1. **HIGH** — `docker-compose.yml:80–84`: `JWT_SECRET_KEY` reused as
