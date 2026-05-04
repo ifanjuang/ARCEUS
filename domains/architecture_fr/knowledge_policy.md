@@ -32,10 +32,12 @@ cohesion-territoires.gouv.fr
 ### Tier 2 — professional / technical reference
 
 ```text
-cstb.fr
-afnor.org
-oppbtp.fr
-qualibat.fr
+cstb.fr (avis techniques, DTA, ATEx)
+afnor.org (NF, NF EN, NF DTU)
+oppbtp.fr (prévention chantier)
+qualibat.fr (qualifications entreprises)
+maf.fr (Mutuelle des Architectes Français — recommandations, boîte à outils, fiches sinistres)
+ordre-des-architectes.fr (déontologie, missions, modèles)
 ```
 
 ### Tier 3 — project-controlled sources
@@ -143,6 +145,67 @@ standard_reference
 ```
 
 CCTP, DTU and standards benefit from contextual chunking when available.
+
+---
+
+## 6.bis Regulatory and normative reference families
+
+Pantheon Next must **name the family** when an output cites or relies on
+one of these references. Each citation must be backed by a fetched and
+read source recorded in the Evidence Pack (see §3 fetch-before-cite).
+
+### 6.bis.1 Construction and architecture references
+
+```text
+RE2020 (réglementation environnementale 2020) — bâtiments neufs
+RT2012 — legacy, peut encore s'appliquer à certains projets
+DTU (NF DTU) — règles de l'art exécution travaux
+Eurocodes (NF EN 1990 à NF EN 1999) — calcul des structures
+NF C 15-100 — installations électriques basse tension
+règles ERP / IGH (code de la construction et de l'habitation)
+règles SDIS — sécurité incendie locale
+règles d'accessibilité (PMR, ERP, logements)
+PLU / PLUi / RNU — règles d'urbanisme locales et nationales
+ABF — périmètre monuments historiques
+recommandations CSTB — avis techniques, DTA, ATEx
+```
+
+### 6.bis.2 Contractual and procurement references
+
+```text
+loi MOP (loi 85-704 modifiée) — maîtrise d'ouvrage publique
+ordonnance 2018-1074, décret 2018-1075 — code de la commande publique
+CCAG Travaux, MOE, FCS, PI, MI — clauses administratives générales
+NF P 03-001 — marchés privés de travaux
+contrat type d'architecte (Ordre, MAF) — missions et honoraires
+code civil — responsabilité décennale, biennale, parfait achèvement
+code de la construction et de l'habitation
+code de l'urbanisme
+recommandations MAF — boîte à outils, fiches contrats, fiches sinistres
+```
+
+### 6.bis.3 Reliability and freshness rule
+
+A regulatory or normative reference is **time-sensitive**. For each
+citation, record:
+
+```yaml
+freshness:
+  source_family: "RE2020 | DTU | Eurocode | NF C 15-100 | CCAG | code civil | …"
+  source_id: ""              # e.g. "NF EN 1992-1-1:2005+A1:2014"
+  source_url_or_path: ""
+  last_checked: null
+  check_required_after: null
+  status: "current | superseded | unknown"
+```
+
+If `status` is `unknown` or the source is older than the configured
+freshness window, the conclusion **must** be marked
+`based on possibly outdated source` and any contractual recommendation
+**must stop** until re-check.
+
+Reference: `docs/governance/KNOWLEDGE_TAXONOMY.md` §4–§8,
+`domains/architecture_fr/rules.md` §3.2.
 
 ---
 

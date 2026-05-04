@@ -1,0 +1,211 @@
+# Quote vs CCTP Review — Workflow template
+#
+# Source of truth:
+#   docs/governance/WORKFLOW_SCHEMA.md §3
+#   docs/governance/WORKFLOW_ADAPTATION.md
+#   docs/governance/TASK_CONTRACTS.md §7.2 (quote_vs_cctp_review)
+#   domains/architecture_fr/rules.md
+#   domains/architecture_fr/knowledge_policy.md
+#   domains/architecture_fr/output_formats.md
+#   domains/architecture_fr/skills/quote_vs_cctp_consistency/
+#
+# Status: Documented / not runtime.
+#
+# Doctrine:
+#   OpenWebUI expose.
+#   Hermes Agent exécute.
+#   Pantheon Next gouverne.
+#
+# Privacy: fictional examples only — no real client / project / address /
+# chantier / personal / budget data.
+
+id: quote_vs_cctp_review
+name: Quote vs CCTP Review
+domain: architecture_fr
+status: candidate
+version: 0.1.0
+pattern: cascade
+adaptive: true            # may be adapted in session per WORKFLOW_ADAPTATION.md §1
+
+purpose: >
+  Compare a contractor quote against a CCTP (and where relevant the
+  DPGF / CCAP / programme) and produce a structured candidate review
+  highlighting matched, missing, divergent, duplicate and out-of-scope
+  items, plus technical / contractual / quantitative / regulatory risk
+  flags, hypotheses and limits. Review-mode only — never a final
+  contractual position.
+
+inputs:
+  required:
+    - cctp_document
+    - quote_document
+    - lot_scope
+  optional:
+    - dpgf_document
+    - ccap_document
+    - project_context
+    - freshness_window
+    - priority_aspects
+
+outputs:
+  - quote_vs_cctp_consistency_result
+  - evidence_pack
+  - approval_request_if_external_use
+
+agents:
+  - ZEUS
+  - ATHENA
+  - ARGOS
+  - HEPHAESTUS
+  - DEMETER
+  - THEMIS
+  - PROMETHEUS
+  - APOLLO
+  - HECATE
+
+skills:
+  - project_context_resolution      # domains/general/skills/project_context_resolution
+  - knowledge_selection             # domains/general/skills/knowledge_selection
+  - source_check                    # domains/general — referenced in TASK_CONTRACTS.md §7.2
+  - quote_vs_cctp_consistency       # domains/architecture_fr/skills/quote_vs_cctp_consistency
+
+approval_default:
+  level: C1
+  rationale: review_mode_candidate_output
+
+approval_points:
+  - condition: drives_file_mutation
+    level: C3
+  - condition: presented_externally_as_position
+    level: C4
+  - condition: client_message_draft_requested_after_review
+    handoff_to: domains/architecture_fr/output_formats.md#28-client_message_draft
+    level: C4
+  - condition: memory_promotion_requested
+    handoff_to: docs/governance/TASK_CONTRACTS.md#74-memory_promotion_review
+    level: C3
+
+memory_impact:
+  default: none
+  candidate_only_if: reusable_pattern_detected
+
+evidence_required: true
+evidence_pack_minimum_fields:
+  - files_read
+  - sources_used
+  - documents_used
+  - knowledge_bases_consulted
+  - tools_used
+  - assumptions
+  - unsupported_claims
+  - limitations
+  - outputs
+  - approval_required
+  - next_safe_action
+evidence_pack_domain_specific_fields:
+  - project_documents_used
+  - source_status
+  - version_or_filename
+  - chunks_or_excerpts_consulted
+  - regulatory_references_used
+  - regulatory_freshness_check
+  - risk_flags
+
+knowledge_sources:
+  preferred:
+    - architecture_fr_cctp_models
+    - architecture_fr_dpgf_models
+    - architecture_fr_contract_clauses
+  conditional:
+    - architecture_fr_notices
+    - architecture_fr_sdis_erp
+    - architecture_fr_plu_reference
+  forbidden_by_default:
+    - cross_project_knowledge_bases
+    - public_search_snippets_as_evidence
+
+allowed_tools:
+  - read_reference_markdowns
+  - read_project_documents_under_task_contract
+  - knowledge_search_within_selected_bases
+  - structured_extraction
+  - source_check
+  - evidence_pack_assembly
+
+forbidden_tools:
+  - send_email_or_external_message
+  - publish_to_third_party_channel
+  - mutate_pantheon_source_of_truth_files
+  - auto_promote_memory
+  - install_plugin_or_external_tool
+  - docker_socket
+  - secret_access
+  - cross_project_knowledge_merge_without_authorization
+
+fallback:
+  retry_allowed: true
+  max_retries: 1
+  alternative_tool_allowed: false
+  require_approval_if_risk_increases: true
+  forbidden_fallbacks:
+    - cross_project_knowledge
+    - external_send
+    - memory_write
+    - unallowlisted_tool
+  on_blocked_or_incomplete:
+    decision: keep_as_diagnostic_if_sources_are_incomplete
+    reason: "review-mode candidate; do not silently degrade to a contractual position"
+
+remediation:
+  enabled: true
+  parallel_analysis_allowed: true
+  auto_fix_allowed: false
+  patch_candidate_allowed: true
+  require_evidence_pack: true
+  require_approval_if:
+    - file_mutation
+    - skill_change
+    - workflow_change
+    - memory_change
+    - external_action
+
+# Adaptive notes per docs/governance/WORKFLOW_ADAPTATION.md
+adaptation:
+  may_be:
+    - selected_from_template
+    - adapted_in_session
+    - composed_with_knowledge_selection
+    - reset_to_baseline
+  must_not:
+    - lower_approval_silently
+    - remove_themis_veto
+    - remove_apollo_gate
+    - remove_evidence_pack_requirement
+    - bypass_external_send_C4_when_drafting_for_third_party
+    - canonize_session_workflow_automatically
+  baseline_template_path: domains/architecture_fr/workflows/quote_vs_cctp_review/workflow.yaml
+
+# Execution mode: dependency graph (per WORKFLOW_ADAPTATION.md §9).
+# Tasks are defined in tasks.yaml. Hermes is the runtime; Pantheon
+# governs. This file declares the high-level structure only.
+execution_plan_reference: domains/architecture_fr/workflows/quote_vs_cctp_review/tasks.yaml
+
+risks:
+  - "Surinterprétation review-mode comme position contractuelle finale."
+  - "Bypass freshness_check sur référence réglementaire stale ou superseded."
+  - "Mélange cross-project sans autorisation explicite."
+  - "Drafting client envoyé sans gate C4 si l'enchaînement saute output_formats.md §2.8."
+
+review:
+  required_before_activation: true
+  required_documents:
+    - docs/governance/WORKFLOW_SCHEMA.md
+    - docs/governance/WORKFLOW_ADAPTATION.md
+    - docs/governance/TASK_CONTRACTS.md
+    - docs/governance/EVIDENCE_PACK.md
+    - docs/governance/APPROVALS.md
+    - docs/governance/KNOWLEDGE_TAXONOMY.md
+    - domains/architecture_fr/rules.md
+    - domains/architecture_fr/knowledge_policy.md
+    - domains/architecture_fr/output_formats.md
+    - domains/architecture_fr/skills/quote_vs_cctp_consistency/SKILL.md
