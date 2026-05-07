@@ -15,6 +15,10 @@ Le projet suit SemVer : `MAJOR.MINOR.PATCH`.
 
 ### Added
 
+- `docs/governance/HERMES_CAPABILITY_MAP.md` : cartographie opérationnelle des capacités entre Hermes, OpenWebUI, Pantheon et legacy.
+- `docs/governance/GOVERNANCE_METHODS.md` : méthodes standard de classification, Task Contract, approvals, Evidence Packs et mémoire candidate.
+- `docs/governance/MEMORY_STORAGE_MODEL.md` : modèle de stockage mémoire canonique, candidates, evidence, approvals, index Postgres et miroirs optionnels.
+- `docs/governance/OPENWEBUI_PLUGIN_POLICY.md` : policy de sécurité pour Functions, Tools, Pipes, Filters, Actions et plugins OpenWebUI.
 - Section `[project]` dans `pyproject.toml` (PEP 621) avec dépendances explicites — la source de vérité runtime reste `platform/api/requirements.txt`.
 - `docs/governance/` : 14 documents de gouvernance déplacés depuis la racine (AGENTS, APPROVALS, ARCHITECTURE, EVIDENCE_PACK, EXTERNAL_TOOLS_POLICY, EXTERNAL_WATCHLIST, HERMES_INTEGRATION, KNOWLEDGE_TAXONOMY, MEMORY, MODULES, ROADMAP, STATUS, TASK_CONTRACTS, VERSIONS) + `docs/governance/README.md`.
 - `ai_logs/README.md` : hub canonique du journal IA (règles, fichiers critiques, conventions branches, template d'entrée).
@@ -26,6 +30,7 @@ Le projet suit SemVer : `MAJOR.MINOR.PATCH`.
 
 ### Changed
 
+- `docs/governance/README.md` indexe les nouveaux documents de gouvernance opératoire : capability map, methods, memory storage model et OpenWebUI plugin policy.
 - `config/domains.yaml` réduit au scope MVP : conserve `architecture_fr` (actif) et ajoute `general` comme socle. Les overlays aspirationnels `legal_fr` / `medical_fr` sont retirés (à recréer en V2 quand les dossiers existeront).
 - `config/policies.yaml` retire les `trusted_sources` `legal_fr` / `medical_fr` ; commentaire scope MVP-only.
 - `platform/api/pantheon_runtime/router.py` : retire la référence orpheline `domains/software` du context-pack ; `truth_files` mis à jour vers `docs/governance/*.md`.
