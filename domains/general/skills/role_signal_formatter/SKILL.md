@@ -73,7 +73,28 @@ If the message changes risk, authority, persistence or execution, escalate to TH
 
 ---
 
-## 4. Inputs
+## 4. Formatting hierarchy
+
+IRIS must use a profile-first approach.
+
+```text
+1. Use the known Role Signal Profile.
+2. If the known profile is insufficient, send a format_reminder_request.
+3. If the reminder response only returns structure, format the signal.
+4. If the response requires judgment, risk classification, approval or arbitration, stop and route to the competent role.
+```
+
+Reference:
+
+```text
+docs/governance/ROLE_SIGNAL_PROFILES.md
+```
+
+The format reminder exists to recover structure, not to obtain a decision.
+
+---
+
+## 5. Inputs
 
 Expected input:
 
@@ -90,9 +111,22 @@ role_signal_input:
   risk_level: C1
 ```
 
+Optional format reminder input:
+
+```yaml
+format_reminder_request:
+  from_role: IRIS
+  to_role: THEMIS
+  purpose: "Remind the expected structure for a risk review signal."
+  constraints:
+    no_decision: true
+    no_approval: true
+    no_execution: true
+```
+
 ---
 
-## 5. Outputs
+## 6. Outputs
 
 Expected output:
 
@@ -121,9 +155,21 @@ addressed_role_signal:
   status: open
 ```
 
+Blocked output when structure requires substance:
+
+```yaml
+format_blocked:
+  from_role: IRIS
+  reason: "The requested format requires substantive risk classification."
+  blocked_action: format_signal
+  next_role: THEMIS
+  next_action: "THEMIS must classify risk directly."
+  escalation_required: true
+```
+
 ---
 
-## 6. Address profiles
+## 7. Address profiles
 
 The skill must adapt the signal to the receiving role.
 
@@ -141,9 +187,11 @@ To PROMETHEUS: emphasize alternatives, contradictions and edge cases.
 To IRIS: emphasize audience, tone, wording and communication constraints.
 ```
 
+Full profiles live in `ROLE_SIGNAL_PROFILES.md`.
+
 ---
 
-## 7. Guardrails
+## 8. Guardrails
 
 The skill must preserve:
 
@@ -171,15 +219,29 @@ hide uncertainty
 change requested authority
 ```
 
+A format reminder response must not be accepted if it contains:
+
+```text
+final approval
+risk downgrade
+external send instruction
+memory promotion
+skill activation
+workflow canonization
+substantive decision
+```
+
 ---
 
-## 8. Evidence relationship
+## 9. Evidence relationship
 
 For consequential outputs, Evidence Pack may record:
 
 ```text
 original signal
 mediated signal
+format reminder request
+format reminder response
 addressed role
 risk level
 limitations preserved
@@ -190,7 +252,7 @@ Signal formatting is not proof.
 
 ---
 
-## 9. Approval relationship
+## 10. Approval relationship
 
 Formatting a signal is normally C0/C1.
 
@@ -207,9 +269,12 @@ authorize tool execution
 
 ---
 
-## 10. Final rule
+## 11. Final rule
 
 ```text
+Use the recipient profile first.
+Ask for a format reminder only as fallback.
+Block if the reminder becomes a decision.
 IRIS may mediate form.
 The source role owns substance.
 The addressed role owns response.
